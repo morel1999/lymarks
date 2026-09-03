@@ -1,0 +1,38 @@
+# Flutter / Dart
+app/.dart_tool/
+app/.flutter-plugins-dependencies
+app/build/
+app/.idea/
+app/android/.gradle/
+app/android/local.properties
+app/ios/Pods/
+app/ios/.symlinks/
+app/windows/flutter/ephemeral/
+app/linux/flutter/ephemeral/
+app/macos/Flutter/ephemeral/
+*.iml
+
+# Les rendus de reference sont versionnes (test/goldens/) : ils servent de
+# preuve visuelle et de garde-fou contre les regressions.
+# Les echecs de comparaison, eux, ne le sont pas.
+app/test/failures/
+
+# Node / API (etape suivante)
+api/node_modules/
+api/.wrangler/
+api/dist/
+
+# Secrets - rien de tout cela ne doit entrer dans l historique
+.env
+.env.*
+!.env.example
+.dev.vars
+*.jks
+*.keystore
+**/google-services.json
+**/GoogleService-Info.plist
+
+# OS
+.DS_Store
+Thumbs.db
+.gstack/

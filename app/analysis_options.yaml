@@ -1,0 +1,14 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  errors:
+    # Application, pas paquet publie : la doc publique n'est pas exigee.
+    public_member_api_docs: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+linter:
+  rules:
+    # Les chaines UI restent lisibles ; l'extraction i18n viendra ensuite.
+    lines_longer_than_80_chars: true
