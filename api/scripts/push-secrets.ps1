@@ -45,18 +45,35 @@ foreach ($raw in Get-Content -Path $File -Encoding UTF8) {
   if ($wanted -contains $name) { $values[$name] = $value }
 }
 
-$pushed = 0
+# Pas de pipe vers gh : sous une console en code page UTF-8, PowerShell 5.1
+# prefixe l'entree standard d'un executable natif d'un BOM (U+FEFF), quel que
+# soit $OutputEncoding — invisible, et wrangler refuse ensuite l'Account ID.
+# On ecrit un dotenv temporaire (UTF-8 sans preambule, valeurs entre guillemets)
+# que `gh secret set -f` lit directement, puis on l'efface.
+$selected = @()
 $skipped = @()
 foreach ($name in $wanted) {
   $value = $values[$name]
   # Une valeur laissee au placeholder (pk_test_, gsk_, AIza, postgresql://) ne vaut rien.
-  $placeholder = ($null -eq $value) -or ($value.Length -lt 12)
-  if ($placeholder) { $skipped += $name; continue }
-  if ($DryRun) { Write-Host "[dry-run] $name ($($value.Length) caracteres)"; continue }
-  $value | gh secret set $name --repo $Repo
-  if ($LASTEXITCODE -ne 0) { Write-Error "gh secret set $name a echoue" }
-  Write-Host "+ $name"
-  $pushed += 1
+  if (($null -eq $value) -or ($value.Length -lt 12)) { $skipped += $name; continue }
+  if ($value -match '[\r\n"\\]') { Write-Error "$name contient un caractere interdit (retour a la ligne, guillemet ou antislash)" }
+  $selected += $name
+  if ($DryRun) { Write-Host "[dry-run] $name ($($value.Length) caracteres)" }
+}
+
+$pushed = 0
+if (-not $DryRun -and $selected.Count -gt 0) {
+  $tmp = Join-Path $env:TEMP ("lymarks-secrets-" + [guid]::NewGuid().ToString("N") + ".env")
+  try {
+    $body = ($selected | ForEach-Object { '{0}="{1}"' -f $_, $values[$_] }) -join "`n"
+    [IO.File]::WriteAllText($tmp, $body + "`n", (New-Object System.Text.UTF8Encoding($false)))
+    gh secret set --repo $Repo -f $tmp
+    if ($LASTEXITCODE -ne 0) { Write-Error "gh secret set -f a echoue" }
+    $pushed = $selected.Count
+    $selected | ForEach-Object { Write-Host "+ $_" }
+  } finally {
+    if (Test-Path $tmp) { Remove-Item $tmp -Force }
+  }
 }
 
 Write-Host ""
