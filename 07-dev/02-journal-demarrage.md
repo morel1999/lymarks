@@ -83,6 +83,8 @@ Troisième piège mineur : les listes étant paresseuses, la surface de test par
 
 Soit **2,5 Mo de poids mort** sur un budget d'app installée de 40 Mo (`08-qualite/02-performance-budget.md`). Ce n'est pas un dépassement, donc rien n'est fait maintenant — le jeu d'icônes bouge encore. À revoir avant soumission aux stores : vendoriser `lucide.ttf` seul, ou sous-ensembler la police aux ~57 glyphes réellement utilisés (~10 Ko).
 
+**Première mesure réelle (CI, 17/09)** : APK release **arm64 18,6 Mo**, armv7 16,3 Mo. Le debug pesait 144 Mo (toutes les ABI + VM JIT) — ne jamais juger la taille sur un build debug. La taille installée sera un peu supérieure à l'APK ; la marge sous les 40 Mo reste large.
+
 ## 6. Environnement
 
 Flutter 3.41.9 · Dart 3.11.5 · Node 22.22 · JDK Temurin 17. Machine Windows, **sans Mac ni device iOS** → ADR-007 (Android seul en V1.0). Mémoire contrainte (R11) : pas d'émulateur, pas d'Android Studio, pas de scan récursif.
@@ -100,7 +102,9 @@ Correctif retenu, réversible et hors dépôt : faire lire à Java le magasin Wi
 - `GRADLE_OPTS` (variable utilisateur) pour le wrapper qui télécharge la distribution ;
 - `systemProp.javax.net.ssl.trustStoreType=WINDOWS-ROOT` dans `~/.gradle/gradle.properties` pour le daemon qui télécharge les dépendances.
 
-Alternative écartée : importer la racine AVG dans le `cacerts` du JDK (à refaire à chaque mise à jour du JDK). Vraie solution de fond, au choix du propriétaire de la machine : désactiver l'analyse HTTPS d'AVG, qui est aussi un consommateur de mémoire connu.
+Alternative écartée : importer la racine AVG dans le `cacerts` du JDK (à refaire à chaque mise à jour du JDK).
+
+**Résolu le 17/09 :** l'analyse HTTPS d'AVG a été désactivée (Bouclier Web → « Activer l'analyse HTTPS » décoché). Vérifié : `dl.google.com` présente désormais un certificat émis par Google Trust Services. Le réglage `WINDOWS-ROOT` est conservé : inoffensif, et il protège si l'analyse est réactivée.
 
 Autre piège : `Invoke-WebRequest` (PowerShell 5.1) plafonne à ~60 Ko/s à cause de sa barre de progression ; `curl.exe` natif fait 2,4 Mo/s sur la même connexion. Et `Expand-Archive` échoue sur ce zip ; `tar.exe` (natif Windows 10+) fonctionne.
 
