@@ -46,7 +46,7 @@ foreach ($name in $wanted) {
   # Une valeur laissee au placeholder (pk_test_, gsk_, AIza, postgresql://) ne vaut rien.
   $placeholder = ($null -eq $value) -or ($value.Length -lt 12)
   if ($placeholder) { $skipped += $name; continue }
-  if ($DryRun) { Write-Host "[dry-run] $name (" + $value.Length + " caracteres)"; continue }
+  if ($DryRun) { Write-Host "[dry-run] $name ($($value.Length) caracteres)"; continue }
   $value | gh secret set $name --repo $Repo
   if ($LASTEXITCODE -ne 0) { Write-Error "gh secret set $name a echoue" }
   Write-Host "+ $name"
