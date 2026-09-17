@@ -1,15 +1,15 @@
 # Product Roadmap — Lymarks
 
-> **But :** jalons versionnés. · **Statut :** vivant · **Màj :** 2026-09-17
+> **But :** jalons versionnés. · **Statut :** vivant · **Màj :** 2026-09-18
 
 > **Périmètre V1.0 = Android seul** (ADR-007). iOS en V1.1.
 
 ## Sprint Shipaton 2026 (V1.0)
 | Étape | Jours | Contenu | Critère de sortie |
 |---|---|---|---|
-| 1. Infra cloud | J1–J2 | Neon + pgvector (schéma initial), Clerk configuré, API Hono déployée sur Workers | `GET /health` authentifié OK en prod |
+| 1. Infra cloud | J1–J2 | Neon + pgvector (schéma initial), Clerk configuré, API Hono déployée sur Workers | **Code prêt le 18/09** : API complète (104 tests, ADR-009), migration 001, CI de déploiement. Reste : comptes et clés (Neon, Clerk, Groq, Gemini, Cloudflare) → `GET /health` OK en prod |
 | 2. Core Flutter + Share | J3–J6 | Projet Flutter ✔ (04/09), share sheet **Android** en canal natif ✔ (ADR-008, 18/09), liste + états ✔ | **Atteint le 18/09** : capture réelle depuis Chrome sur un Android physique, réactivité jugée bonne, cartes `processing` visibles. X et YouTube à confirmer. |
-| 3. Pipeline IA + recherche | J7–J10 | Scraper → Groq → Gemini → Neon ; recherche plein texte + cosinus | Un lien partagé ressort via une requête sémantique |
+| 3. Pipeline IA + recherche | J7–J10 | Scraper → Groq → Gemini → Neon ; recherche plein texte + cosinus | Code prêt le 18/09 (pipeline, anti-SSRF, recherche hybride, sur mocks). Critère inchangé : un lien partagé ressort via une requête sémantique **en prod** |
 | 4. Monétisation + store | J11–J14 | Produits Play, paywall RevenueCat, gel des features à J11, soumission ≤ J14 | Build soumis à Google Play |
 
 **Buffer review stores :** soumettre à J14 laisse la marge nécessaire avant le 30/09/2026 (rejet possible → itération, voir Risk Register R1).

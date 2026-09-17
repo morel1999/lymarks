@@ -1,0 +1,128 @@
+// Pipeline d'ingestion (SAD Flux 1, module M2) : scrape → résumé → embedding →
+// mise à jour. Tourne après le 201, dans `ctx.waitUntil` ; l'utilisateur ne
+// l'attend jamais. Toute sortie est un statut final : jamais d'échec silencieux
+// (PRD §3).
+
+import type { Db, PipelineResult } from "../db/types.js";
+import { embeddingInput, type Embedder } from "./embedder.js";
+import { ScrapeError, type PageContent, type ScrapeOptions } from "./scraper.js";
+import type { Summarizer } from "./summarizer.js";
+
+export interface PipelineDeps {
+  db: Db;
+  scrape: (url: string, opts: ScrapeOptions) => Promise<PageContent>;
+  scrapeOptions: ScrapeOptions;
+  summarizer: Summarizer;
+  embedder: Embedder;
+  log: (event: Record<string, unknown>) => void;
+}
+
+export interface PipelineJob {
+  id: string;
+  url: string;
+  urlHash: string;
+  /** Titre transmis par la feuille de partage : sert de secours. */
+  title: string | null;
+}
+
+/** En dessous, la page n'a pas livré de vrai contenu : on résume ses métadonnées → `partial`. */
+const THIN_CONTENT_CHARS = 200;
+
+export async function processBookmark(
+  deps: PipelineDeps,
+  job: PipelineJob,
+): Promise<PipelineResult> {
+  const started = Date.now();
+  const result = await run(deps, job);
+  await deps.db.bookmarks.setResult(job.id, result);
+  deps.log({
+    event: "pipeline_done",
+    bookmarkId: job.id,
+    status: result.status,
+    reason: result.failureReason,
+    ms: Date.now() - started,
+  });
+  return result;
+}
+
+async function run(deps: PipelineDeps, job: PipelineJob): Promise<PipelineResult> {
+  // 1. Cache inter-utilisateurs : même page, même résumé (AI Architecture §2).
+  const cached = await deps.db.bookmarks.findCachedSummary(job.urlHash).catch(() => null);
+  if (cached) {
+    deps.log({ event: "pipeline_cache_hit", bookmarkId: job.id });
+    return {
+      status: cached.embedding ? "ready" : "partial",
+      title: job.title ?? cached.title,
+      summary: cached.summary,
+      keywords: cached.keywords,
+      embedding: cached.embedding,
+      failureReason: null,
+    };
+  }
+
+  // 2. Scrape.
+  let page: PageContent;
+  try {
+    page = await deps.scrape(job.url, deps.scrapeOptions);
+  } catch (err) {
+    const reason = err instanceof ScrapeError ? err.reason : "scrape_error";
+    deps.log({ event: "pipeline_scrape_failed", bookmarkId: job.id, reason });
+    return failed(job.title, reason);
+  }
+
+  const title = page.title ?? job.title;
+  const thin = page.text.length < THIN_CONTENT_CHARS;
+  const content = thin ? [page.description, page.text].filter(Boolean).join("\n") : page.text;
+  if (!content.trim() && !title) return failed(null, "empty_page");
+
+  // 3. Résumé (le résumeur gère retry et fallback).
+  let summary;
+  try {
+    summary = await deps.summarizer.summarize({ title, content });
+  } catch (err) {
+    deps.log({
+      event: "pipeline_summary_failed",
+      bookmarkId: job.id,
+      reason: (err as Error).message,
+    });
+    return failed(title, "summary_failed");
+  }
+  const lang = summary.lang ?? page.lang?.slice(0, 2) ?? null;
+
+  // 4. Embedding : son échec dégrade en `partial` (recherche texte seule), il
+  //    ne perd pas le résumé.
+  let embedding: number[] | null = null;
+  const input = embeddingInput(title, summary.bullets);
+  if (input) {
+    try {
+      embedding = await deps.embedder.embed(input, "RETRIEVAL_DOCUMENT");
+    } catch (err) {
+      deps.log({
+        event: "pipeline_embed_failed",
+        bookmarkId: job.id,
+        reason: (err as Error).message,
+      });
+    }
+  }
+
+  const degraded = thin || summary.bullets.length === 0 || !embedding;
+  return {
+    status: degraded ? "partial" : "ready",
+    title,
+    summary: { bullets: summary.bullets, lang },
+    keywords: summary.keywords,
+    embedding,
+    failureReason: null,
+  };
+}
+
+function failed(title: string | null, reason: string): PipelineResult {
+  return {
+    status: "failed",
+    title,
+    summary: null,
+    keywords: [],
+    embedding: null,
+    failureReason: reason,
+  };
+}

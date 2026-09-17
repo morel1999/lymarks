@@ -7,7 +7,7 @@
 |---|---|---|---|
 | 01-vision | product-vision · **prd** · roadmap | Pourquoi, quoi, quand | stable · vivant · vivant |
 | 02-ux | ux-bible · design-system | Règles d'expérience et d'UI | stable · vivant |
-| 03-architecture | sad (+modules +stack) · adr/ (8) | Comment c'est construit, et pourquoi | vivants |
+| 03-architecture | sad (+modules +stack) · adr/ (9) | Comment c'est construit, et pourquoi | vivants |
 | 04-securite | security-architecture · threat-model · privacy-spec | Défense et données personnelles | vivants |
 | 05-data | knowledge-vault-spec · database-schema | Mémoire de connaissances et SQL | vivants |
 | 06-ia | ai-architecture (+ prompts) | Modèles, orchestration, coûts | vivant |
@@ -20,7 +20,8 @@
 1. `01-vision/02-prd.md` — tout part de là. 2. `03-architecture/01-sad.md`. 3. `04-securite/02-threat-model.md`. 4. Le reste selon l'étape du sprint.
 
 ## Décisions récentes
+- **2026-09-18 — SQL brut plutôt que Drizzle** (ADR-009). Le schéma est déjà du SQL ; pgvector et le FTS aussi.
 - **2026-09-17 — Android seul en V1.0, iOS en V1.1** (ADR-007). Pas de Mac disponible ; deadline stores 30/09.
 
 ## Points ouverts (⚠️ à décider)
-Recensés dans les documents : navigateur in-app, transcripts YouTube, fallback Gemini Flash, prix Pro et essai gratuit, Drizzle, Riverpod, FCM seul, export Free (RGPD), politique excédent au downgrade, notif discrète.
+Recensés dans les documents : navigateur in-app, transcripts YouTube, prix Pro et essai gratuit, FCM seul, politique excédent au downgrade, notif discrète. Tranchés à l'implémentation : Drizzle (non, ADR-009), Riverpod (oui), fallback Gemini Flash (oui, `api/src/index.ts`), export Free (oui, `GET /me/export` pour tous).

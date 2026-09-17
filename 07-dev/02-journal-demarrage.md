@@ -116,7 +116,25 @@ Alternative écartée : importer la racine AVG dans le `cacerts` du JDK (à refa
 
 Autre piège : `Invoke-WebRequest` (PowerShell 5.1) plafonne à ~60 Ko/s à cause de sa barre de progression ; `curl.exe` natif fait 2,4 Mo/s sur la même connexion. Et `Expand-Archive` échoue sur ce zip ; `tar.exe` (natif Windows 10+) fonctionne.
 
-## 7. Questions ouvertes créées par les écrans
+## 7. API — décisions prises à l'implémentation (18/09)
+
+Le code est dans `api/` (README dedans : routes, commandes, déploiement). Ce qui a été tranché en l'écrivant, et pourquoi :
+
+- **SQL brut, pas Drizzle** → ADR-009. Le contrat `Db` (`src/db/types.ts`) a deux implémentations : Neon (`src/db/neon.ts`, seul fichier avec du SQL) et mémoire (`test/helpers/memory-db.ts`). Les 104 tests tournent sans base ni réseau : sur cette machine c'est la seule façon d'avoir une suite rapide (10 s) et sûre pour la RAM.
+- **Auth Clerk sans SDK** : `jose` vérifie le JWT contre le JWKS de l'instance ; l'hôte du JWKS est décodé depuis la publishable key (`pk_test_<base64(host)$>`), donc une seule clé à configurer. La `secret key` ne sert qu'à supprimer le compte chez Clerk (F7).
+- **Anti-SSRF sans DNS système** : le Worker n'a pas d'API DNS, on interroge le résolveur DoH de Cloudflare avant le fetch, puis à chaque redirection (3 max). Ports 80/443 seulement. Les formes d'IP exotiques (`http://2130706433/`) sont neutralisées par le parseur WHATWG lui-même, testé.
+- **Scraper sans DOM** : extracteur regex (article/main/body, balises de bruit retirées, entités décodées). Suffisant pour 3 puces, et zéro dépendance. **X** : l'endpoint oEmbed public rend le texte du post que le HTML brut ne contient pas ; tenté d'abord, page en repli.
+- **Résumeur = une classe, deux fournisseurs** : Groq et Gemini parlent tous deux le protocole chat-completions d'OpenAI. Chaîne : Groq (1 retry) → Gemini Flash (1 retry) → `failed`. Sortie hors format (M2) → second appel avec la réponse fautive en contexte et consigne de correction, comme prévu AI Architecture §3. Le fallback Gemini Flash, ⚠️ dans la doc, est donc **retenu** : zéro fournisseur en plus.
+- **Embeddings** : `outputDimensionality: 768` envoyé systématiquement — ignoré par `text-embedding-004`, respecté par les modèles plus larges. Le jour où Google retire ce modèle, on change la variable `GEMINI_EMBEDDING_MODEL` dans `wrangler.toml`, pas le schéma.
+- **Statuts** : `failed` = rien n'a pu être récupéré (404, timeout, SSRF, résumeur à plat) avec `failure_reason` ; `partial` = page mince (paywall, JS), résumé sur les métadonnées OG, ou embedding indisponible. Le titre transmis par la feuille de partage sert de secours dans tous les cas.
+- **Limites côté serveur** : Free 30 actifs (403 `limit_reached`, un doublon ne consomme rien, archiver libère), 30 captures/h par comptage Neon (429). Le rate limiting des recherches (60/h prévu Security §5) est **reporté** : la recherche texte est une requête SQL bon marché, la sémantique est réservée aux Pro payants ; à ajouter si les logs montrent un abus.
+- **Export JSON pour tous** (`GET /me/export`) : la question RGPD art. 20 de la Privacy Spec est tranchée dans le sens de la portabilité.
+- **Webhook RevenueCat** : `Authorization` comparé en temps constant, idempotence par `event.id`, rejet des événements plus anciens que le dernier appliqué (`last_event_at`). Toujours 200 une fois authentifié, sinon RevenueCat rejoue indéfiniment.
+- **Cache de résumés inter-utilisateurs** (AI Architecture §2) : implémenté dans le pipeline, index `bookmarks_url_hash` ajouté pour ça.
+
+Ce qui n'est **pas** fait : Digest (M4, P1) — les colonnes existent, pas le cron ; push tokens ; test d'intégration sur branche Neon (ADR-009, conséquences). Et surtout : **rien n'est déployé** tant que les comptes n'existent pas — `api/.dev.vars` attend les clés, `api/scripts/push-secrets.ps1` les envoie en GitHub Secrets, `api.yml` fait le reste.
+
+## 8. Questions ouvertes créées par les écrans
 
 Elles ne bloquent pas le code actuel mais devront être tranchées :
 

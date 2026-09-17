@@ -1,0 +1,38 @@
+# Secrets de l'API Lymarks — copie ce fichier en `.dev.vars` (gitignore) et
+# remplis-le. `wrangler dev` le lit automatiquement ; en prod les memes noms
+# deviennent des Workers Secrets (voir README.md § Deploiement).
+#
+# Regle : jamais de valeur dans une conversation, un commit ou un screenshot.
+# Une cle exposee est une cle a revoquer (Security §2, Risk Register R9).
+
+# ── Neon (base Postgres + pgvector) ─────────────────────────────────────────
+# Console Neon → projet → "Connect" → role applicatif → "Connection string".
+# Format : postgresql://ROLE:MOT_DE_PASSE@ep-xxx-pooler.REGION.aws.neon.tech/neondb?sslmode=require
+# Prendre la variante "pooled" (hote en -pooler) : c'est celle qui convient aux Workers.
+DATABASE_URL=postgresql://
+
+# ── Clerk (auth Google / e-mail) ─────────────────────────────────────────────
+# Dashboard Clerk → application → "API Keys".
+# Format : pk_test_… ou pk_live_… (publique par design, aussi embarquee dans l'app)
+CLERK_PUBLISHABLE_KEY=pk_test_
+# Format : sk_test_… ou sk_live_… (sert uniquement a la suppression de compte)
+CLERK_SECRET_KEY=sk_test_
+
+# ── Groq (resumes, Llama 3.3 70B) ────────────────────────────────────────────
+# console.groq.com → "API Keys" → "Create API Key".
+# Format : gsk_…
+GROQ_API_KEY=gsk_
+
+# ── Google AI Studio (embeddings Gemini + fallback resumes) ──────────────────
+# aistudio.google.com → "Get API key".
+# Format : AIza…
+GEMINI_API_KEY=AIza
+
+# ── RevenueCat (etape 4 de la roadmap, peut rester vide pour l'instant) ──────
+# Valeur que TU choisis (32+ caracteres aleatoires), a coller telle quelle dans
+# RevenueCat → projet → Integrations → Webhooks → "Authorization header value".
+# Generer : PowerShell → [Convert]::ToBase64String((1..32 | % { Get-Random -Max 256 }) -as [byte[]])
+REVENUECAT_WEBHOOK_SECRET=
+# RevenueCat → projet → "API keys" → cle secrete (V1) ; sert a purger l'abonne
+# lors de la suppression de compte. Format : sk_…
+REVENUECAT_API_KEY=

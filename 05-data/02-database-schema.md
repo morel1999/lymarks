@@ -1,8 +1,8 @@
 # Database Schema — Lymarks (Neon Postgres)
 
-> **But :** tables, relations, index, migrations. · **Statut :** vivant · **Màj :** 2026-08-07
+> **But :** tables, relations, index, migrations. · **Statut :** vivant · **Màj :** 2026-09-18
 
-Outil de migrations ⚠️ à décider — **proposition : Drizzle ORM** (TypeScript, compatible Workers + driver Neon HTTP, migrations SQL lisibles). Ci-dessous le SQL de référence (migration 001).
+Outil de migrations : **SQL brut, fichiers numérotés dans `api/migrations/`, joués par `api/scripts/migrate.ts`** (ADR-009 ; Drizzle écarté). Le SQL ci-dessous est celui de `api/migrations/001_initial.sql`, la source de vérité. Écarts par rapport à la première version : `bookmarks.failure_reason` et `updated_at`, index `bookmarks_url_hash` (cache de résumés inter-utilisateurs), `subscriptions.last_event_id` / `last_event_at` (idempotence du webhook, M7), table `schema_migrations`.
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -31,15 +31,18 @@ CREATE TABLE bookmarks (
   keywords      text[] NOT NULL DEFAULT '{}',
   embedding     vector(768),
   status        bookmark_status NOT NULL DEFAULT 'processing',
+  failure_reason text,                          -- code court, affiché à l'utilisateur
   summary_version int NOT NULL DEFAULT 1,
   saved_count   int NOT NULL DEFAULT 1,
   archived      boolean NOT NULL DEFAULT false,
   created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now(),
   last_opened_at   timestamptz,
   last_surfaced_at timestamptz,
   UNIQUE (user_id, url_hash)                    -- anti-doublon + idempotence
 );
 CREATE INDEX bookmarks_user_created ON bookmarks (user_id, created_at DESC);
+CREATE INDEX bookmarks_url_hash ON bookmarks (url_hash);
 CREATE INDEX bookmarks_embedding_hnsw ON bookmarks
   USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 CREATE INDEX bookmarks_fts ON bookmarks USING gin (
@@ -51,6 +54,8 @@ CREATE TABLE subscriptions (
   rc_app_user_id text NOT NULL,
   entitlement  text NOT NULL DEFAULT 'free',    -- 'free' | 'pro'
   expires_at   timestamptz,
+  last_event_id text,                           -- idempotence du webhook (M7)
+  last_event_at timestamptz,                    -- rejet des événements dans le désordre
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
 
@@ -75,5 +80,6 @@ CREATE TABLE push_tokens (
 ## Règles
 - **Toute requête applicative filtre par `user_id`** (issu du JWT). Test d'intégration M6 dédié.
 - `ON DELETE CASCADE` partout → la suppression de compte = `DELETE FROM users` (Privacy §5).
-- Migrations : numérotées, jouées via CI sur branch Neon dev puis prod ; jamais de `DROP` sans migration de repli notée.
+- Migrations : numérotées, jouées par la CI (`npm run migrate`, transaction par fichier, journal `schema_migrations`) ; jamais de `DROP` sans migration de repli notée.
+- Tout accès passe par le contrat `Db` (`api/src/db/types.ts`) : une implémentation Neon, une en mémoire pour les tests (ADR-009).
 - Compte des lymarks Free : `SELECT count(*) WHERE user_id=$1 AND archived=false` — pas de compteur dénormalisé en V1.

@@ -18,13 +18,13 @@ lymarks/
 - Tout texte UI passe par l'i18n dès le départ (`flutter_localizations`, FR+EN).
 
 ## 3. TypeScript / API
-- `strict: true`, ESLint + Prettier. Validation d'entrée systématique par **Zod** sur chaque route.
+- `strict: true` (+ `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`), ESLint + Prettier. Validation d'entrée systématique par **Zod** sur chaque route.
 - Une route = un fichier ; services purs (scraper, summarizer, embedder) sans dépendance à Hono → testables unitairement.
 - Aucune requête SQL hors de `src/db/` ; toute requête reçoit `userId` en paramètre explicite.
 
 ## 4. Commits, branches, CI
 - Conventional Commits (`feat:`, `fix:`, `sec:`, `docs:`). Branche `main` protégée, déploiement uniquement via CI.
-- CI (GitHub Actions) : lint → tests → scan secrets (GitLeaks) → deploy `wrangler` / build Flutter.
+- CI (GitHub Actions) : `android.yml` (analyse, tests, APK), `api.yml` (typecheck, lint, tests, puis migrations + `wrangler deploy` + secrets Workers sur master si les GitHub Secrets existent), `secrets-scan.yml` (GitLeaks sur tout l'historique).
 - Code généré par IA : relu ligne à ligne avant commit — le commit vaut approbation humaine.
 
 ## 5. Registre des dépendances
@@ -36,5 +36,6 @@ lymarks/
 | `freezed`, `riverpod` (⚠️) | Modèles / état | Écosystème mûr | Faible |
 | `hono` | Framework API | Minimal, edge-first | Faible |
 | `zod` | Validation | Standard TS | Faible |
-| `drizzle-orm` + `@neondatabase/serverless` (⚠️) | DB | Compatible Workers | Alternative : SQL brut + `postgres.js` |
+| `@neondatabase/serverless` | DB (pilote HTTP, SQL brut) | Compatible Workers, zéro ORM (ADR-009) | Faible |
+| `jose` | Vérification JWT Clerk (JWKS) | Standard, tourne sur Workers | Faible |
 Règle : versions épinglées, lockfiles committés, revue des mises à jour **après** le Shipaton (aucun upgrade non indispensable pendant le sprint).

@@ -1,0 +1,24 @@
+# Configuration Cloudflare Workers de l'API Lymarks (ADR-003).
+#
+# Les secrets (DATABASE_URL, cles Groq/Gemini/Clerk, secret webhook) ne sont
+# JAMAIS ici : en local ils viennent de `.dev.vars` (gitignore), en prod de
+# `wrangler secret` pousse par la CI (Security §2).
+
+name = "lymarks-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Logs structures consultables dans le dashboard (retention courte, sans corps
+# de requete — Privacy §4).
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+# Variables non secretes. Les modeles sont ici pour pouvoir en changer sans
+# redeployer le code (fallback Groq → Gemini Flash, AI Architecture §1).
+[vars]
+APP_VERSION = "0.1.0"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+GEMINI_SUMMARY_MODEL = "gemini-2.5-flash"
+GEMINI_EMBEDDING_MODEL = "text-embedding-004"
