@@ -132,6 +132,8 @@ Le code est dans `api/` (README dedans : routes, commandes, déploiement). Ce qu
 - **Webhook RevenueCat** : `Authorization` comparé en temps constant, idempotence par `event.id`, rejet des événements plus anciens que le dernier appliqué (`last_event_at`). Toujours 200 une fois authentifié, sinon RevenueCat rejoue indéfiniment.
 - **Cache de résumés inter-utilisateurs** (AI Architecture §2) : implémenté dans le pipeline, index `bookmarks_url_hash` ajouté pour ça.
 
+**Première migration réelle (18/09)** : Postgres a refusé l'index GIN de la doc — `array_to_string()` est `STABLE`, pas `IMMUTABLE`, donc interdit dans une expression d'index. Correctif : fonction `keywords_text()` immuable + colonne générée `fts tsvector … STORED` indexée directement ; les requêtes lisent `fts` au lieu de répéter l'expression (un écart de virgule entre l'index et la requête aurait suffi à perdre l'index). La transaction par fichier a fait son travail : rien n'était à moitié appliqué, le rejeu après correctif est passé, et un second rejeu répond « déjà appliquée ». Base : PostgreSQL 18.6, pgvector 0.8.6, eu-central-1.
+
 Ce qui n'est **pas** fait : Digest (M4, P1) — les colonnes existent, pas le cron ; push tokens ; test d'intégration sur branche Neon (ADR-009, conséquences). Et surtout : **rien n'est déployé** tant que les comptes n'existent pas — `api/.dev.vars` attend les clés, `api/scripts/push-secrets.ps1` les envoie en GitHub Secrets, `api.yml` fait le reste.
 
 ## 8. Questions ouvertes créées par les écrans

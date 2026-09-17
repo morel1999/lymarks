@@ -6,7 +6,7 @@
 // `user_id = ${userId}` — c'est la règle absolue du Database Schema.
 
 import { neon } from "@neondatabase/serverless";
-import { fusedScore, toTsQuery } from "../services/search.js";
+import { fusedScore, SEMANTIC_WEIGHT, TEXT_WEIGHT, toTsQuery } from "../services/search.js";
 import type {
   BookmarkPatch,
   BookmarkRow,
@@ -30,8 +30,8 @@ const BOOKMARK_COLUMNS = `id, user_id, url, url_hash, source, title, note, summa
   failure_reason, summary_version, saved_count, archived, created_at, updated_at,
   last_opened_at, last_surfaced_at`;
 
-const FTS_DOCUMENT = `to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(note,'') || ' ' ||
-  coalesce(summary->>'bullets','') || ' ' || array_to_string(keywords,' '))`;
+// `fts` est une colonne générée (migration 001) : le document plein texte est
+// maintenu par Postgres et indexé en GIN, sans répéter l'expression ici.
 
 function asDate(v: unknown): Date {
   return v instanceof Date ? v : new Date(String(v));
@@ -274,11 +274,9 @@ export function createNeonDb(databaseUrl: string): Db {
         const ts = toTsQuery(query);
         if (!ts) return [];
         const rows = await q(
-          `SELECT ${BOOKMARK_COLUMNS},
-                  ts_rank(${FTS_DOCUMENT}, to_tsquery('simple', $2), 32) AS score
+          `SELECT ${BOOKMARK_COLUMNS}, ts_rank(fts, to_tsquery('simple', $2), 32) AS score
            FROM bookmarks
-           WHERE user_id = $1 AND archived = false
-             AND ${FTS_DOCUMENT} @@ to_tsquery('simple', $2)
+           WHERE user_id = $1 AND archived = false AND fts @@ to_tsquery('simple', $2)
            ORDER BY score DESC, created_at DESC
            LIMIT $3`,
           [userId, ts, limit],
@@ -287,20 +285,19 @@ export function createNeonDb(databaseUrl: string): Db {
       },
       async searchHybrid(userId, query, embedding, limit): Promise<SearchHit[]> {
         const ts = toTsQuery(query);
+        // Fusion 0,7 sémantique / 0,3 texte (Knowledge Vault §5), calculée en
+        // sous-requête pour ordonner sur le score composé.
         const rows = await q(
-          `SELECT ${BOOKMARK_COLUMNS},
-                  greatest(0, 1 - (embedding <=> $3::vector)) AS semantic,
-                  CASE WHEN $2::text IS NULL THEN 0
-                       ELSE ts_rank(${FTS_DOCUMENT}, to_tsquery('simple', $2), 32) END AS text
-           FROM bookmarks
-           WHERE user_id = $1 AND archived = false AND embedding IS NOT NULL
-           ORDER BY (${fusedScoreSql("semantic_expr", "text_expr")}) DESC, created_at DESC
-           LIMIT $4`
-            .replace("semantic_expr", "greatest(0, 1 - (embedding <=> $3::vector))")
-            .replace(
-              "text_expr",
-              `CASE WHEN $2::text IS NULL THEN 0 ELSE ts_rank(${FTS_DOCUMENT}, to_tsquery('simple', $2), 32) END`,
-            ),
+          `SELECT * FROM (
+             SELECT ${BOOKMARK_COLUMNS},
+                    greatest(0, 1 - (embedding <=> $3::vector)) AS semantic,
+                    CASE WHEN $2::text IS NULL THEN 0
+                         ELSE ts_rank(fts, to_tsquery('simple', $2), 32) END AS text
+             FROM bookmarks
+             WHERE user_id = $1 AND archived = false AND embedding IS NOT NULL
+           ) scored
+           ORDER BY (${SEMANTIC_WEIGHT} * semantic + ${TEXT_WEIGHT} * text) DESC, created_at DESC
+           LIMIT $4`,
           [userId, ts, JSON.stringify(embedding), limit],
         );
         return rows.map((r) => ({
@@ -368,8 +365,4 @@ export function createNeonDb(databaseUrl: string): Db {
       },
     },
   };
-}
-
-function fusedScoreSql(semantic: string, text: string): string {
-  return `0.7 * ${semantic} + 0.3 * ${text}`;
 }

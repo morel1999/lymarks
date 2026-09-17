@@ -2,7 +2,7 @@
 
 > **But :** tables, relations, index, migrations. · **Statut :** vivant · **Màj :** 2026-09-18
 
-Outil de migrations : **SQL brut, fichiers numérotés dans `api/migrations/`, joués par `api/scripts/migrate.ts`** (ADR-009 ; Drizzle écarté). Le SQL ci-dessous est celui de `api/migrations/001_initial.sql`, la source de vérité. Écarts par rapport à la première version : `bookmarks.failure_reason` et `updated_at`, index `bookmarks_url_hash` (cache de résumés inter-utilisateurs), `subscriptions.last_event_id` / `last_event_at` (idempotence du webhook, M7), table `schema_migrations`.
+Outil de migrations : **SQL brut, fichiers numérotés dans `api/migrations/`, joués par `api/scripts/migrate.ts`** (ADR-009 ; Drizzle écarté). Le SQL ci-dessous est celui de `api/migrations/001_initial.sql`, la source de vérité. Écarts par rapport à la première version : `bookmarks.failure_reason` et `updated_at`, index `bookmarks_url_hash` (cache de résumés inter-utilisateurs), `subscriptions.last_event_id` / `last_event_at` (idempotence du webhook, M7), table `schema_migrations`, et colonne générée `bookmarks.fts` (la première version indexait une expression contenant `array_to_string`, que Postgres refuse car non `IMMUTABLE` — découvert à la première migration réelle, 18/09). **Appliquée sur Neon le 18/09** : PostgreSQL 18.6, pgvector 0.8.6, région eu-central-1.
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -18,6 +18,10 @@ CREATE TABLE users (
 
 CREATE TYPE bookmark_status AS ENUM ('processing','ready','partial','failed');
 CREATE TYPE bookmark_source AS ENUM ('x','youtube','linkedin','web');
+
+-- array_to_string() est STABLE : interdit dans un index ou une colonne générée.
+CREATE FUNCTION keywords_text(text[]) RETURNS text
+  LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE AS $$ SELECT array_to_string($1, ' ') $$;
 
 CREATE TABLE bookmarks (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -39,15 +43,17 @@ CREATE TABLE bookmarks (
   updated_at    timestamptz NOT NULL DEFAULT now(),
   last_opened_at   timestamptz,
   last_surfaced_at timestamptz,
+  fts tsvector GENERATED ALWAYS AS (            -- document plein texte, maintenu par Postgres
+    to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(note,'') || ' ' ||
+                coalesce(summary->>'bullets','') || ' ' || keywords_text(keywords))
+  ) STORED,
   UNIQUE (user_id, url_hash)                    -- anti-doublon + idempotence
 );
 CREATE INDEX bookmarks_user_created ON bookmarks (user_id, created_at DESC);
 CREATE INDEX bookmarks_url_hash ON bookmarks (url_hash);
 CREATE INDEX bookmarks_embedding_hnsw ON bookmarks
   USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
-CREATE INDEX bookmarks_fts ON bookmarks USING gin (
-  to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(note,'') || ' ' ||
-              coalesce(summary->>'bullets','') || ' ' || array_to_string(keywords,' ')));
+CREATE INDEX bookmarks_fts ON bookmarks USING gin (fts);
 
 CREATE TABLE subscriptions (
   user_id      uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

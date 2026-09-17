@@ -21,6 +21,12 @@ DO $$ BEGIN
   CREATE TYPE bookmark_source AS ENUM ('x','youtube','linkedin','web');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- array_to_string() est STABLE, donc interdit dans un index ou une colonne
+-- générée ; ce wrapper strict (résultat identique) est déclaré IMMUTABLE.
+CREATE OR REPLACE FUNCTION keywords_text(text[]) RETURNS text
+  LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE
+  AS $$ SELECT array_to_string($1, ' ') $$;
+
 CREATE TABLE IF NOT EXISTS bookmarks (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -41,15 +47,18 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   updated_at    timestamptz NOT NULL DEFAULT now(),
   last_opened_at   timestamptz,
   last_surfaced_at timestamptz,
+  -- Document plein texte (titre, note, puces, mots-clés), maintenu par Postgres.
+  fts tsvector GENERATED ALWAYS AS (
+    to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(note,'') || ' ' ||
+                coalesce(summary->>'bullets','') || ' ' || keywords_text(keywords))
+  ) STORED,
   UNIQUE (user_id, url_hash)                    -- anti-doublon + idempotence
 );
 CREATE INDEX IF NOT EXISTS bookmarks_user_created ON bookmarks (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS bookmarks_url_hash ON bookmarks (url_hash);
 CREATE INDEX IF NOT EXISTS bookmarks_embedding_hnsw ON bookmarks
   USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
-CREATE INDEX IF NOT EXISTS bookmarks_fts ON bookmarks USING gin (
-  to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(note,'') || ' ' ||
-              coalesce(summary->>'bullets','') || ' ' || array_to_string(keywords,' ')));
+CREATE INDEX IF NOT EXISTS bookmarks_fts ON bookmarks USING gin (fts);
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   user_id        uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
