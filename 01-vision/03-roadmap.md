@@ -8,7 +8,7 @@
 | Étape | Jours | Contenu | Critère de sortie |
 |---|---|---|---|
 | 1. Infra cloud | J1–J2 | Neon + pgvector (schéma initial), Clerk configuré, API Hono déployée sur Workers | `GET /health` authentifié OK en prod |
-| 2. Core Flutter + Share | J3–J6 | Projet Flutter ✔ (fait le 04/09), `receive_sharing_intent` **Android**, liste + états ✔ | Capture réelle depuis X et Chrome sur un Android physique |
+| 2. Core Flutter + Share | J3–J6 | Projet Flutter ✔ (04/09), share sheet **Android** en canal natif ✔ (ADR-008, 18/09), liste + états ✔ | **Atteint le 18/09** : capture réelle depuis Chrome sur un Android physique, réactivité jugée bonne, cartes `processing` visibles. X et YouTube à confirmer. |
 | 3. Pipeline IA + recherche | J7–J10 | Scraper → Groq → Gemini → Neon ; recherche plein texte + cosinus | Un lien partagé ressort via une requête sémantique |
 | 4. Monétisation + store | J11–J14 | Produits Play, paywall RevenueCat, gel des features à J11, soumission ≤ J14 | Build soumis à Google Play |
 
