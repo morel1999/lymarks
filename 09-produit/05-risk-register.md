@@ -14,6 +14,6 @@
 | R8 | Bus factor = 1 (solo) | Organisation | 3 | 2 | Cette documentation ; CI reproductible ; secrets dans un vault personnel |
 | R9 | Fuite de clé API | Sécurité | 1 | 3 | Workers Secrets, GitLeaks CI, rotation immédiate documentée |
 | R10 | Aucun moyen de builder iOS (pas de Mac, pas de device) → la moitié du marché absente au lancement | Produit | 3 | 2 | **Décision prise (ADR-007) : Android seul en V1.0, iOS en V1.1.** Provisionner un Mac (occasion ou cloud) avant d'ouvrir la V1.1 ; ne rien promettre d'iOS sur le store listing ni le site |
-| R11 | Machine de dev sous-dimensionnée en mémoire (scans et builds qui bloquent) | Organisation | 3 | 2 | Pas d'émulateur Android (device USB), pas d'Android Studio (command-line tools seuls), heap Gradle plafonné, aucun scan récursif du disque |
+| R11 | Machine de dev à **3,8 Go de RAM** (mesuré le 17/09 : 0,4 Go libre, 2,5 Go en swap). Premier build Gradle tué faute de mémoire après 18 min | Organisation | 3 | 3 | **Build Android en CI** (GitHub Actions, .github/workflows/android.yml) comme voie principale ; en local : Gradle à 1 Go sans daemon, Kotlin in-process, VS Code et navigateur fermés. Pas d'émulateur, pas d'Android Studio, aucun scan récursif |
 
 Revue : à chaque fin d'étape du sprint (J2, J6, J10, J14).
