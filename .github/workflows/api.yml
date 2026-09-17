@@ -85,10 +85,9 @@ jobs:
       - name: Forme des secrets
         if: steps.gate.outputs.ready == 'true'
         run: |
-          printf 'DATABASE_URL: %s caracteres, prefixe "%s", fin hex %s
-' "${#DATABASE_URL}" "${DATABASE_URL:0:11}" "$(printf '%s' "$DATABASE_URL" | tail -c 2 | od -An -tx1 | tr -d ' ')"
-          printf 'CLERK_PUBLISHABLE_KEY: %s caracteres, prefixe "%s"
-' "${#CLERK_PUBLISHABLE_KEY}" "${CLERK_PUBLISHABLE_KEY:0:8}"
+          TAIL_HEX="$(printf '%s' "$DATABASE_URL" | tail -c 2 | od -An -tx1 | tr -d ' ')"
+          echo "DATABASE_URL: ${#DATABASE_URL} caracteres, prefixe '${DATABASE_URL:0:11}', 2 derniers octets ${TAIL_HEX}"
+          echo "CLERK_PUBLISHABLE_KEY: ${#CLERK_PUBLISHABLE_KEY} caracteres, prefixe '${CLERK_PUBLISHABLE_KEY:0:8}'"
 
       - name: Migrations Neon
         if: steps.gate.outputs.ready == 'true'
