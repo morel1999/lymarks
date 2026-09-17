@@ -66,6 +66,14 @@ Troisième piège mineur : les listes étant paresseuses, la surface de test par
 
 À reporter dans `08-qualite/01-test-strategy.md`.
 
+### Les goldens suivaient l'horloge réelle (corrigé le 18/09)
+
+Deux semaines après leur génération, trois goldens échouaient sans qu'aucun pixel de code n'ait changé : le Digest affiche la date du jour, le Profil compte les mois depuis l'inscription, la Home salue selon l'heure. Tout `DateTime.now()` d'un écran passe désormais par `clockProvider`, que les goldens figent au 4 septembre 9 h. Règle à retenir : **un rendu de référence ne doit dépendre d'aucune horloge, d'aucun aléa, d'aucune plateforme**.
+
+### Les E/S réelles et l'horloge simulée des tests de widget
+
+La feuille de partage écrit un vrai fichier. Sous `testWidgets`, chaque `await` qui suit une E/S reprend dans une microtâche de la zone simulée, vidée uniquement par `pump` : attendre en temps réel ne suffit pas, il faut alterner `runAsync(delay)` et `pump()` jusqu'à l'événement attendu (`_waitForClose` dans `test/capture_test.dart`).
+
 ### Deux défauts trouvés par les goldens, et corrigés
 
 - **Débordement horizontal** (`RenderFlex overflowed by 141 pixels`) sur l'écran Search : le `Spacer(flex:1)` et le libellé de mode se partageaient l'espace à parts égales, affamant le libellé. Corrigé (`Expanded` sur le libellé, textes tronquables). Ce défaut était invisible sans rendu — il justifie à lui seul les goldens.

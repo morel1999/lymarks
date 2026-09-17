@@ -7,7 +7,7 @@
 |---|---|---|---|
 | 01-vision | product-vision · **prd** · roadmap | Pourquoi, quoi, quand | stable · vivant · vivant |
 | 02-ux | ux-bible · design-system | Règles d'expérience et d'UI | stable · vivant |
-| 03-architecture | sad (+modules +stack) · adr/ (7) | Comment c'est construit, et pourquoi | vivants |
+| 03-architecture | sad (+modules +stack) · adr/ (8) | Comment c'est construit, et pourquoi | vivants |
 | 04-securite | security-architecture · threat-model · privacy-spec | Défense et données personnelles | vivants |
 | 05-data | knowledge-vault-spec · database-schema | Mémoire de connaissances et SQL | vivants |
 | 06-ia | ai-architecture (+ prompts) | Modèles, orchestration, coûts | vivant |

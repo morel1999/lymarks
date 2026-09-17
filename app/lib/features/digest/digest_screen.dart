@@ -29,7 +29,7 @@ class DigestScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(digestProvider);
     final isPro = ref.watch(profileProvider).isPro;
-    final today = DateTime.now();
+    final today = ref.watch(clockProvider)();
 
     return Scaffold(
       body: CustomScrollView(

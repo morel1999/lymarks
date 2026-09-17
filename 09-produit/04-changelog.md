@@ -4,6 +4,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/) · versions sémanti
 
 ## [Unreleased]
 ### Added
+- **Capture via le menu de partage Android** (F1) : activité translucide dédiée, feuille minimale, file locale hors-ligne, anti-doublon d'URL. Canal natif sans dépendance (ADR-008) — 2026-09-18.
 - App Flutter : design system (palette mesurée sur la Home), les 7 écrans sur données de démo, mode sombre, 23 tests dont 15 rendus de référence — 2026-09-04.
 - Chaîne Android et build en CI (GitHub Actions) : analyse stricte, tests, APK release par architecture — 2026-09-17.
 - **Premier APK installé et lancé sur un Android physique** (release arm64, 18,6 Mo) — 2026-09-17.

@@ -145,6 +145,7 @@ class _HomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
+    final now = ref.watch(clockProvider)();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -158,7 +159,7 @@ class _HomeHeader extends ConsumerWidget {
         children: [
           Expanded(
             child: Text(
-              '${_greeting(DateTime.now())}\nyour knowledge',
+              '${_greeting(now)}\nyour knowledge',
               style: context.texts.displayLarge,
             ),
           ),

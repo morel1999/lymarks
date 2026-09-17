@@ -88,6 +88,7 @@ class Lymark {
     List<String>? keywords,
     DateTime? lastOpenedAt,
     bool? archived,
+    int? savedCount,
   }) {
     return Lymark(
       id: id,
@@ -105,7 +106,7 @@ class Lymark {
       accentSlot: accentSlot,
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       archived: archived ?? this.archived,
-      savedCount: savedCount,
+      savedCount: savedCount ?? this.savedCount,
     );
   }
 

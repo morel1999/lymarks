@@ -31,12 +31,24 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+/// Horloge figée : la Home salue selon l'heure, le Digest affiche la date du
+/// jour, le Profil compte les mois — un golden qui suit l'horloge réelle
+/// casse tout seul le lendemain.
+final DateTime _fixedNow = DateTime(2026, 9, 4, 9);
+
+ProviderContainer _container() {
+  final container = ProviderContainer(
+    overrides: [clockProvider.overrideWithValue(() => _fixedNow)],
+  );
+  addTearDown(container.dispose);
+  return container;
+}
+
 Future<void> _boot(WidgetTester tester, {ThemeMode? theme}) async {
   await tester.binding.setSurfaceSize(_phone);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
-  final container = ProviderContainer();
-  addTearDown(container.dispose);
+  final container = _container();
   if (theme != null) {
     container.read(themeModeProvider.notifier).state = theme;
   }
@@ -196,8 +208,7 @@ void main() {
     await tester.binding.setSurfaceSize(_phone);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+    final container = _container();
     container.read(lymarksProvider.notifier).state = [];
 
     await tester.pumpWidget(
@@ -215,8 +226,7 @@ void main() {
     await tester.binding.setSurfaceSize(_phone);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+    final container = _container();
     container.read(profileProvider.notifier).setPlan(UserPlan.free);
 
     await tester.pumpWidget(

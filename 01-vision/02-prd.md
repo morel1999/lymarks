@@ -40,6 +40,8 @@ Résolution de conflits hors-ligne pour la sync multi-appareils (le cloud donne 
 - **Page inaccessible au scraping** (paywall presse, X sans login, page 100 % JS) : fallback = titre + balises OG uniquement, statut `partial`, résumé sur métadonnées ; jamais d'échec silencieux.
 - **Vidéo YouTube :** V1.0 = titre + description. ⚠️ À décider : transcript en V1.1.
 - **Doublon d'URL (même utilisateur) :** incrément de `saved_count` + mise à jour de la note ; pas de doublon en base.
+- **Plusieurs URL dans un partage :** la première est enregistrée, l'utilisateur en est informé dans la feuille (« N more links, saving the first »). Décidé à l'implémentation, ADR-008.
+- **Partage sans URL :** refus explicite dans la feuille (« No link in what you shared »). Lymarks n'enregistre que des liens.
 - **Hors-ligne à la capture :** file d'attente locale, envoi au retour du réseau ; l'UX de capture reste identique.
 - **Contenu de page malveillant :** le texte scrapé est traité comme non fiable (anti-injection, voir Threat Model M2).
 

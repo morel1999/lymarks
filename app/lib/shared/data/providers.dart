@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lymarks/features/capture/capture_queue.dart';
+import 'package:lymarks/features/capture/capture_sync.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
 
 /// Thème choisi dans les réglages (Light / Dark / System).
 final themeModeProvider = StateProvider<ThemeMode>((_) => ThemeMode.system);
+
+/// Horloge de l'application.
+///
+/// Tout ce qui affiche « aujourd'hui », une salutation selon l'heure ou une
+/// durée depuis une date absolue passe par ici, jamais par `DateTime.now()`
+/// directement : les rendus de référence figent cette horloge pour rester
+/// stables d'un jour à l'autre.
+final Provider<DateTime Function()> clockProvider =
+    Provider<DateTime Function()>((_) => DateTime.now);
 
 /// Profil et plan.
 ///
@@ -64,6 +75,45 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
   void updateNote(String id, String? note) {
     final clean = note == null || note.trim().isEmpty ? '' : note;
     _patch(id, (l) => l.copyWith(note: clean));
+  }
+
+  /// Intègre des captures venues du menu de partage, en tête de liste.
+  ///
+  /// Doublon d'URL (PRD §3) : pas de second lymark ; `saved_count` +1 et la
+  /// note remplacée si la capture en apporte une. L'URL est comparée après
+  /// normalisation légère (schéma et hôte en minuscules, sans `/` final),
+  /// en attendant le `url_hash` calculé côté serveur.
+  void addCaptures(List<PendingCapture> captures) {
+    if (captures.isEmpty) return;
+    var next = [...state];
+
+    for (final c in captures) {
+      final key = normalizeUrl(c.url);
+      final i = next.indexWhere((l) => normalizeUrl(l.url) == key);
+      if (i == -1) {
+        next.insert(0, c.toLymark());
+        continue;
+      }
+      final existing = next[i];
+      next[i] = existing.copyWith(
+        savedCount: existing.savedCount + 1,
+        note: c.note ?? existing.note,
+      );
+    }
+
+    next = next..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+    state = next;
+  }
+
+  /// Normalisation minimale pour l'anti-doublon local.
+  static String normalizeUrl(String url) {
+    final u = Uri.tryParse(url.trim());
+    if (u == null || u.host.isEmpty) return url.trim();
+    final path = u.path.endsWith('/') && u.path.length > 1
+        ? u.path.substring(0, u.path.length - 1)
+        : u.path;
+    return '${u.scheme.toLowerCase()}://${u.host.toLowerCase()}$path'
+        '${u.hasQuery ? '?${u.query}' : ''}';
   }
 
   void markOpened(String id) =>

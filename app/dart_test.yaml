@@ -1,0 +1,7 @@
+# Tags de la suite de tests.
+#
+# `golden` : rendus de reference, propres a la plateforme qui les a generes
+# (Windows). Exclus du runner Linux de la CI : `flutter test --exclude-tags golden`.
+tags:
+  golden:
+    description: Rendus de reference, a jouer sur la machine qui les a generes.

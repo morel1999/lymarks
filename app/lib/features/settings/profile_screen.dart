@@ -206,14 +206,15 @@ class _IdentityCard extends StatelessWidget {
   }
 }
 
-class _StatsRow extends StatelessWidget {
+class _StatsRow extends ConsumerWidget {
   const _StatsRow({required this.profile});
 
   final UserProfile profile;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ly = context.ly;
+    final now = ref.watch(clockProvider)();
 
     return Row(
       children: [
@@ -239,7 +240,8 @@ class _StatsRow extends StatelessWidget {
           child: _Stat(
             icon: LyIcons.calendar,
             accent: ly.blue,
-            value: LyTime.relative(profile.memberSince).replaceAll(' ago', ''),
+            value: LyTime.relative(profile.memberSince, now: now)
+                .replaceAll(' ago', ''),
             label: 'With Lymarks',
           ),
         ),
