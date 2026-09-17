@@ -6,6 +6,9 @@
 # Une cle exposee est une cle a revoquer (Security §2, Risk Register R9).
 
 # ── Neon (base Postgres + pgvector) ─────────────────────────────────────────
+# Cle API personnelle pour le CLI `neon` sans navigateur (Account settings →
+# API keys). Sert uniquement a l'outillage local, jamais au Worker.
+NEON_API_KEY=
 # Console Neon → projet → "Connect" → role applicatif → "Connection string".
 # Format : postgresql://ROLE:MOT_DE_PASSE@ep-xxx-pooler.REGION.aws.neon.tech/neondb?sslmode=require
 # Prendre la variante "pooled" (hote en -pooler) : c'est celle qui convient aux Workers.
