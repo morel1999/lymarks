@@ -1,6 +1,6 @@
 # Journal de démarrage — app Flutter
 
-> **But :** tracer les décisions prises au démarrage du code, et tout écart assumé vis-à-vis des documents. · **Statut :** vivant · **Màj :** 2026-09-04
+> **But :** tracer les décisions prises au démarrage du code, et tout écart assumé vis-à-vis des documents. · **Statut :** vivant · **Màj :** 2026-09-17
 
 Étape 2 de la roadmap (« Core Flutter ») démarrée avant l'étape 1 (« Infra cloud »), qui exige des comptes Neon / Clerk / Cloudflare non provisionnables sans accès. L'app tourne donc sur données mock ; aucun écran ne dépend de `MockData` autrement que par les providers, le branchement API est un remplacement de providers.
 
@@ -85,7 +85,7 @@ Soit **2,5 Mo de poids mort** sur un budget d'app installée de 40 Mo (`08-quali
 
 ## 6. Environnement
 
-Flutter 3.41.9 · Dart 3.11.5 · Node 22.22 · **pas de SDK Android sur cette machine** — vérification sur Chrome et Windows en attendant. `flutter doctor` : tout est vert sauf la chaîne Android.
+Flutter 3.41.9 · Dart 3.11.5 · Node 22.22 · JDK Temurin 17. Machine Windows, **sans Mac ni device iOS** → ADR-007 (Android seul en V1.0). Mémoire contrainte (R11) : pas d'émulateur, pas d'Android Studio, pas de scan récursif.
 
 ## 7. Questions ouvertes créées par les écrans
 

@@ -1,6 +1,8 @@
 # PRD — Lymarks
 
-> **But :** décrire précisément fonctionnalités, comportements, flux et priorités. · **Statut :** vivant · **Màj :** 2026-08-07
+> **But :** décrire précisément fonctionnalités, comportements, flux et priorités. · **Statut :** vivant · **Màj :** 2026-09-17
+
+> **V1.0 = Android seul** (ADR-007). Tout ce qui est spécifique à iOS ci-dessous est reporté en V1.1.
 
 Priorités : **P0** = indispensable V1.0 (Shipaton) · **P1** = V1.0 si le temps le permet, sinon V1.1 · **P2** = post-lancement.
 
@@ -9,13 +11,13 @@ Priorités : **P0** = indispensable V1.0 (Shipaton) · **P1** = V1.0 si le temps
 ### P0 — Cœur
 | # | Fonctionnalité | Comportement attendu |
 |---|---|---|
-| F1 | Capture via menu de partage | Depuis toute app (X, Safari, Chrome, YouTube, LinkedIn) : Partager → Lymarks ouvre une fenêtre native légère. Champ note optionnel. Bouton **Enregistrer**. Fermeture immédiate ; traitement en arrière-plan. Cible : <2 s tap→fermeture. |
+| F1 | Capture via menu de partage | Depuis toute app (X, Chrome, YouTube, LinkedIn ; Safari en V1.1) : Partager → Lymarks ouvre une fenêtre native légère. Champ note optionnel. Bouton **Enregistrer**. Fermeture immédiate ; traitement en arrière-plan. Cible : <2 s tap→fermeture. |
 | F2 | Pipeline IA | Backend : extraction du texte de la page → résumé en 3 puces + mots-clés (Groq Llama 3.3) → embedding (Gemini) → stockage Neon. Cible <15 s. L'utilisateur n'attend jamais ce pipeline. |
 | F3 | Liste des lymarks | Tri antéchronologique. Carte : titre, favicon/source, 3 puces, note perso, tags. États : `processing` (squelette animé), `ready`, `partial`, `failed` (bouton réessayer). |
 | F4 | Recherche mots-clés (Free) | Recherche plein texte (titre, note, résumé, tags). Résultats <500 ms. |
-| F5 | Auth | Clerk : Google / Apple / e-mail. Apple Sign-In obligatoire sur iOS dès qu'un login social est proposé. |
+| F5 | Auth | Clerk : Google / e-mail en V1.0. Apple Sign-In en V1.1 avec iOS (obligatoire sur iOS dès qu'un login social est proposé). |
 | F6 | Freemium + Paywall | Limite Free : 30 lymarks. Paywall RevenueCat déclenché au 31ᵉ enregistrement et à la 1ʳᵉ recherche sémantique. Enforcement **côté serveur** (voir `../09-produit/02-monetization-spec.md`). |
-| F7 | Suppression de compte in-app | Obligatoire Apple. Supprime tout (voir Privacy Spec). |
+| F7 | Suppression de compte in-app | Obligatoire Google Play (depuis 2024, toute app avec création de compte) et Apple. Supprime tout (voir Privacy Spec). |
 
 ### P1
 | # | Fonctionnalité | Comportement |
@@ -45,7 +47,7 @@ Résolution de conflits hors-ligne pour la sync multi-appareils (le cloud donne 
 - Deadline stores : publication avant le **30/09/2026**.
 - Développeur solo, sprint 14 jours : tout P0 doit être atteignable seul.
 - Coût IA par lymark maîtrisé (voir `../06-ia/01-ai-architecture.md` §Coûts).
-- iOS 16+ / Android 10+ ⚠️ à confirmer selon les contraintes de `receive_sharing_intent`.
+- Android 10+ ⚠️ à confirmer selon les contraintes de `receive_sharing_intent`. iOS 16+ en V1.1.
 
 ## 5. Hors périmètre V1.0 (explicite)
 Web clipper desktop, collaboration/partage de collections, import Pocket/Instapaper, mode équipe.
