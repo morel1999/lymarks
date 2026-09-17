@@ -1,3 +1,10 @@
+// Les rendus de reference dependent de la plateforme qui les a produits (ici
+// Windows) : l'anticrenelage des polices differe sous Linux, d'ou 0,4 a 2 %
+// de pixels d'ecart en CI. Ils sont donc tagues et exclus du runner Linux
+// (`flutter test --exclude-tags golden`), et restent un outil local.
+@Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
