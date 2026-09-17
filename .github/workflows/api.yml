@@ -93,8 +93,11 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: npm run migrate
 
+      # `shell: bash` explicite = `-o pipefail` : l'echec de wrangler n'est
+      # pas masque par le tee.
       - name: Deploiement Workers
         if: steps.gate.outputs.ready == 'true'
+        shell: bash
         run: npx wrangler deploy | tee /tmp/deploy.log
 
       # Les secrets du Worker sont poses apres le premier deploiement (le

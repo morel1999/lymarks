@@ -15,6 +15,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# PowerShell 5.1 : si $OutputEncoding est l'UTF-8 « avec preambule » (herite de
+# certaines consoles), le pipe vers un executable natif emet un BOM (U+FEFF)
+# en tete de chaque secret — invisible, et fatal pour wrangler. On impose
+# l'UTF-8 sans preambule avant tout pipe vers gh.
+$OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+
 if (-not (Test-Path $File)) {
   Write-Error "Fichier introuvable : $File"
 }
@@ -35,7 +41,7 @@ foreach ($raw in Get-Content -Path $File -Encoding UTF8) {
   $eq = $line.IndexOf("=")
   if ($eq -lt 1) { continue }
   $name = $line.Substring(0, $eq).Trim()
-  $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
+  $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'").TrimStart([char]0xFEFF)
   if ($wanted -contains $name) { $values[$name] = $value }
 }
 
