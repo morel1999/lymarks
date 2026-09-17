@@ -56,15 +56,24 @@ jobs:
       - name: Tests de comportement
         run: flutter test --exclude-tags golden
 
-      - name: APK debug
-        run: flutter build apk --debug
+      # Release decoupe par architecture : ~20 Mo par APK au lieu de 144 Mo
+      # en debug (toutes les ABI + VM JIT). Signe avec la cle debug par le
+      # template, donc installable en sideload. arm64 couvre les telephones
+      # de moins de 8 ans ; armv7 reste pour les tests sur Android 10 ancien.
+      - name: APK release par architecture
+        run: flutter build apk --release --split-per-abi
 
-      - name: Publier l'APK
+      - name: Taille installee (budget 40 Mo, 08-qualite/02-performance-budget)
+        run: ls -la build/app/outputs/flutter-apk/*.apk
+
+      - name: Publier les APK
         uses: actions/upload-artifact@v4
         with:
-          name: lymarks-debug-${{ github.sha }}
-          path: app/build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 14
+          name: lymarks-release-${{ github.sha }}
+          path: |
+            app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          retention-days: 7
 
       # En cas d'echec d'un golden, les images de comparaison aident a juger.
       - name: Publier les ecarts de rendu
