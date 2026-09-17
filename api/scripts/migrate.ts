@@ -33,9 +33,11 @@ function readDevVar(name: string): string | undefined {
 }
 
 async function main(): Promise<void> {
-  const url = process.env["DATABASE_URL"] ?? readDevVar("DATABASE_URL");
-  if (!url || !url.startsWith("postgres")) {
-    console.error("DATABASE_URL manquante (env ou api/.dev.vars).");
+  const url = (process.env["DATABASE_URL"] ?? readDevVar("DATABASE_URL") ?? "").trim();
+  if (!url.startsWith("postgres")) {
+    console.error(
+      `DATABASE_URL manquante ou invalide (env ou api/.dev.vars) : ${url.length} caractère(s), préfixe « ${url.slice(0, 8)} ».`,
+    );
     process.exit(2);
   }
 

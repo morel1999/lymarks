@@ -81,6 +81,15 @@ jobs:
       - if: steps.gate.outputs.ready == 'true'
         run: npm ci --no-audit --no-fund
 
+      # Diagnostic sans fuite : longueur et prefixe du secret, jamais sa valeur.
+      - name: Forme des secrets
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          printf 'DATABASE_URL: %s caracteres, prefixe "%s", fin hex %s
+' "${#DATABASE_URL}" "${DATABASE_URL:0:11}" "$(printf '%s' "$DATABASE_URL" | tail -c 2 | od -An -tx1 | tr -d ' ')"
+          printf 'CLERK_PUBLISHABLE_KEY: %s caracteres, prefixe "%s"
+' "${#CLERK_PUBLISHABLE_KEY}" "${CLERK_PUBLISHABLE_KEY:0:8}"
+
       - name: Migrations Neon
         if: steps.gate.outputs.ready == 'true'
         run: npm run migrate
