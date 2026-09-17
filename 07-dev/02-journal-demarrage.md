@@ -87,6 +87,23 @@ Soit **2,5 Mo de poids mort** sur un budget d'app installée de 40 Mo (`08-quali
 
 Flutter 3.41.9 · Dart 3.11.5 · Node 22.22 · JDK Temurin 17. Machine Windows, **sans Mac ni device iOS** → ADR-007 (Android seul en V1.0). Mémoire contrainte (R11) : pas d'émulateur, pas d'Android Studio, pas de scan récursif.
 
+### Chaîne Android (installée le 17/09)
+
+Command-line tools 22.0 seuls (148 Mo, SHA-256 vérifié contre l'empreinte publiée par Google), dans `%LOCALAPPDATA%\Android\Sdk`. Paquets : `platform-tools`, `platforms;android-36`, `build-tools;36.0.0` — ce que Flutter 3.41.9 exige (compileSdk 36, minSdk 24, AGP 8.11.1). `flutter doctor` : tout vert.
+
+### Piège machine : AVG intercepte le HTTPS
+
+**AVG Antivirus (« Web/Mail Shield ») re-signe tout le trafic HTTPS avec sa propre racine.** Windows lui fait confiance, donc navigateurs, `curl` et Dart passent. **Java non** : la JVM a son propre magasin (`cacerts`) qui ignore AVG → `PKIX path building failed` sur `sdkmanager`, et ce serait pareil pour Gradle, AGP, Kotlin.
+
+Correctif retenu, réversible et hors dépôt : faire lire à Java le magasin Windows via `-Djavax.net.ssl.trustStoreType=WINDOWS-ROOT`, posé à trois endroits :
+- `SDKMANAGER_OPTS` pour sdkmanager ;
+- `GRADLE_OPTS` (variable utilisateur) pour le wrapper qui télécharge la distribution ;
+- `systemProp.javax.net.ssl.trustStoreType=WINDOWS-ROOT` dans `~/.gradle/gradle.properties` pour le daemon qui télécharge les dépendances.
+
+Alternative écartée : importer la racine AVG dans le `cacerts` du JDK (à refaire à chaque mise à jour du JDK). Vraie solution de fond, au choix du propriétaire de la machine : désactiver l'analyse HTTPS d'AVG, qui est aussi un consommateur de mémoire connu.
+
+Autre piège : `Invoke-WebRequest` (PowerShell 5.1) plafonne à ~60 Ko/s à cause de sa barre de progression ; `curl.exe` natif fait 2,4 Mo/s sur la même connexion. Et `Expand-Archive` échoue sur ce zip ; `tar.exe` (natif Windows 10+) fonctionne.
+
 ## 7. Questions ouvertes créées par les écrans
 
 Elles ne bloquent pas le code actuel mais devront être tranchées :
