@@ -4,8 +4,9 @@
 // (PRD §3).
 
 import type { Db, PipelineResult } from "../db/types.js";
+import { normalizeCategory } from "./categories.js";
 import { embeddingInput, type Embedder } from "./embedder.js";
-import { ScrapeError, type PageContent, type ScrapeOptions } from "./scraper.js";
+import { MAX_CHARS, ScrapeError, type PageContent, type ScrapeOptions } from "./scraper.js";
 import type { Summarizer } from "./summarizer.js";
 
 export interface PipelineDeps {
@@ -17,12 +18,23 @@ export interface PipelineDeps {
   log: (event: Record<string, unknown>) => void;
 }
 
+/** Page lue par le téléphone quand le serveur n'a pas pu la lire (anti-robot, paywall). */
+export interface ProvidedPage {
+  title: string | null;
+  description: string | null;
+  text: string;
+  lang: string | null;
+  imageUrl: string | null;
+}
+
 export interface PipelineJob {
   id: string;
   url: string;
   urlHash: string;
   /** Titre transmis par la feuille de partage : sert de secours. */
   title: string | null;
+  /** Fournie par `POST /bookmarks/:id/content` : remplace l'étape scrape. */
+  page?: ProvidedPage;
 }
 
 /** En dessous, la page n'a pas livré de vrai contenu : on résume ses métadonnées → `partial`. */
@@ -69,24 +81,30 @@ async function run(deps: PipelineDeps, job: PipelineJob): Promise<PipelineResult
       title: job.title ?? cached.title,
       summary: cached.summary,
       keywords: cached.keywords,
+      category: normalizeCategory(cached.category),
+      imageUrl: cached.imageUrl,
       embedding: cached.embedding,
       failureReason: null,
     };
   }
 
-  // 2. Scrape.
+  // 2. Scrape — sauf si le téléphone a déjà lu la page pour nous.
   let page: PageContent;
-  try {
-    page = await deps.scrape(job.url, deps.scrapeOptions);
-  } catch (err) {
-    const reason = err instanceof ScrapeError ? err.reason : "scrape_error";
-    deps.log({
-      event: "pipeline_scrape_failed",
-      bookmarkId: job.id,
-      reason,
-      detail: (err as Error).message,
-    });
-    return failed(job.title, reason);
+  if (job.page) {
+    page = providedPage(job.url, job.page);
+  } else {
+    try {
+      page = await deps.scrape(job.url, deps.scrapeOptions);
+    } catch (err) {
+      const reason = err instanceof ScrapeError ? err.reason : "scrape_error";
+      deps.log({
+        event: "pipeline_scrape_failed",
+        bookmarkId: job.id,
+        reason,
+        detail: (err as Error).message,
+      });
+      return failed(job.title, reason);
+    }
   }
 
   const title = page.title ?? job.title;
@@ -130,9 +148,17 @@ async function run(deps: PipelineDeps, job: PipelineJob): Promise<PipelineResult
     title,
     summary: { bullets: summary.bullets, lang },
     keywords: summary.keywords,
+    category: summary.category,
+    imageUrl: page.imageUrl,
     embedding,
     failureReason: null,
   };
+}
+
+/** Même budget de texte que le scraper : le prompt ne distingue pas l'origine. */
+function providedPage(url: string, page: ProvidedPage): PageContent {
+  const text = page.text.length > MAX_CHARS ? `${page.text.slice(0, MAX_CHARS)}…` : page.text;
+  return { ...page, text, finalUrl: url, siteName: null };
 }
 
 function failed(title: string | null, reason: string): PipelineResult {
@@ -141,6 +167,8 @@ function failed(title: string | null, reason: string): PipelineResult {
     title,
     summary: null,
     keywords: [],
+    category: "other",
+    imageUrl: null,
     embedding: null,
     failureReason: reason,
   };

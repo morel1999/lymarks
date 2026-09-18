@@ -3,11 +3,14 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
+import type { UserRow } from "../db/types.js";
 import type { AppDeps } from "../deps.js";
 import type { AuthVariables } from "../middleware/auth.js";
 import { HttpError, notFound, parseBody } from "../middleware/errors.js";
 import { canUseDigest } from "../services/plan.js";
 import { toMeDto } from "./serialize.js";
+
+const MAX_AVATAR_CODEPOINTS = 8;
 
 const settingsSchema = z
   .object({
@@ -18,6 +21,16 @@ const settingsSchema = z
       .optional(),
     digestHour: z.number().int().min(0).max(23).optional(),
     digestOptin: z.boolean().optional(),
+    // Un emoji, séquences comprises (drapeau, teint, famille) : compté en
+    // points de code, pas en unités UTF-16. Null retire l'avatar.
+    avatar: z
+      .string()
+      .trim()
+      .refine((s) => [...s].length >= 1 && [...s].length <= MAX_AVATAR_CODEPOINTS, {
+        message: `Entre 1 et ${MAX_AVATAR_CODEPOINTS} caractères`,
+      })
+      .nullable()
+      .optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "Rien à modifier" });
 
@@ -35,13 +48,21 @@ export function meRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables }> {
   });
 
   app.patch("/", async (c) => {
-    const patch = await parseBody(c, settingsSchema);
+    const { avatar, ...settings } = await parseBody(c, settingsSchema);
     const userId = c.var.user.id;
     const plan = await deps.db.subscriptions.getPlan(userId);
-    if (patch.digestOptin === true && !canUseDigest(plan)) {
+    if (settings.digestOptin === true && !canUseDigest(plan)) {
       throw new HttpError(403, "pro_required", "Le Daily Digest est réservé au plan Pro");
     }
-    const user = await deps.db.users.updateSettings(userId, patch);
+    let user: UserRow | null = null;
+    if (avatar !== undefined) {
+      user = await deps.db.users.setAvatar(userId, avatar);
+      // Jamais la valeur : c'est un choix personnel, pas une donnée technique.
+      deps.log({ event: "avatar_updated", userId, removed: avatar === null });
+    }
+    if (Object.keys(settings).length > 0) {
+      user = await deps.db.users.updateSettings(userId, settings);
+    }
     if (!user) throw notFound();
     const count = await deps.db.bookmarks.countActive(userId);
     return c.json({ me: toMeDto(user, plan, count) });

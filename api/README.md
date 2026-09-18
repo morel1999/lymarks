@@ -13,7 +13,7 @@ Node ≥ 22. `npm install` dans ce dossier. Aucun Docker, aucune base locale : l
 ## Commandes
 | Commande | Rôle |
 |---|---|
-| `npm test` | 104 tests Vitest (services purs, routes sur dépôt mémoire, suites sécurité M1/M2/M5/M6/M7) |
+| `npm test` | 123 tests Vitest (services purs, routes sur dépôt mémoire, suites sécurité M1/M2/M5/M6/M7) |
 | `npm run typecheck` | `tsc` strict, sources + tests + scripts |
 | `npm run lint` / `npm run format` | ESLint + Prettier |
 | `npm run check` | Tout ce qui précède : le gate de la CI |
@@ -34,18 +34,19 @@ Toutes sous JWT Clerk (`Authorization: Bearer <token>`) sauf `/health` et le web
 | DELETE | `/bookmarks/:id` | Suppression (embedding et digests compris) |
 | POST | `/bookmarks/:id/opened` | Horodate l'ouverture (re-surfaçage) |
 | POST | `/bookmarks/:id/retry` | Relance le pipeline depuis `failed`/`partial` → 202 |
+| POST | `/bookmarks/:id/content` | Repli client : `{text, title?, description?, lang?, imageUrl?}` lu par le téléphone quand le serveur est bloqué → 202, pipeline sans scrape ; 409 `not_retryable` si ni échec ni partiel |
 | GET | `/bookmarks/:id/similar` | Top-3 par cosinus ≥ 0,75 |
 | GET | `/search?q=&mode=text\|semantic&limit=` | Texte pour tous ; `semantic` → 403 `pro_required` en Free |
-| GET | `/me` | `{plan, lymarkCount, lymarkLimit, tz, digestHour, digestOptin}` |
-| PATCH | `/me` | `{tz?, digestHour?, digestOptin?}` — digest réservé Pro |
+| GET | `/me` | `{plan, lymarkCount, lymarkLimit, tz, digestHour, digestOptin, avatar}` |
+| PATCH | `/me` | `{tz?, digestHour?, digestOptin?, avatar?}` — digest réservé Pro ; `avatar` = un emoji (1 à 8 points de code) ou `null` pour le retirer |
 | GET | `/me/export` | Export JSON complet (portabilité, tous plans) |
 | DELETE | `/me` | Purge Neon → Clerk → RevenueCat ; 204 |
 | POST | `/webhooks/revenuecat` | En-tête `Authorization` = `REVENUECAT_WEBHOOK_SECRET` ; idempotent |
 
-Erreurs : `{error: <code>, message, details?}`. Forme d'un lymark : `src/routes/serialize.ts` (miroir du modèle Dart).
+Erreurs : `{error: <code>, message, details?}`. Forme d'un lymark : `src/routes/serialize.ts` (miroir du modèle Dart) — dont `category` (taxonomie fermée de `src/services/categories.ts`, `other` par défaut) et `imageUrl` (og:image en https absolu, ou null).
 
 ## Pipeline d'ingestion
-`POST /bookmarks` → 201 → `ctx.waitUntil` : cache par `url_hash` → scrape (anti-SSRF, DoH, 3 redirections max, 10 s, 2 Mo, HTML seulement ; oEmbed pour X) → Groq (retry + correction de format, puis Gemini Flash) → embedding Gemini 768 d → `ready` / `partial` / `failed` + `failure_reason`. La note utilisateur n'entre jamais dans un prompt.
+`POST /bookmarks` → 201 → `ctx.waitUntil` : cache par `url_hash` → scrape (anti-SSRF, DoH, 3 redirections max, 10 s, 2 Mo, HTML seulement ; oEmbed pour X) → Groq (retry + correction de format, puis Gemini Flash ; le modèle rend aussi la `category`) → embedding Gemini 768 d → `ready` / `partial` / `failed` + `failure_reason`. La note utilisateur n'entre jamais dans un prompt. Quand le scrape est bloqué (`blocked`), l'app peut lire la page elle-même et la confier à `POST /bookmarks/:id/content` : même pipeline, étape scrape sautée.
 
 ## Déploiement (CI, `.github/workflows/api.yml`)
 Sur push de `api/**` : `npm run check`. Le job `deploy` ne tourne que sur `master` **et** si les GitHub Secrets suivants existent :
@@ -63,9 +64,9 @@ src/
   middleware/       auth (Clerk/jose), erreurs
   routes/           une route = un fichier ; serialize.ts = DTO
   services/         url, ssrf, scraper, summarizer, embedder, pipeline, search, plan (purs)
-  prompts/          summarize.v1.ts (versionné)
+  prompts/          summarize.v2.ts (versionné ; v1 conservée pour rejeu)
   db/               types.ts = contrat Db ; neon.ts = SQL brut (seul endroit avec du SQL)
-migrations/         001_initial.sql …
+migrations/         001_initial.sql, 002_category_image_avatar.sql …
 scripts/            migrate.ts (Node), push-secrets.ps1
 test/               vitest ; helpers/memory-db.ts = même contrat Db, en mémoire
 ```

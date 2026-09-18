@@ -79,6 +79,42 @@ describe("extractContent", () => {
   it("décode les entités numériques et nommées", () => {
     expect(decodeEntities("&#233;t&#xE9; &amp; &quot;x&quot; &rsquo;")).toBe('été & "x" ’');
   });
+
+  const withImage = (metas: string) =>
+    extractContent(`<html><head>${metas}</head><body>x</body></html>`, "https://site.fr/a/b");
+
+  it("og:image : absolue telle quelle, relative résolue contre l'URL finale, entités décodées", () => {
+    expect(
+      withImage('<meta property="og:image" content="https://cdn.site.fr/img.jpg?w=1&amp;h=2">')
+        .imageUrl,
+    ).toBe("https://cdn.site.fr/img.jpg?w=1&h=2");
+    expect(withImage('<meta property="og:image" content="/img/cover.png">').imageUrl).toBe(
+      "https://site.fr/img/cover.png",
+    );
+    expect(withImage('<meta content="../c.png" property="og:image">').imageUrl).toBe(
+      "https://site.fr/c.png",
+    );
+  });
+
+  it("og:image : https seulement (http, data: et adresse invalide → null), twitter:image en repli", () => {
+    expect(withImage('<meta property="og:image" content="http://site.fr/i.jpg">').imageUrl).toBe(
+      null,
+    );
+    expect(
+      withImage('<meta property="og:image" content="data:image/png;base64,AAAA">').imageUrl,
+    ).toBeNull();
+    expect(withImage('<meta name="twitter:image" content="https://site.fr/t.jpg">').imageUrl).toBe(
+      "https://site.fr/t.jpg",
+    );
+    // Un og:image inutilisable laisse sa place au twitter:image.
+    expect(
+      withImage(
+        '<meta property="og:image" content="http://site.fr/i.jpg"><meta property="twitter:image" content="https://site.fr/t.jpg">',
+      ).imageUrl,
+    ).toBe("https://site.fr/t.jpg");
+    expect(withImage("").imageUrl).toBeNull();
+    expect(extractContent(PAGE, "https://example.com/a").imageUrl).toBeNull();
+  });
 });
 
 describe("safeFetch", () => {
@@ -168,6 +204,7 @@ describe("X via oEmbed", () => {
     expect(post?.title).toBe("Ada sur X");
     expect(post?.text).toContain("Ship it & learn");
     expect(post?.text).not.toContain("pic.twitter.com");
+    expect(post?.imageUrl).toBeNull();
   });
 
   it("scrape() tente oEmbed pour x.com puis retombe sur la page", async () => {

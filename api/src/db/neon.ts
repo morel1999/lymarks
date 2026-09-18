@@ -26,9 +26,9 @@ import type {
 type Sql = ReturnType<typeof neon>;
 type Row = Record<string, unknown>;
 
-const BOOKMARK_COLUMNS = `id, user_id, url, url_hash, source, title, note, summary, keywords, status,
-  failure_reason, summary_version, saved_count, archived, created_at, updated_at,
-  last_opened_at, last_surfaced_at`;
+const BOOKMARK_COLUMNS = `id, user_id, url, url_hash, source, title, note, summary, keywords,
+  category, image_url, status, failure_reason, summary_version, saved_count, archived,
+  created_at, updated_at, last_opened_at, last_surfaced_at`;
 
 // `fts` est une colonne générée (migration 001) : le document plein texte est
 // maintenu par Postgres et indexé en GIN, sans répéter l'expression ici.
@@ -56,6 +56,7 @@ function toUser(r: Row): UserRow {
     tz: String(r["tz"]),
     digestHour: Number(r["digest_hour"]),
     digestOptin: Boolean(r["digest_optin"]),
+    avatar: (r["avatar"] as string | null) ?? null,
     createdAt: asDate(r["created_at"]),
   };
 }
@@ -71,6 +72,8 @@ function toBookmark(r: Row): BookmarkRow {
     note: (r["note"] as string | null) ?? null,
     summary: (r["summary"] as Summary | null) ?? null,
     keywords: (r["keywords"] as string[] | null) ?? [],
+    category: String(r["category"] ?? "other"),
+    imageUrl: (r["image_url"] as string | null) ?? null,
     status: r["status"] as BookmarkRow["status"],
     failureReason: (r["failure_reason"] as string | null) ?? null,
     summaryVersion: Number(r["summary_version"]),
@@ -122,6 +125,13 @@ export function createNeonDb(databaseUrl: string): Db {
            WHERE id = $1 RETURNING *`,
           [userId, patch.tz ?? null, patch.digestHour ?? null, patch.digestOptin ?? null],
         );
+        return rows[0] ? toUser(rows[0]) : null;
+      },
+      async setAvatar(userId, avatar) {
+        const rows = await q("UPDATE users SET avatar = $2 WHERE id = $1 RETURNING *", [
+          userId,
+          avatar,
+        ]);
         return rows[0] ? toUser(rows[0]) : null;
       },
       async delete(userId) {
@@ -240,6 +250,8 @@ export function createNeonDb(databaseUrl: string): Db {
              keywords = $5::text[],
              embedding = $6::vector,
              failure_reason = $7,
+             category = $8,
+             image_url = $9,
              summary_version = CASE WHEN status = 'processing' AND summary IS NOT NULL
                                     THEN summary_version + 1 ELSE summary_version END,
              updated_at = now()
@@ -252,12 +264,14 @@ export function createNeonDb(databaseUrl: string): Db {
             result.keywords,
             result.embedding ? JSON.stringify(result.embedding) : null,
             result.failureReason,
+            result.category,
+            result.imageUrl,
           ],
         );
       },
       async findCachedSummary(urlHash): Promise<CachedSummary | null> {
         const rows = await q(
-          `SELECT title, summary, keywords, embedding::text AS embedding
+          `SELECT title, summary, keywords, category, image_url, embedding::text AS embedding
            FROM bookmarks
            WHERE url_hash = $1 AND status = 'ready' AND summary IS NOT NULL
            ORDER BY updated_at DESC LIMIT 1`,
@@ -269,6 +283,8 @@ export function createNeonDb(databaseUrl: string): Db {
           title: (r["title"] as string | null) ?? null,
           summary: r["summary"] as Summary,
           keywords: (r["keywords"] as string[] | null) ?? [],
+          category: String(r["category"] ?? "other"),
+          imageUrl: (r["image_url"] as string | null) ?? null,
           embedding: parseVector(r["embedding"]),
         };
       },

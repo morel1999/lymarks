@@ -72,6 +72,14 @@ describe("parseModelJson / tidySummary", () => {
     expect(out.keywords).toEqual(["flutter", "dart"]);
     expect(out.lang).toBe("fr");
   });
+
+  it("normalise la catégorie et tolère son absence ou une valeur hors liste", () => {
+    const base = { bullets: ["x"], keywords: [], lang: null };
+    expect(tidySummary({ ...base, category: " Design " }).category).toBe("design");
+    expect(tidySummary({ ...base }).category).toBe("other");
+    expect(tidySummary({ ...base, category: "cooking" }).category).toBe("other");
+    expect(tidySummary({ ...base, category: 3 }).category).toBe("other");
+  });
 });
 
 describe("ChatSummarizer", () => {
@@ -79,13 +87,32 @@ describe("ChatSummarizer", () => {
     const { fetch, calls } = fakeFetch([GOOD]);
     const s = new ChatSummarizer({ providers: [groq], fetch, retryDelayMs: 0 });
     const out = await s.summarize({ title: "T", content: "contenu" });
-    expect(out).toEqual({ bullets: ["Un", "Deux", "Trois"], keywords: ["a", "b"], lang: "fr" });
+    // Sans "category" dans la réponse : le résumé passe, catégorie `other`.
+    expect(out).toEqual({
+      bullets: ["Un", "Deux", "Trois"],
+      keywords: ["a", "b"],
+      lang: "fr",
+      category: "other",
+    });
     expect(calls[0]!.url).toBe("https://groq.test/v1/chat/completions");
     expect(calls[0]!.auth).toBe("Bearer k1");
     expect(calls[0]!.body.model).toBe("m1");
     expect(calls[0]!.body.messages[0]!.role).toBe("system");
     expect(calls[0]!.body.messages[0]!.content).toContain("DONNÉE");
+    expect(calls[0]!.body.messages[0]!.content).toContain('"category"');
     expect(calls[0]!.body.messages[1]!.content).toContain("<page>\ncontenu\n</page>");
+  });
+
+  it("rend la catégorie choisie par le modèle, normalisée", async () => {
+    const withCategory = JSON.stringify({
+      bullets: ["Un"],
+      keywords: ["k"],
+      lang: "en",
+      category: "AI",
+    });
+    const { fetch } = fakeFetch([withCategory]);
+    const s = new ChatSummarizer({ providers: [groq], fetch, retryDelayMs: 0 });
+    expect((await s.summarize({ title: "T", content: "c" })).category).toBe("ai");
   });
 
   it("M2 : une réponse hors format (injection) déclenche un retry avec consigne, puis réussit", async () => {
@@ -137,6 +164,7 @@ describe("ChatSummarizer", () => {
       bullets: [],
       keywords: [],
       lang: null,
+      category: "other",
     });
   });
 });

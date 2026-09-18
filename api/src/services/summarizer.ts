@@ -8,12 +8,15 @@
 // prompt ; la note utilisateur n'y entre jamais (Privacy §2).
 
 import { z } from "zod";
-import { SUMMARIZE_FIX, SUMMARIZE_SYSTEM, summarizeUser } from "../prompts/summarize.v1.js";
+import { SUMMARIZE_FIX, SUMMARIZE_SYSTEM, summarizeUser } from "../prompts/summarize.v2.js";
+import { normalizeCategory, type Category } from "./categories.js";
 
 export interface SummaryOutput {
   bullets: string[];
   keywords: string[];
   lang: string | null;
+  /** Toujours une entrée de la taxonomie : `other` si le modèle se trompe ou l'omet. */
+  category: Category;
 }
 
 export interface Summarizer {
@@ -49,6 +52,9 @@ const summarySchema = z.object({
     .regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/)
     .nullable()
     .optional(),
+  // Accessoire : une valeur absente ou farfelue ne vaut pas un retry, elle
+  // est ramenée à `other` par tidySummary.
+  category: z.unknown().optional(),
 });
 
 /** Nettoie et borne une sortie déjà conforme au schéma. */
@@ -74,7 +80,7 @@ export function tidySummary(raw: z.infer<typeof summarySchema>): SummaryOutput {
     if (keywords.length === 6) break;
   }
   const lang = raw.lang ? raw.lang.slice(0, 2).toLowerCase() : null;
-  return { bullets, keywords, lang };
+  return { bullets, keywords, lang, category: normalizeCategory(raw.category) };
 }
 
 /** Extrait le premier objet JSON d'une réponse, même entourée de texte ou de ```. */

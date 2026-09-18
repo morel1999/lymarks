@@ -2,8 +2,20 @@
 // (IDOR) exigées par la Test Strategy.
 
 import { describe, expect, it } from "vitest";
+import type { PipelineResult } from "../src/db/types.js";
 import { FREE_ACTIVE_LIMIT } from "../src/services/plan.js";
 import { FIXED_NOW, fakeEmbedding, harness, json } from "./helpers/app.js";
+
+const failedResult = (reason: string): PipelineResult => ({
+  status: "failed",
+  title: null,
+  summary: null,
+  keywords: [],
+  category: "other",
+  imageUrl: null,
+  embedding: null,
+  failureReason: reason,
+});
 
 /** Recule la création des lymarks existants de 2 h : sort du quota horaire sans toucher au plan. */
 function backdate(h: ReturnType<typeof harness>) {
@@ -216,20 +228,97 @@ describe("lecture, modification, suppression", () => {
     const h = harness();
     const { id } = await create(h, "u1", "https://example.com/a");
     expect((await h.as("u1")(`/bookmarks/${id}/retry`, { method: "POST" })).status).toBe(409);
-    await h.db.bookmarks.setResult(id, {
-      status: "failed",
-      title: null,
-      summary: null,
-      keywords: [],
-      embedding: null,
-      failureReason: "timeout",
-    });
+    await h.db.bookmarks.setResult(id, failedResult("timeout"));
     const res = await h.as("u1")(`/bookmarks/${id}/retry`, { method: "POST" });
     expect(res.status).toBe(202);
     expect(((await res.json()) as { bookmark: { status: string } }).bookmark.status).toBe(
       "processing",
     );
     expect(h.jobs).toHaveLength(2);
+  });
+
+  it("content : 202 depuis failed, le pipeline reçoit la page lue par le téléphone", async () => {
+    const h = harness();
+    const { id } = await create(h, "u1", "https://example.com/blocked", { title: "Partagé" });
+    await h.db.bookmarks.setResult(id, failedResult("blocked"));
+    const text = "Le corps de l'article, lu par l'app. ".repeat(10);
+    const res = await h.as("u1")(
+      `/bookmarks/${id}/content`,
+      json({
+        title: "Lu sur le téléphone",
+        text,
+        description: "Chapeau",
+        lang: "fr",
+        imageUrl: "https://example.com/cover.jpg",
+      }),
+    );
+    expect(res.status).toBe(202);
+    const body = (await res.json()) as { bookmark: { status: string; failureReason: null } };
+    expect(body.bookmark).toMatchObject({ status: "processing", failureReason: null });
+    expect(h.jobs).toHaveLength(2);
+    expect(h.jobs[1]).toMatchObject({
+      id,
+      url: "https://example.com/blocked",
+      title: "Partagé",
+      page: {
+        title: "Lu sur le téléphone",
+        description: "Chapeau",
+        lang: "fr",
+        imageUrl: "https://example.com/cover.jpg",
+      },
+    });
+    expect(h.jobs[1]!.page!.text).toContain("Le corps de l'article");
+    expect(h.waited).toHaveLength(2);
+    // Journal : la taille, jamais le texte.
+    const log = h.logs.find((l) => l.event === "bookmark_content_received");
+    expect(log).toMatchObject({ bookmarkId: id, chars: text.trim().length, hasImage: true });
+    expect(JSON.stringify(log)).not.toContain("corps de l'article");
+  });
+
+  it("content : champs facultatifs absents → null dans le job ; 400 sur image http ou texte vide", async () => {
+    const h = harness();
+    const { id } = await create(h, "u1", "https://example.com/a");
+    await h.db.bookmarks.setResult(id, failedResult("blocked"));
+    expect(
+      (await h.as("u1")(`/bookmarks/${id}/content`, json({ text: "x", imageUrl: "http://a/b" })))
+        .status,
+    ).toBe(400);
+    expect((await h.as("u1")(`/bookmarks/${id}/content`, json({ text: "  " }))).status).toBe(400);
+    expect((await h.as("u1")(`/bookmarks/${id}/content`, json({}))).status).toBe(400);
+    expect(h.jobs).toHaveLength(1);
+    const ok = await h.as("u1")(`/bookmarks/${id}/content`, json({ text: "Juste du texte" }));
+    expect(ok.status).toBe(202);
+    expect(h.jobs[1]!.page).toEqual({
+      title: null,
+      description: null,
+      text: "Juste du texte",
+      lang: null,
+      imageUrl: null,
+    });
+  });
+
+  it("content : 409 sur un lymark ready ou en traitement, 404 pour un autre utilisateur", async () => {
+    const h = harness();
+    const { id } = await create(h, "u1", "https://example.com/a");
+    const send = (who: string) => h.as(who)(`/bookmarks/${id}/content`, json({ text: "texte" }));
+    expect((await send("u1")).status).toBe(409);
+    await h.db.bookmarks.setResult(id, {
+      status: "ready",
+      title: "T",
+      summary: { bullets: ["b"], lang: "fr" },
+      keywords: [],
+      category: "ai",
+      imageUrl: null,
+      embedding: null,
+      failureReason: null,
+    });
+    const conflict = await send("u1");
+    expect(conflict.status).toBe(409);
+    expect(await conflict.json()).toMatchObject({ error: "not_retryable" });
+    await h.db.bookmarks.setResult(id, failedResult("blocked"));
+    expect((await send("bob")).status).toBe(404);
+    expect(h.jobs).toHaveLength(1);
+    expect(h.db.bookmarks_.get(id)?.status).toBe("failed");
   });
 
   it("traitement abandonné : servi en échec relançable, relancé par retry ou par une nouvelle capture", async () => {
@@ -297,6 +386,8 @@ describe("GET /search", () => {
       title: "Flutter state management",
       summary: { bullets: ["Riverpod expliqué"], lang: "en" },
       keywords: ["flutter", "riverpod"],
+      category: "development",
+      imageUrl: "https://example.com/flutter.png",
       embedding: fakeEmbedding("flutter riverpod state"),
       failureReason: null,
     });
@@ -306,6 +397,8 @@ describe("GET /search", () => {
       title: "Recette de pâtes",
       summary: { bullets: ["Carbonara sans crème"], lang: "fr" },
       keywords: ["cuisine"],
+      category: "lifestyle",
+      imageUrl: null,
       embedding: fakeEmbedding("recette pâtes carbonara"),
       failureReason: null,
     });
@@ -318,9 +411,17 @@ describe("GET /search", () => {
   it("plein texte : titre, note, puces et mots-clés, scopé par utilisateur", async () => {
     const { h, a } = await seeded();
     const res = await h.as("u1")("/search?q=flutter");
-    const body = (await res.json()) as { items: Array<{ bookmark: { id: string } }>; mode: string };
+    const body = (await res.json()) as {
+      items: Array<{ bookmark: { id: string; category: string; imageUrl: string | null } }>;
+      mode: string;
+    };
     expect(body.mode).toBe("text");
     expect(body.items.map((i) => i.bookmark.id)).toEqual([a]);
+    // Le DTO expose la catégorie et l'image d'aperçu (miroir du modèle Dart).
+    expect(body.items[0]!.bookmark).toMatchObject({
+      category: "development",
+      imageUrl: "https://example.com/flutter.png",
+    });
     const byNote = (await (await h.as("u1")("/search?q=app")).json()) as {
       items: Array<{ bookmark: { id: string } }>;
     };
@@ -382,6 +483,36 @@ describe("/me", () => {
     ).toBe(400);
   });
 
+  it("PATCH avatar : posé (séquence emoji comprise), retiré par null, refusé au-delà de 8 caractères", async () => {
+    const h = harness();
+    const patch = (body: unknown) =>
+      h.as("u1")("/me", { method: "PATCH", body: JSON.stringify(body) });
+    const me = async (res: Response) =>
+      ((await res.json()) as { me: { avatar: string | null } }).me;
+
+    expect((await me(await h.as("u1")("/me"))).avatar).toBeNull();
+    const family = "👨‍👩‍👧‍👦"; // 7 points de code, 11 unités UTF-16
+    const set = await patch({ avatar: family });
+    expect(set.status).toBe(200);
+    expect((await me(set)).avatar).toBe(family);
+    expect((await me(await h.as("u1")("/me"))).avatar).toBe(family);
+    // Avec les réglages dans le même corps : les deux sont appliqués.
+    const both = await patch({ avatar: "🦊", tz: "Europe/Paris" });
+    expect(await me(both)).toMatchObject({ avatar: "🦊", tz: "Europe/Paris" });
+
+    const cleared = await patch({ avatar: null });
+    expect(cleared.status).toBe(200);
+    expect((await me(cleared)).avatar).toBeNull();
+
+    expect((await patch({ avatar: "a".repeat(20) })).status).toBe(400);
+    expect((await patch({ avatar: "" })).status).toBe(400);
+    expect((await patch({ avatar: 3 })).status).toBe(400);
+    expect((await me(await h.as("u1")("/me"))).avatar).toBeNull();
+    const logs = h.logs.filter((l) => l.event === "avatar_updated");
+    expect(logs).toHaveLength(3);
+    expect(JSON.stringify(logs)).not.toContain("🦊");
+  });
+
   it("export JSON : url, note, résumé, tags, dates", async () => {
     const h = harness();
     const { id } = await create(h, "u1", "https://example.com/a", { note: "n" });
@@ -390,6 +521,8 @@ describe("/me", () => {
       title: "T",
       summary: { bullets: ["b"], lang: "fr" },
       keywords: ["k"],
+      category: "other",
+      imageUrl: null,
       embedding: null,
       failureReason: null,
     });
