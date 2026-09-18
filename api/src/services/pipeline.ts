@@ -28,6 +28,20 @@ export interface PipelineJob {
 /** En dessous, la page n'a pas livré de vrai contenu : on résume ses métadonnées → `partial`. */
 const THIN_CONTENT_CHARS = 200;
 
+/**
+ * Au-delà, une entrée `processing` est tenue pour abandonnée : le pipeline ne
+ * dépasse jamais ~1 min (scrape 10 s, 2 fournisseurs × 2 essais × 25 s au
+ * pire), donc rien n'aboutira plus. Constaté en prod le 18/09 : requête de
+ * création annulée par le client (mobile + VPN), l'invocation Workers meurt
+ * avec elle et emporte le `waitUntil` — la ligne restait en traitement sans
+ * fin. Servie comme échec relançable, et relancée par une nouvelle capture.
+ */
+export const STALL_AFTER_MS = 2 * 60_000;
+
+export function isStalled(b: { status: string; updatedAt: Date }, now: Date): boolean {
+  return b.status === "processing" && now.getTime() - b.updatedAt.getTime() > STALL_AFTER_MS;
+}
+
 export async function processBookmark(
   deps: PipelineDeps,
   job: PipelineJob,

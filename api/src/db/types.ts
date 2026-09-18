@@ -132,7 +132,11 @@ export interface Db {
     /** Captures depuis `since` = base du rate limiting 30/h (Security §5). */
     countCreatedSince(userId: string, since: Date): Promise<number>;
     /** Repasse en `processing` avant un retry ; false si le lymark n'est pas au user. */
-    resetForRetry(userId: string, id: string): Promise<BookmarkRow | null>;
+    /**
+     * Repasse en `processing` une entrée en échec ou partielle — ou en
+     * traitement depuis avant `stalledBefore` (abandonnée). Null sinon.
+     */
+    resetForRetry(userId: string, id: string, stalledBefore: Date): Promise<BookmarkRow | null>;
     /** Écrit le résultat du pipeline. Pas de userId : appelé hors requête, sur un id qu'on a créé. */
     setResult(id: string, result: PipelineResult): Promise<void>;
     findCachedSummary(urlHash: string): Promise<CachedSummary | null>;

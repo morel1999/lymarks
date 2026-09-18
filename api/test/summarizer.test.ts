@@ -1,7 +1,7 @@
 // Suite sécurité M2 : une page hostile ne fait jamais sortir le résumeur du
 // format ; la validation par schéma et le retry corrigent, sinon on échoue.
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ChatSummarizer,
   parseModelJson,
@@ -137,5 +137,24 @@ describe("ChatSummarizer", () => {
       keywords: [],
       lang: null,
     });
+  });
+});
+
+describe("ChatSummarizer — fetch global", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("appelle le fetch global sans `this` (Workers refuse « Illegal invocation »)", async () => {
+    // Le runtime Workers lève si `fetch` reçoit un `this` qui n'est pas le
+    // global : on reproduit cette exigence, que Node n'a pas.
+    const strictFetch = async function (this: unknown, _input: RequestInfo | URL) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation");
+      return new Response(JSON.stringify({ choices: [{ message: { content: GOOD } }] }), {
+        headers: { "content-type": "application/json" },
+      });
+    };
+    vi.stubGlobal("fetch", strictFetch);
+    const s = new ChatSummarizer({ providers: [groq], retryDelayMs: 0 });
+    const out = await s.summarize({ title: "T", content: "Un texte assez long pour résumer." });
+    expect(out.bullets).toEqual(["Un", "Deux", "Trois"]);
   });
 });

@@ -28,7 +28,10 @@ export function searchRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables }> 
     if (mode === "text") {
       const hits = await deps.db.bookmarks.searchText(user.id, q, limit);
       return c.json({
-        items: hits.map((h) => ({ bookmark: toBookmarkDto(h.bookmark), score: h.score })),
+        items: hits.map((h) => ({
+          bookmark: toBookmarkDto(h.bookmark, deps.now()),
+          score: h.score,
+        })),
         mode,
       });
     }
@@ -45,14 +48,17 @@ export function searchRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables }> 
       // Dégradation : la recherche texte répond quand même.
       const hits = await deps.db.bookmarks.searchText(user.id, q, limit);
       return c.json({
-        items: hits.map((h) => ({ bookmark: toBookmarkDto(h.bookmark), score: h.score })),
+        items: hits.map((h) => ({
+          bookmark: toBookmarkDto(h.bookmark, deps.now()),
+          score: h.score,
+        })),
         mode: "text",
         degraded: true,
       });
     }
     const hits = await deps.db.bookmarks.searchHybrid(user.id, q, vector, limit);
     return c.json({
-      items: hits.map((h) => ({ bookmark: toBookmarkDto(h.bookmark), score: h.score })),
+      items: hits.map((h) => ({ bookmark: toBookmarkDto(h.bookmark, deps.now()), score: h.score })),
       mode,
     });
   });

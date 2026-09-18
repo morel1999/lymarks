@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { EMBEDDING_DIMENSIONS, embeddingInput, GeminiEmbedder } from "../src/services/embedder.js";
 
 describe("embeddingInput", () => {
@@ -47,5 +47,21 @@ describe("GeminiEmbedder", () => {
     await expect(
       new GeminiEmbedder({ apiKey: "k", model: "m", fetch: down }).embed("x", "RETRIEVAL_QUERY"),
     ).rejects.toMatchObject({ reason: "provider_down" });
+  });
+});
+
+describe("GeminiEmbedder — fetch global", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("appelle le fetch global sans `this` (Workers refuse « Illegal invocation »)", async () => {
+    const strictFetch = async function (this: unknown, _input: RequestInfo | URL) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation");
+      return new Response(
+        JSON.stringify({ embedding: { values: new Array(EMBEDDING_DIMENSIONS).fill(0.1) } }),
+      );
+    };
+    vi.stubGlobal("fetch", strictFetch);
+    const e = new GeminiEmbedder({ apiKey: "k", model: "m" });
+    expect(await e.embed("x", "RETRIEVAL_QUERY")).toHaveLength(EMBEDDING_DIMENSIONS);
   });
 });

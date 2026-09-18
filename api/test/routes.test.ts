@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { FREE_ACTIVE_LIMIT } from "../src/services/plan.js";
-import { fakeEmbedding, harness, json } from "./helpers/app.js";
+import { FIXED_NOW, fakeEmbedding, harness, json } from "./helpers/app.js";
 
 /** Recule la création des lymarks existants de 2 h : sort du quota horaire sans toucher au plan. */
 function backdate(h: ReturnType<typeof harness>) {
@@ -230,6 +230,40 @@ describe("lecture, modification, suppression", () => {
       "processing",
     );
     expect(h.jobs).toHaveLength(2);
+  });
+
+  it("traitement abandonné : servi en échec relançable, relancé par retry ou par une nouvelle capture", async () => {
+    let now = FIXED_NOW;
+    const h = harness({ now: () => now });
+    h.db.now = () => now;
+    const { id } = await create(h, "u1", "https://example.com/stalled");
+    expect(h.jobs).toHaveLength(1);
+
+    // Tout juste créé : en traitement, pas relançable, un doublon n'insiste pas.
+    let list = (await (await h.as("u1")("/bookmarks")).json()) as {
+      items: Array<{ status: string; failureReason: string | null }>;
+    };
+    expect(list.items[0]).toMatchObject({ status: "processing", failureReason: null });
+    expect((await h.as("u1")(`/bookmarks/${id}/retry`, { method: "POST" })).status).toBe(409);
+    await create(h, "u1", "https://example.com/stalled");
+    expect(h.jobs).toHaveLength(1);
+
+    // Deux minutes plus tard sans résultat : le pipeline est mort avec le Worker.
+    now = new Date(FIXED_NOW.getTime() + 3 * 60_000);
+    list = (await (await h.as("u1")("/bookmarks")).json()) as typeof list;
+    expect(list.items[0]).toMatchObject({ status: "failed", failureReason: "stalled" });
+
+    // Une nouvelle capture de la même URL relance au lieu de compter un doublon.
+    const again = await create(h, "u1", "https://example.com/stalled");
+    expect(again.res.status).toBe(200);
+    expect(again.body).toMatchObject({ duplicate: true, bookmark: { status: "processing" } });
+    expect(h.jobs).toHaveLength(2);
+    expect(h.logs.some((l) => l.event === "bookmark_requeued")).toBe(true);
+
+    // Et « Try again » aussi, une fois le délai de nouveau écoulé.
+    now = new Date(now.getTime() + 3 * 60_000);
+    expect((await h.as("u1")(`/bookmarks/${id}/retry`, { method: "POST" })).status).toBe(202);
+    expect(h.jobs).toHaveLength(3);
   });
 
   it("M6 : un utilisateur ne voit, ne modifie, ne supprime ni ne relance les lymarks d'un autre", async () => {

@@ -153,7 +153,10 @@ export class ChatSummarizer implements Summarizer {
 
   constructor(private readonly opts: ChatSummarizerOptions) {
     if (opts.providers.length === 0) throw new Error("ChatSummarizer : aucun fournisseur");
-    this.fetchFn = opts.fetch ?? fetch;
+    // Jamais `fetch` nu : appelé ensuite comme `this.fetchFn(...)`, il
+    // recevrait l'instance en `this` et Workers lève « Illegal invocation »
+    // (constaté en prod le 18/09 ; invisible en test, où `fetch` est injecté).
+    this.fetchFn = opts.fetch ?? ((input, init) => fetch(input, init));
   }
 
   async summarize(input: { title: string | null; content: string }): Promise<SummaryOutput> {

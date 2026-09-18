@@ -187,10 +187,14 @@ export class MemoryDb implements Db {
     countCreatedSince: async (userId: string, since: Date) =>
       [...this.bookmarks_.values()].filter((b) => b.userId === userId && b.createdAt >= since)
         .length,
-    resetForRetry: async (userId: string, id: string) => {
+    resetForRetry: async (userId: string, id: string, stalledBefore: Date) => {
       const row = this.bookmarks_.get(id);
-      if (!row || row.userId !== userId || (row.status !== "failed" && row.status !== "partial"))
-        return null;
+      if (!row || row.userId !== userId) return null;
+      const retryable =
+        row.status === "failed" ||
+        row.status === "partial" ||
+        (row.status === "processing" && row.updatedAt < stalledBefore);
+      if (!retryable) return null;
       row.status = "processing";
       row.failureReason = null;
       row.updatedAt = this.stamp();

@@ -35,7 +35,10 @@ export class GeminiEmbedder implements Embedder {
   private readonly fetchFn: typeof fetch;
 
   constructor(private readonly opts: GeminiEmbedderOptions) {
-    this.fetchFn = opts.fetch ?? fetch;
+    // Jamais `fetch` nu : appelé ensuite comme `this.fetchFn(...)`, il
+    // recevrait l'instance en `this` et Workers lève « Illegal invocation »
+    // (constaté en prod le 18/09 ; invisible en test, où `fetch` est injecté).
+    this.fetchFn = opts.fetch ?? ((input, init) => fetch(input, init));
   }
 
   async embed(text: string, taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"): Promise<number[]> {

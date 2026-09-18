@@ -220,12 +220,14 @@ export function createNeonDb(databaseUrl: string): Db {
         );
         return Number(rows[0]?.["n"] ?? 0);
       },
-      async resetForRetry(userId, id) {
+      async resetForRetry(userId, id, stalledBefore) {
         const rows = await q(
           `UPDATE bookmarks SET status = 'processing', failure_reason = NULL, updated_at = now()
-           WHERE user_id = $1 AND id = $2 AND status IN ('failed', 'partial')
+           WHERE user_id = $1 AND id = $2
+             AND (status IN ('failed', 'partial')
+                  OR (status = 'processing' AND updated_at < $3))
            RETURNING ${BOOKMARK_COLUMNS}`,
-          [userId, id],
+          [userId, id, stalledBefore],
         );
         return rows[0] ? toBookmark(rows[0]) : null;
       },

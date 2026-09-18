@@ -2,6 +2,7 @@
 // tout changement ici se répercute dans le client Flutter.
 
 import type { BookmarkRow, UserRow, Plan } from "../db/types.js";
+import { isStalled } from "../services/pipeline.js";
 import { activeLimitFor } from "../services/plan.js";
 import { domainOf } from "../services/url.js";
 
@@ -24,14 +25,17 @@ export interface BookmarkDto {
   failureReason: string | null;
 }
 
-export function toBookmarkDto(b: BookmarkRow): BookmarkDto {
+export function toBookmarkDto(b: BookmarkRow, now: Date = new Date()): BookmarkDto {
+  // Un traitement abandonné (Worker annulé) est montré comme un échec
+  // relançable plutôt qu'un squelette éternel.
+  const stalled = isStalled(b, now);
   return {
     id: b.id,
     url: b.url,
     domain: domainOf(b.url),
     title: b.title,
     source: b.source,
-    status: b.status,
+    status: stalled ? "failed" : b.status,
     bullets: b.summary?.bullets ?? [],
     keywords: b.keywords,
     lang: b.summary?.lang ?? null,
@@ -41,7 +45,7 @@ export function toBookmarkDto(b: BookmarkRow): BookmarkDto {
     lastOpenedAt: b.lastOpenedAt?.toISOString() ?? null,
     archived: b.archived,
     savedCount: b.savedCount,
-    failureReason: b.failureReason,
+    failureReason: stalled ? "stalled" : b.failureReason,
   };
 }
 

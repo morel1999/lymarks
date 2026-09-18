@@ -12,6 +12,7 @@ import {
   CAPTURE_WINDOW_MS,
   CAPTURES_PER_HOUR,
 } from "../services/plan.js";
+import { STALL_AFTER_MS, isStalled } from "../services/pipeline.js";
 import { SIMILAR_MIN_SCORE } from "../services/search.js";
 import { detectSource, normalizeUrl, urlHash } from "../services/url.js";
 import { toBookmarkDto } from "./serialize.js";
@@ -57,6 +58,7 @@ function background(
 
 export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables }> {
   const app = new Hono<{ Variables: AuthVariables }>();
+  const stalledBefore = (): Date => new Date(deps.now().getTime() - STALL_AFTER_MS);
 
   app.post("/", async (c) => {
     const body = await parseBody(c, createSchema);
@@ -68,8 +70,29 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
     // Doublon : pas de nouvelle ligne, pas de nouveau passage IA (PRD §3).
     const existing = await deps.db.bookmarks.findByHash(user.id, hash);
     if (existing) {
+      // Doublon d'un traitement abandonné (l'envoi précédent a été coupé en
+      // route) : on relance, c'est ce que l'utilisateur attend.
+      if (isStalled(existing, deps.now())) {
+        const reset = await deps.db.bookmarks.resetForRetry(user.id, existing.id, stalledBefore());
+        if (reset) {
+          deps.log({ event: "bookmark_requeued", userId: user.id, bookmarkId: reset.id });
+          background(
+            deps.runPipeline({
+              id: reset.id,
+              url: reset.url,
+              urlHash: reset.urlHash,
+              title: reset.title,
+            }),
+            () => c.executionCtx,
+          );
+          return c.json({ bookmark: toBookmarkDto(reset, deps.now()), duplicate: true }, 200);
+        }
+      }
       const bumped = await deps.db.bookmarks.bumpDuplicate(user.id, hash, body.note ?? null);
-      return c.json({ bookmark: toBookmarkDto(bumped ?? existing), duplicate: true }, 200);
+      return c.json(
+        { bookmark: toBookmarkDto(bumped ?? existing, deps.now()), duplicate: true },
+        200,
+      );
     }
 
     const plan = await deps.db.subscriptions.getPlan(user.id);
@@ -108,7 +131,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
       }),
       () => c.executionCtx,
     );
-    return c.json({ bookmark: toBookmarkDto(created), duplicate: false }, 201);
+    return c.json({ bookmark: toBookmarkDto(created, deps.now()), duplicate: false }, 201);
   });
 
   app.get("/", async (c) => {
@@ -122,7 +145,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
     const rows = await deps.db.bookmarks.list(c.var.user.id, opts);
     const last = rows[rows.length - 1];
     return c.json({
-      items: rows.map(toBookmarkDto),
+      items: rows.map((b) => toBookmarkDto(b, deps.now())),
       nextCursor: rows.length === query.limit && last ? last.createdAt.toISOString() : null,
     });
   });
@@ -131,7 +154,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
     const id = idSchema.parse(c.req.param("id"));
     const row = await deps.db.bookmarks.get(c.var.user.id, id);
     if (!row) throw notFound();
-    return c.json({ bookmark: toBookmarkDto(row) });
+    return c.json({ bookmark: toBookmarkDto(row, deps.now()) });
   });
 
   app.patch("/:id", async (c) => {
@@ -139,7 +162,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
     const patch = await parseBody(c, patchSchema);
     const row = await deps.db.bookmarks.update(c.var.user.id, id, patch);
     if (!row) throw notFound();
-    return c.json({ bookmark: toBookmarkDto(row) });
+    return c.json({ bookmark: toBookmarkDto(row, deps.now()) });
   });
 
   app.delete("/:id", async (c) => {
@@ -158,7 +181,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
 
   app.post("/:id/retry", async (c) => {
     const id = idSchema.parse(c.req.param("id"));
-    const row = await deps.db.bookmarks.resetForRetry(c.var.user.id, id);
+    const row = await deps.db.bookmarks.resetForRetry(c.var.user.id, id, stalledBefore());
     if (!row) {
       const exists = await deps.db.bookmarks.get(c.var.user.id, id);
       if (!exists) throw notFound();
@@ -168,7 +191,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
       deps.runPipeline({ id: row.id, url: row.url, urlHash: row.urlHash, title: row.title }),
       () => c.executionCtx,
     );
-    return c.json({ bookmark: toBookmarkDto(row) }, 202);
+    return c.json({ bookmark: toBookmarkDto(row, deps.now()) }, 202);
   });
 
   app.get("/:id/similar", async (c) => {
@@ -177,7 +200,7 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
     if (!ref) throw notFound();
     const hits = await deps.db.bookmarks.similar(c.var.user.id, id, 3, SIMILAR_MIN_SCORE);
     return c.json({
-      items: hits.map((h) => ({ bookmark: toBookmarkDto(h.bookmark), score: h.score })),
+      items: hits.map((h) => ({ bookmark: toBookmarkDto(h.bookmark, deps.now()), score: h.score })),
     });
   });
 
