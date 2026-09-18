@@ -38,11 +38,7 @@ Future<void> main() async {
     );
   });
   // Erreurs asynchrones non rattrapées : visibles, jamais silencieuses.
-  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-    debugPrint('[lymarks] uncaught: $error');
-    debugPrint('$stack');
-    return true;
-  };
+  PlatformDispatcher.instance.onError = _logUncaught;
 
   // Mode réel : le SDK Clerk restaure la session persistée avant le premier
   // rendu, pour que le routeur parte directement sur la bonne route.
@@ -74,6 +70,13 @@ Future<void> main() async {
       child: ClerkAuth(authState: clerk, child: const LymarksApp()),
     ),
   );
+}
+
+/// Erreurs asynchrones non rattrapées : visibles dans logcat, jamais muettes.
+bool _logUncaught(Object error, StackTrace stack) {
+  debugPrint('[lymarks] uncaught: $error');
+  debugPrint('$stack');
+  return true;
 }
 
 /// URL de retour dans l'app après un OAuth Clerk. Doit figurer dans la liste
