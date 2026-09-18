@@ -90,6 +90,11 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
   /// déconnexion) : leurs continuations ne doivent plus toucher à l'état.
   bool _disposed = false;
 
+  /// Captures encore dans la file (envoi échoué) : affichées comme cartes en
+  /// attente, et conservées à travers les rafraîchissements jusqu'à ce que le
+  /// serveur les ait acceptées.
+  final Set<String> _pending = {};
+
   @override
   List<Lymark> build() {
     _repo = ref.watch(lymarksRepositoryProvider);
@@ -120,12 +125,18 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
       final items = await _repo.fetchAll();
       if (_disposed) return;
       if (stamp != _mutations) return refresh();
-      state = _sorted(items);
+      final placeholders = state.where((l) => _pending.contains(l.id));
+      state = _sorted([...items, ...placeholders]);
       sync.value = LibrarySync.idle;
     } on ApiException catch (e) {
       if (_disposed) return;
       debugPrint('[lymarks/library] refresh failed: $e');
       sync.value = e.isNetwork ? LibrarySync.offline : LibrarySync.idle;
+    } on Object catch (e) {
+      // Quoi qu'il arrive, on ne laisse jamais l'écran sur un chargement.
+      if (_disposed) return;
+      debugPrint('[lymarks/library] refresh crashed: $e');
+      sync.value = LibrarySync.offline;
     } finally {
       _schedulePoll();
     }
@@ -141,10 +152,18 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
     for (final c in captures) {
       try {
         final result = await _repo.capture(c);
+        // La carte « en attente » d'un envoi précédent laisse la place à
+        // l'entrée serveur.
+        if (_pending.remove(c.id)) _drop(c.id);
         _upsert(result.lymark);
       } on ApiException catch (e) {
         if (e.isNetwork || e.status >= 500) {
           retryLater.add(c);
+          // Hors-ligne : la capture reste visible, en traitement, jusqu'au
+          // prochain passage (PRD §3 — l'UX ne change pas sans réseau).
+          _pending.add(c.id);
+          _upsert(c.toLymark());
+          ref.read(librarySyncProvider.notifier).value = LibrarySync.offline;
         } else if (e.isLimitReached) {
           ref.read(captureLimitHitProvider.notifier).state = true;
         } else {
@@ -227,6 +246,15 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
       next[i] = lymark;
       state = next;
     }
+  }
+
+  void _drop(String id) {
+    if (_disposed) return;
+    _mutations += 1;
+    state = [
+      for (final l in state)
+        if (l.id != id) l,
+    ];
   }
 
   void _patch(String id, Lymark Function(Lymark) fn) {

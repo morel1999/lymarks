@@ -151,6 +151,8 @@ Le code est dans `api/` (README dedans : routes, commandes, déploiement). Ce qu
 - **Formatage** : `dart format` (style Dart 3.11) appliqué à tout `lib/` et `test/` — d'où un diff large mais neutre sur des fichiers non modifiés.
 - Manifest : `INTERNET` ajouté explicitement (le debug l'obtient tout seul, pas la release). CI : `--dart-define` de la clé Clerk et de l'URL de l'API, échec si la clé manque.
 
+**Premier test sur device de l'app connectée (18/09, 04:52)** : spinner infini sur la Home, capture Chrome invisible. Cause : le téléphone était en Wi-Fi Türk Telekom (R12), et l'échec TLS produit par le filtre arrive en `HandshakeException` — une `IOException` que le client n'assimilait pas à « pas de réseau » (`SocketException` et `ClientException` seulement). L'erreur traversait `refresh()` sans toucher l'état de synchronisation, d'où le chargement éternel. Correctifs : toute erreur d'E/S (et tout imprévu) vaut hors-ligne ; `refresh()` ne peut plus laisser l'écran en chargement ; une capture qui n'a pas pu partir reste visible comme carte en attente (`_pending`), survit aux rafraîchissements et cède la place à l'entrée serveur quand l'envoi passe. Leçon : les tests simulaient la panne réseau avec `ClientException` uniquement — le cas `HandshakeException` est maintenant testé.
+
 Ce qui n'est **pas** fait : Digest (M4, P1) — les colonnes existent, pas le cron ; push tokens ; test d'intégration sur branche Neon (ADR-009, conséquences). Et surtout : **rien n'est déployé** tant que les comptes n'existent pas — `api/.dev.vars` attend les clés, `api/scripts/push-secrets.ps1` les envoie en GitHub Secrets, `api.yml` fait le reste.
 
 ## 8. Questions ouvertes créées par les écrans

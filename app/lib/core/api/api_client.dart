@@ -226,10 +226,14 @@ class ApiClient {
       );
     } on TimeoutException {
       throw const ApiException(0, 'timeout', 'The server took too long');
-    } on SocketException catch (e) {
-      throw ApiException(0, 'network', e.message);
     } on http.ClientException catch (e) {
       throw ApiException(0, 'network', e.message);
+    } on IOException catch (e) {
+      // SocketException, HandshakeException (TLS cassé par un filtre FAI,
+      // R12), HttpException… : tout vaut « pas de réseau ».
+      throw ApiException(0, 'network', e.toString());
+    } on Object catch (e) {
+      throw ApiException(0, 'network', e.toString());
     }
 
     if (res.statusCode == 204 || res.body.isEmpty) {

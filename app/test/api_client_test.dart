@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -147,6 +148,21 @@ void main() {
       );
     });
 
+    test(
+      'TLS cassé (filtre FAI) : ApiException réseau, pas un crash',
+      () async {
+        final api = client(
+          (_) => throw const HandshakeException('CERTIFICATE_VERIFY_FAILED'),
+        );
+        await expectLater(
+          api.me(),
+          throwsA(
+            isA<ApiException>().having((e) => e.isNetwork, 'net', isTrue),
+          ),
+        );
+      },
+    );
+
     test('204 sans corps : succès silencieux', () async {
       final api = client((_) => http.Response('', 204));
       await api.deleteBookmark('b1');
@@ -239,8 +255,49 @@ void main() {
       online = false;
       final again = capture.copyWithId('cap-2');
       expect(await notifier.addCaptures([again]), [again]);
-      expect(c.read(lymarksProvider), hasLength(1));
+      // L'échec laisse une carte en attente à côté de l'entrée serveur.
+      expect(
+        c.read(lymarksProvider).map((l) => l.id),
+        unorderedEquals(['cap-2', 'srv-1']),
+      );
     });
+
+    test(
+      'hors-ligne : la capture reste visible en attente, puis part',
+      () async {
+        var online = false;
+        final stored = <Map<String, Object?>>[];
+        final c = containerWith((req) {
+          if (!online) throw const HandshakeException('blocked');
+          if (req.method == 'POST') {
+            stored.add(_bookmarkJson(id: 'srv-1'));
+            return _json({
+              'bookmark': stored.last,
+              'duplicate': false,
+            }, status: 201);
+          }
+          return _json({'items': stored, 'nextCursor': null});
+        });
+        final notifier = c.read(lymarksProvider.notifier);
+
+        expect(await notifier.addCaptures([capture]), [capture]);
+        final placeholder = c.read(lymarksProvider).single;
+        expect(placeholder.id, 'cap-1');
+        expect(placeholder.status, LymarkStatus.processing);
+        expect(c.read(librarySyncProvider), LibrarySync.offline);
+
+        // Un rafraîchissement raté ne fait pas disparaître la carte en attente.
+        await notifier.refresh();
+        expect(c.read(lymarksProvider).single.id, 'cap-1');
+
+        online = true;
+        expect(await notifier.addCaptures([capture]), isEmpty);
+        expect(c.read(lymarksProvider).map((l) => l.id), ['srv-1']);
+        await notifier.refresh();
+        expect(c.read(lymarksProvider).map((l) => l.id), ['srv-1']);
+        expect(c.read(librarySyncProvider), LibrarySync.idle);
+      },
+    );
 
     test('403 limit_reached : capture abandonnée, paywall signalé', () async {
       final c = containerWith(

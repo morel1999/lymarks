@@ -47,6 +47,10 @@ class CaptureSync {
     } on FileSystemException catch (e) {
       debugPrint('[lymarks/capture] queue unreadable: ${e.message}');
       return 0;
+    } on Object catch (e) {
+      // Une erreur inattendue ne doit ni planter l'app ni vider la file.
+      debugPrint('[lymarks/capture] sync failed: $e');
+      return 0;
     } finally {
       _running = false;
     }
