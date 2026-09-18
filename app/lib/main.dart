@@ -57,24 +57,29 @@ Future<void> main() async {
     ),
   );
   final session = ClerkAuthSession(clerk);
+  _session = session;
   AppLinks().uriLinkStream.listen(
     (uri) {
-      // Trace sans la query (elle porte le jeton).
-      debugPrint(
-        '[lymarks/auth] deep link ${uri.scheme}://${uri.host}${uri.path}',
-      );
-      debugPrint('[lymarks/auth] deep link → handler');
+      // Trace sans la query (elle porte le jeton). L'écran d'abord : sur
+      // device, rien n'apparaît plus dans logcat après la première ligne.
+      final where = '${uri.scheme}://${uri.host}${uri.path}';
+      session.note('link received $where');
+      try {
+        debugPrint('[lymarks/auth] deep link $where');
+        session.note('print ok');
+      } on Object catch (e) {
+        session.note('print threw: $e');
+      }
       unawaited(
         session
             .handleDeepLink(uri)
             .then(
-              (_) => debugPrint('[lymarks/auth] handler returned'),
-              onError: (Object e) =>
-                  debugPrint('[lymarks/auth] handler threw: $e'),
+              (_) => session.note('handler returned'),
+              onError: (Object e) => session.note('handler threw: $e'),
             ),
       );
     },
-    onError: (Object e) => debugPrint('[lymarks/auth] link stream error: $e'),
+    onError: (Object e) => session.note('link stream error: $e'),
   );
   runApp(
     ProviderScope(
@@ -84,8 +89,11 @@ Future<void> main() async {
   );
 }
 
+ClerkAuthSession? _session;
+
 /// Erreurs asynchrones non rattrapées : visibles dans logcat, jamais muettes.
 bool _logUncaught(Object error, StackTrace stack) {
+  _session?.note('uncaught: $error');
   debugPrint('[lymarks] uncaught: $error');
   debugPrint('$stack');
   return true;

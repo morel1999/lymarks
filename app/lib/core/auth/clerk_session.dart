@@ -18,10 +18,21 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
   /// (diagnostic sur device : les traces logcat ne suffisent pas).
   final ValueNotifier<List<String>> oauthTrace = ValueNotifier(const []);
 
-  void _trace(String message) {
+  /// Note une étape à l'écran, sans passer par logcat.
+  void note(String message) {
     final stamp = DateTime.now().toIso8601String().substring(11, 19);
     oauthTrace.value = [...oauthTrace.value, '$stamp $message'];
-    debugPrint('[lymarks/auth] $message');
+  }
+
+  void _trace(String message) {
+    note(message);
+    // Sur device, l'exécution semble s'arrêter après un `debugPrint` dans ce
+    // chemin : on l'isole pour que la trace écran survive dans tous les cas.
+    try {
+      debugPrint('[lymarks/auth] $message');
+    } on Object catch (e) {
+      note('debugPrint threw: $e');
+    }
   }
 
   @override
@@ -68,6 +79,12 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
   /// (connexion → inscription) ou l'inverse (inscription → connexion). Sur le
   /// web, Clerk le fait d'office ; sans lui, l'utilisateur reste sur l'écran
   /// de connexion sans message (constaté sur device le 18/09, ADR-010).
+  ///
+  /// Les appels passent par `fetchApiResponse` (API bas niveau publique du
+  /// SDK) plutôt que par `completeOAuthSignIn` : ce dernier ne fait rien, sans
+  /// erreur, quand aucune tentative n'est en cours, et cache le statut HTTP.
+  /// `fetchApiResponse` pose les en-têtes, met à jour le jeton client rotatif
+  /// et applique la réponse au `Client` du SDK.
   Future<void> handleDeepLink(Uri uri) async {
     _trace('handler entered (${uri.scheme}://${uri.host}${uri.path})');
     try {
@@ -76,35 +93,44 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
         return;
       }
       final nonce = uri.queryParameters['rotating_token_nonce'];
-      _trace('nonce=${nonce != null}');
-      final signIn = state.signIn;
-      final signUp = state.signUp;
+      final attempt = state.signIn ?? state.signUp;
       _trace(
-        'signIn=${signIn?.status}/${signIn?.verification?.status} '
-        'signUp=${signUp?.status}',
+        'nonce=${nonce != null} '
+        'signIn=${state.signIn?.status}/${state.signIn?.verification?.status} '
+        'signUp=${state.signUp?.status}',
       );
-      if (nonce != null && (signIn != null || signUp != null)) {
-        _trace('completeOAuthSignIn…');
-        await state.completeOAuthSignIn(token: nonce);
-        _trace('token exchanged: signedIn=${state.isSignedIn}');
+      if (nonce != null && attempt != null) {
+        // Échange du nonce : le Client revient avec la tentative avancée
+        // (complète, ou `transferable` si le compte n'existe pas encore).
+        final r = await state.fetchApiResponse(
+          '/client/${attempt.urlType}/${attempt.id}',
+          method: clerk.HttpMethod.get,
+          params: {'rotating_token_nonce': nonce},
+        );
+        _trace('exchange: ${_describe(r)}');
       } else {
-        _trace('refreshClient…');
         await state.refreshClient();
         _trace('client refreshed: signedIn=${state.isSignedIn}');
       }
-      final transferable =
-          state.signIn?.isTransferable == true ||
-          state.signUp?.isTransferable == true;
       _trace(
         'after: signIn=${state.signIn?.status}/'
         '${state.signIn?.verification?.status} '
-        'signUp=${state.signUp?.status} transferable=$transferable',
+        'signUp=${state.signUp?.status}',
       );
-      if (transferable) {
-        _trace('transfer…');
-        await state.transfer();
-        _trace('transferred: signedIn=${state.isSignedIn}');
+      if (state.signIn?.isTransferable == true) {
+        final r = await state.fetchApiResponse(
+          '/client/sign_ups',
+          params: {'transfer': true},
+        );
+        _trace('transfer → sign-up: ${_describe(r)}');
+      } else if (state.signUp?.isTransferable == true) {
+        final r = await state.fetchApiResponse(
+          '/client/sign_ins',
+          params: {'transfer': true},
+        );
+        _trace('transfer → sign-in: ${_describe(r)}');
       }
+      state.update();
       _trace('done: signedIn=${state.isSignedIn}');
     } on Object catch (e) {
       final text = '$e';
@@ -118,6 +144,11 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
       } on Object catch (_) {}
     }
   }
+
+  String _describe(clerk.ApiResponse r) =>
+      'status=${r.status}'
+      '${r.isError ? ' error=${r.errorCollection.errorMessage}' : ''}'
+      ' signedIn=${state.isSignedIn}';
 
   @override
   void dispose() {
