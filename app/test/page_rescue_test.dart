@@ -45,7 +45,7 @@ void main() {
   final base = Uri.parse('https://example.com/a/b');
 
   group('PageRescue.extract', () {
-    test('titre, description, image, langue et texte de l\'article', () {
+    test("titre, description, image, langue et texte de l'article", () {
       final c = PageRescue.extract(_page, base: base)!;
       expect(c.title, 'Titre OG');
       expect(c.description, 'Une description écrite.');
@@ -88,7 +88,7 @@ void main() {
       );
     });
 
-    test('texte borné à la limite de l\'API', () {
+    test("texte borné à la limite de l'API", () {
       final c = PageRescue.extract(
         '<html><body>${'a' * (PageContent.maxChars + 500)}</body></html>',
         base: base,
@@ -98,7 +98,7 @@ void main() {
   });
 
   group('PageRescue.read', () {
-    test('UA de navigateur partout, UA d\'aperçu pour Instagram', () async {
+    test("UA de navigateur partout, UA d'aperçu pour Instagram", () async {
       final agents = <String, String>{};
       final client = MockClient((req) async {
         agents[req.url.host] = req.headers['user-agent']!;
