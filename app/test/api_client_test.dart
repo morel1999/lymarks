@@ -312,6 +312,37 @@ void main() {
       expect(c.read(captureLimitHitProvider), isTrue);
     });
 
+    test('hors-ligne : aucun sondage tant que le réseau manque', () async {
+      var requests = 0;
+      final api = ApiClient(
+        baseUrl: 'https://api.test',
+        token: () async => 'jwt',
+        client: MockClient((req) async {
+          requests += 1;
+          throw http.ClientException('offline');
+        }),
+      );
+      final c = ProviderContainer(
+        overrides: [
+          authSessionProvider.overrideWithValue(DemoAuthSession()),
+          lymarksRepositoryProvider.overrideWithValue(
+            ApiLymarksRepository(api),
+          ),
+          processingPollProvider.overrideWithValue(
+            const Duration(milliseconds: 5),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
+
+      // Une carte en attente existe : en ligne, elle déclencherait le sondage.
+      await c.read(lymarksProvider.notifier).addCaptures([capture]);
+      expect(c.read(librarySyncProvider), LibrarySync.offline);
+      final sent = requests;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(requests, sent);
+    });
+
     test('hors-ligne au chargement : état offline, liste conservée', () async {
       final c = containerWith((_) => throw http.ClientException('offline'));
       await c.read(lymarksProvider.notifier).refresh();

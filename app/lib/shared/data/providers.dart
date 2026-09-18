@@ -287,6 +287,13 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
     if (_disposed) return;
     final interval = ref.read(processingPollProvider);
     if (interval == null) return;
+    // Hors-ligne, sonder ne sert à rien (constaté sur device : 30 appels
+    // pour rien). Le retour au premier plan et la prochaine capture
+    // relancent un `refresh()`, qui réarme le sondage une fois en ligne.
+    if (ref.read(librarySyncProvider) == LibrarySync.offline) {
+      _poll?.cancel();
+      return;
+    }
     final busy = state.any((l) => l.status == LymarkStatus.processing);
     if (!busy) {
       _pollRounds = 0;
