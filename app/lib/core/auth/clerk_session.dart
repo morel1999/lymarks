@@ -93,7 +93,7 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
         return;
       }
       final nonce = uri.queryParameters['rotating_token_nonce'];
-      final attempt = state.signIn ?? state.signUp;
+      final clerk.AuthObject? attempt = state.signIn ?? state.signUp;
       _trace(
         'params=${uri.queryParameters.keys.join(',')} '
         'signIn=${state.signIn?.status}/${state.signIn?.verification?.status} '
