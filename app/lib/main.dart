@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:app_links/app_links.dart';
 import 'package:clerk_flutter/clerk_flutter.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/auth/clerk_session.dart';
 import 'package:lymarks/core/config/app_config.dart';
@@ -25,6 +27,22 @@ Future<void> main() async {
     runApp(const ProviderScope(child: LymarksApp()));
     return;
   }
+
+  // Le SDK Clerk journalise ses erreurs internes via `logging` : sans
+  // écouteur, elles sont muettes. Tout part dans logcat, sans jeton.
+  Logger.root.level = Level.INFO;
+  Logger.root.onRecord.listen((r) {
+    debugPrint(
+      '[clerk] ${r.level.name} ${r.loggerName}: ${r.message}'
+      '${r.error != null ? ' — ${r.error}' : ''}',
+    );
+  });
+  // Erreurs asynchrones non rattrapées : visibles, jamais silencieuses.
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    debugPrint('[lymarks] uncaught: $error');
+    debugPrint('$stack');
+    return true;
+  };
 
   // Mode réel : le SDK Clerk restaure la session persistée avant le premier
   // rendu, pour que le routeur parte directement sur la bonne route.

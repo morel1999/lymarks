@@ -59,17 +59,36 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
   /// web, Clerk le fait d'office ; sans lui, l'utilisateur reste sur l'écran
   /// de connexion sans message (constaté sur device le 18/09, ADR-010).
   Future<void> handleDeepLink(Uri uri) async {
-    if (uri.scheme != 'lymarks' || uri.host != 'oauth') return;
-    final nonce = uri.queryParameters['rotating_token_nonce'];
     try {
-      if (nonce != null && (state.signIn != null || state.signUp != null)) {
+      if (uri.scheme != 'lymarks' || uri.host != 'oauth') {
+        debugPrint(
+          '[lymarks/auth] deep link ignored (${uri.scheme}://${uri.host})',
+        );
+        return;
+      }
+      final nonce = uri.queryParameters['rotating_token_nonce'];
+      final signIn = state.signIn;
+      final signUp = state.signUp;
+      debugPrint(
+        '[lymarks/auth] oauth return: nonce=${nonce != null}, '
+        'signIn=${signIn?.status}/${signIn?.verification?.status}, '
+        'signUp=${signUp?.status}',
+      );
+      if (nonce != null && (signIn != null || signUp != null)) {
         await state.completeOAuthSignIn(token: nonce);
+        debugPrint(
+          '[lymarks/auth] token exchanged: signedIn=${state.isSignedIn}',
+        );
       } else {
         await state.refreshClient();
+        debugPrint(
+          '[lymarks/auth] client refreshed: signedIn=${state.isSignedIn}',
+        );
       }
       if (state.signIn?.isTransferable == true ||
           state.signUp?.isTransferable == true) {
         await state.transfer();
+        debugPrint('[lymarks/auth] transferred: signedIn=${state.isSignedIn}');
       }
       debugPrint(
         '[lymarks/auth] oauth return handled, signedIn=${state.isSignedIn}',
