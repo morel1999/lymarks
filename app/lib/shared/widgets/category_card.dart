@@ -3,6 +3,7 @@ import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/widgets/ly_card.dart';
 
 /// Grande carte de catégorie de la Home.
 ///
@@ -166,6 +167,59 @@ class CategoryTile extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tient la place des cartes de catégories tant qu'aucune n'existe (mode
+/// réel : compte neuf, ou tout encore en traitement). Une ligne, pas de
+/// tutoriel : le vide est un état conçu (UX Bible règle 12), et la liste
+/// juste en dessous montre déjà que la mémoire se remplit.
+class CategoriesEmptyCard extends StatelessWidget {
+  const CategoriesEmptyCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+    final accent = ly.lavender;
+
+    return LyCard(
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: accent.fill,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              LyIcons.collection,
+              size: LyIconSize.regular,
+              color: accent.onFill,
+            ),
+          ),
+          const SizedBox(width: LySpace.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your categories appear as you save',
+                  style: context.texts.titleSmall,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Each lymark is filed where it fits best.',
+                  style: context.texts.bodySmall?.copyWith(
+                    color: ly.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

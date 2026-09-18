@@ -62,41 +62,54 @@ class HomeScreen extends ConsumerWidget {
               ),
             )
           else ...[
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                LySpace.screen,
-                0,
-                LySpace.screen,
-                LySpace.l,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: CategoryHeroCard(
-                  category: categories.first,
-                  onTap: () =>
-                      context.push(LyRoute.category(categories.first.id)),
+            // Cartes de catégories : la première en hero, les suivantes en
+            // carrousel. En mode réel elles n'existent que si l'IA a déjà
+            // rangé quelque chose ; d'ici là, une carte le dit.
+            if (categories.isEmpty)
+              const SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: LySpace.screen),
+                sliver: SliverToBoxAdapter(child: CategoriesEmptyCard()),
+              )
+            else ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  LySpace.screen,
+                  0,
+                  LySpace.screen,
+                  LySpace.l,
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 152,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: LySpace.screen,
+                sliver: SliverToBoxAdapter(
+                  child: CategoryHeroCard(
+                    category: categories.first,
+                    onTap: () =>
+                        context.push(LyRoute.category(categories.first.id)),
                   ),
-                  itemCount: categories.length - 1,
-                  separatorBuilder: (_, _) => const SizedBox(width: LySpace.m),
-                  itemBuilder: (context, i) {
-                    final category = categories[i + 1];
-                    return CategoryTile(
-                      category: category,
-                      onTap: () => context.push(LyRoute.category(category.id)),
-                    );
-                  },
                 ),
               ),
-            ),
+              if (categories.length > 1)
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 152,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: LySpace.screen,
+                      ),
+                      itemCount: categories.length - 1,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(width: LySpace.m),
+                      itemBuilder: (context, i) {
+                        final category = categories[i + 1];
+                        return CategoryTile(
+                          category: category,
+                          onTap: () =>
+                              context.push(LyRoute.category(category.id)),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+            ],
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 LySpace.screen,

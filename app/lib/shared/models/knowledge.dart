@@ -32,6 +32,21 @@ class KnowledgeCategory {
   /// Clé d'icône Lucide, résolue par `LyIcons.byKey`.
   final String iconKey;
   final List<KnowledgeCluster> clusters;
+
+  /// Même catégorie avec un autre compte ou d'autres clusters : sert à
+  /// instancier une entrée de la taxonomie d'après la bibliothèque.
+  KnowledgeCategory copyWith({
+    int? count,
+    List<KnowledgeCluster>? clusters,
+  }) => KnowledgeCategory(
+    id: id,
+    name: name,
+    tagline: tagline,
+    count: count ?? this.count,
+    iconKey: iconKey,
+    accent: accent,
+    clusters: clusters ?? this.clusters,
+  );
 }
 
 /// Un nœud du Category Path : un sous-ensemble cohérent d'une catégorie.

@@ -8,17 +8,34 @@ import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/features/home/home_screen.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
+import 'package:lymarks/shared/widgets/lymark_actions.dart';
 
 /// 03 — Category Path.
 ///
 /// Une catégorie n'est pas une liste : c'est un chemin dans une partie de sa
 /// mémoire (wireframe 03 §Objectif). Le chemin est vertical, légèrement
 /// sinueux, avec peu de nœuds — une métaphore visuelle, pas un graphe.
+///
+/// Les clusters ne sont pas encore calculés par le serveur : en mode réel la
+/// page liste directement les lymarks rangés dans la catégorie, du plus
+/// récent au plus ancien. Le chemin reste celui du jeu de démonstration.
 class CategoryPathScreen extends ConsumerWidget {
   const CategoryPathScreen({required this.categoryId, super.key});
 
   final String categoryId;
+
+  /// En réel il n'y a pas de chemin à construire : le lymark atterrit ici
+  /// dès que l'IA l'a rangé.
+  static String _emptyMessage(
+    KnowledgeCategory category, {
+    required bool live,
+  }) => live
+      ? 'Save something about ${category.name} and it will land here.'
+      : 'Save something related to this category '
+            'to start building this path.';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,6 +44,10 @@ class CategoryPathScreen extends ConsumerWidget {
       return const Scaffold(body: Center(child: Text('Unknown category')));
     }
 
+    final live = ref.watch(categoriesModeProvider) == CategoriesMode.live;
+    final lymarks = live
+        ? ref.watch(categoryLymarksProvider(categoryId))
+        : const <Lymark>[];
     final accent = context.ly.accentAt(category.accent);
 
     return Scaffold(
@@ -44,16 +65,28 @@ class CategoryPathScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (category.clusters.isEmpty)
+          if (live && lymarks.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                LySpace.screen,
+                LySpace.s,
+                LySpace.screen,
+                LySpace.xxl,
+              ),
+              sliver: SliverList.separated(
+                itemCount: lymarks.length,
+                separatorBuilder: (_, _) => const SizedBox(height: LySpace.m),
+                itemBuilder: (context, i) => _CategoryCard(lymark: lymarks[i]),
+              ),
+            )
+          else if (live || category.clusters.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
                 icon: LyIcons.topic(category.iconKey),
                 accent: accent,
                 title: 'Nothing here yet.',
-                message:
-                    'Save something related to this category '
-                    'to start building this path.',
+                message: _emptyMessage(category, live: live),
               ),
             )
           else
@@ -75,6 +108,28 @@ class CategoryPathScreen extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Une carte de la liste plate (mode réel), câblée comme celles de la
+/// bibliothèque : ouverture, menu, relance, tag vers la recherche.
+class _CategoryCard extends ConsumerWidget {
+  const _CategoryCard({required this.lymark});
+
+  final Lymark lymark;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return BookmarkCard(
+      lymark,
+      onTap: () => context.push(LyRoute.lymark(lymark.id)),
+      onMenu: () => LymarkActions.showMenu(context, ref, lymark),
+      onRetry: () => ref.read(lymarksProvider.notifier).retry(lymark.id),
+      onTagTap: (tag) {
+        ref.read(searchQueryProvider.notifier).state = tag;
+        context.go(LyRoute.search);
+      },
     );
   }
 }
