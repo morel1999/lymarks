@@ -5,7 +5,7 @@
 Corollaire : **un mode démo**. Sans `--dart-define=CLERK_PUBLISHABLE_KEY`, l'app tourne sur une session factice et un dépôt en mémoire (`MockLymarksRepository`, mêmes règles métier que l'API). C'est le mode des tests, des rendus de référence et de toute machine sans clé. La CI refuse de produire un APK sans clé.
 **Alternatives :** API Frontend maison (coût, risque sur OAuth) ; Firebase Auth (rompt ADR-002) ; reporter l'auth (impossible : F6 et F7 en dépendent).
 **Conséquences :**
-- Le SDK ouvre Google OAuth dans une WebView avec un user-agent personnalisé pour contourner le refus des WebViews par Google : ça marche, c'est fragile. Risque à suivre ; issue de repli = flux navigateur externe (`redirectionGenerator` + `deepLinkStream` du SDK).
+- Par défaut le SDK ouvre Google OAuth dans une WebView avec un user-agent maquillé ; **constaté en échec sur device le 18/09** (l'utilisateur a dû s'inscrire par e-mail). Remplacé le jour même par le flux navigateur du SDK : `redirectionGenerator` → `lymarks://oauth/<stratégie>`, ouverture en Custom Tab (`LaunchMode.inAppBrowserView`), retour par lien profond (`app_links`, intent-filter `lymarks://oauth`), URL allowlistée sur l'instance Clerk (`POST /v1/redirect_urls`, à refaire sur l'instance de production).
 - 60 dépendances transitives de plus (webview, url_launcher, passkeys, image_picker…) : à mesurer sur l'APK (budget 40 Mo).
 - Aucun upgrade du SDK pendant le sprint (Coding Standards §5) ; revue après le Shipaton, migration vers la 1.0 quand elle sort.
 - La logique d'état (`LymarksNotifier`, recherche, profil) est testée sur le dépôt mémoire et le client HTTP sur un `MockClient` : 37 tests, sans réseau ni SDK.

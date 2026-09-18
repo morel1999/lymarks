@@ -22,3 +22,5 @@
 
 ## Causes classiques de rejet anticipées
 Crash au premier lancement (checklist E2E), paywall sans restore (✔ prévu), suppression de compte absente (✔ P0-F7), métadonnées mentionnant d'autres plateformes, permission notifications injustifiée (✔ en contexte).
+
+- [ ] **Clerk production** : allowlister `lymarks://oauth/oauth_google` sur l'instance prod (`clerk api /redirect_urls --instance prod`) et passer l'app sur la `pk_live_…` — sinon Google OAuth échoue en prod (ADR-010).

@@ -27,6 +27,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Retour de l'OAuth Clerk (Google) ouvert dans le navigateur :
+                 lymarks://oauth/<strategie>?rotating_token_nonce=... (ADR-010).
+                 singleTop : le lien arrive dans l'instance deja ouverte. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="lymarks" android:host="oauth"/>
+            </intent-filter>
         </activity>
 
         <!-- Cible du menu de partage (PRD F1). Activite transitoire et

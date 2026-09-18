@@ -7,6 +7,7 @@ environment:
   sdk: ^3.11.5
 
 dependencies:
+  app_links: 6.4.0
   clerk_auth: 0.0.18-beta
   clerk_flutter: 0.0.18-beta
   flutter:
@@ -20,6 +21,7 @@ dependencies:
   intl: ^0.20.2
   lucide_icons_flutter: ^3.1.17
   path_provider: ^2.1.6
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

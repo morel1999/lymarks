@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,6 +14,7 @@ import 'package:lymarks/core/theme/app_theme.dart';
 import 'package:lymarks/features/capture/capture_sync.dart';
 import 'package:lymarks/features/capture/share_app.dart';
 import 'package:lymarks/shared/data/providers.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +28,18 @@ Future<void> main() async {
 
   // Mode réel : le SDK Clerk restaure la session persistée avant le premier
   // rendu, pour que le routeur parte directement sur la bonne route.
+  //
+  // OAuth (Google) : pas de WebView intégrée — Google la refuse de plus en
+  // plus. Le fournisseur s'ouvre dans un onglet navigateur (Custom Tab), et
+  // Clerk renvoie vers `lymarks://oauth/<stratégie>` ; le lien profond arrive
+  // par app_links et le SDK termine la connexion (ADR-010).
   final clerk = await ClerkAuthState.create(
-    config: ClerkAuthConfig(publishableKey: AppConfig.clerkPublishableKey),
+    config: ClerkAuthConfig(
+      publishableKey: AppConfig.clerkPublishableKey,
+      redirectionGenerator: (_, strategy) => oauthRedirectUri(strategy),
+      deepLinkStream: AppLinks().uriLinkStream,
+      defaultLaunchMode: LaunchMode.inAppBrowserView,
+    ),
   );
   final session = ClerkAuthSession(clerk);
   runApp(
@@ -37,6 +49,11 @@ Future<void> main() async {
     ),
   );
 }
+
+/// URL de retour dans l'app après un OAuth Clerk. Doit figurer dans la liste
+/// des redirections autorisées de l'instance Clerk (Configure → Native
+/// applications) : `lymarks://oauth/oauth_google` pour Google.
+Uri oauthRedirectUri(Object strategy) => Uri.parse('lymarks://oauth/$strategy');
 
 /// Point d'entrée du moteur Flutter de la feuille de partage.
 ///
