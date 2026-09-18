@@ -27,6 +27,10 @@ abstract final class MockData {
       ],
       keywords: const ['AI', 'Agents', 'Tools', 'Framework', 'LLM'],
       note: "This could be useful for the agent system I'm building.",
+      // Aperçus : trois lymarks suffisent à juger le rendu. Sans réseau
+      // (tests, goldens) l'image échoue et la vignette de source reprend.
+      imageUrl:
+          'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200',
     ),
     Lymark(
       id: 'lm-next',
@@ -43,6 +47,8 @@ abstract final class MockData {
         'Use caching and streaming to deliver content faster.',
       ],
       keywords: const ['Next.js', 'Performance', 'Web', 'Rendering'],
+      imageUrl:
+          'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200',
     ),
     Lymark(
       id: 'lm-ds',
@@ -60,6 +66,8 @@ abstract final class MockData {
       ],
       keywords: const ['Design', 'Systems', 'Tokens'],
       note: 'Reference for the Lymarks design system.',
+      imageUrl:
+          'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200',
     ),
     Lymark(
       id: 'lm-rsc',
