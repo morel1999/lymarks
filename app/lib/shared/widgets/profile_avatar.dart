@@ -149,8 +149,8 @@ class _AvatarPickerSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: LySpace.xl),
-              // Cellules bornées : sur un écran large (tablette, paysage, surface
-              // de test) cinq colonnes à largeur libre débordaient de la feuille.
+              // Cellules bornées : sur un écran large (tablette, paysage,
+              // surface de test), cinq colonnes libres débordaient.
               GridView.extent(
                 maxCrossAxisExtent: 72,
                 shrinkWrap: true,
