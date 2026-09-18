@@ -95,7 +95,7 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
       final nonce = uri.queryParameters['rotating_token_nonce'];
       final attempt = state.signIn ?? state.signUp;
       _trace(
-        'nonce=${nonce != null} '
+        'params=${uri.queryParameters.keys.join(',')} '
         'signIn=${state.signIn?.status}/${state.signIn?.verification?.status} '
         'signUp=${state.signUp?.status}',
       );
@@ -109,8 +109,16 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
         );
         _trace('exchange: ${_describe(r)}');
       } else {
-        await state.refreshClient();
-        _trace('client refreshed: signedIn=${state.isSignedIn}');
+        // Sans nonce (pas de session créée : compte inconnu → transfert à
+        // faire), on relit le Client. Pas via `refreshClient()` : le SDK y
+        // rejette tout client dont `updated_at` n'a pas bougé, or Clerk ne
+        // l'avance pas quand une tentative progresse — la réponse serait
+        // jetée et la tentative resterait « unverified » (constaté 18/09).
+        final r = await state.fetchApiResponse(
+          '/client',
+          method: clerk.HttpMethod.get,
+        );
+        _trace('client fetched: ${_describe(r)}');
       }
       _trace(
         'after: signIn=${state.signIn?.status}/'
