@@ -1,0 +1,43 @@
+# Sonde de sante de l'API en production, depuis un runner GitHub.
+#
+# Utile quand la machine de dev ne peut pas joindre workers.dev (le filtre
+# « Guvenli Internet » de certains FAI turcs bloque ce domaine, voir Risk
+# Register R12). Interroge /health jusqu'a 10 minutes : le temps que
+# Cloudflare emette le certificat d'un sous-domaine tout neuf.
+
+name: probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: URL de base de l'API
+        default: https://lymarks-api.lymarks.workers.dev
+        required: true
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: /health jusqu'a reponse
+        run: |
+          for i in $(seq 1 20); do
+            if out="$(curl -fsS --max-time 15 "${{ inputs.url }}/health" 2>&1)"; then
+              echo "OK apres $i essai(s) : $out"
+              exit 0
+            fi
+            echo "essai $i : $out"
+            sleep 30
+          done
+          echo "::error::/health injoignable apres 10 minutes"
+          exit 1
+
+      - name: Refus sans jeton (401 attendu)
+        run: |
+          code="$(curl -s -o /dev/null -w '%{http_code}' "${{ inputs.url }}/me")"
+          echo "GET /me sans jeton -> HTTP $code"
+          test "$code" = "401"
+
+      - name: En-tetes de transport
+        run: curl -sSI "${{ inputs.url }}/health" | grep -iE "strict-transport-security|x-content-type-options|cache-control"
