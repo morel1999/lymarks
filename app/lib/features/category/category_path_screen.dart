@@ -51,7 +51,8 @@ class CategoryPathScreen extends ConsumerWidget {
                 icon: LyIcons.topic(category.iconKey),
                 accent: accent,
                 title: 'Nothing here yet.',
-                message: 'Save something related to this category '
+                message:
+                    'Save something related to this category '
                     'to start building this path.',
               ),
             )
@@ -257,8 +258,9 @@ class _ClusterNode extends StatelessWidget {
                       children: [
                         Text(
                           cluster.name,
-                          style: context.texts.titleLarge
-                              ?.copyWith(color: accent.onFill),
+                          style: context.texts.titleLarge?.copyWith(
+                            color: accent.onFill,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),

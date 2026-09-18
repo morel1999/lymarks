@@ -95,8 +95,7 @@ class UserProfile {
 }
 
 extension on String {
-  String characters(int n) =>
-      substring(0, n.clamp(0, length)).toUpperCase();
+  String characters(int n) => substring(0, n.clamp(0, length)).toUpperCase();
 }
 
 /// Une entrée du Daily Digest : un lymark plus la raison de son retour.

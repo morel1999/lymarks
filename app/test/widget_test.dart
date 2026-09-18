@@ -100,23 +100,35 @@ void main() {
       expect(notifier.byId(failed.id)!.status, LymarkStatus.processing);
     });
 
-    test('la recherche plein texte couvre titre, mots-cles et note', () {
+    test('la recherche plein texte couvre titre, mots-cles et note', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.read(searchQueryProvider.notifier).state = 'agents';
+      await container.read(searchStateProvider.notifier).run('agents');
       final results = container.read(searchResultsProvider);
 
       expect(results, isNotEmpty);
       expect(results.first.title, 'Building AI Agents');
     });
 
-    test('une requete vide ne retourne aucun resultat', () {
+    test('une requete vide ne retourne aucun resultat', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.read(searchQueryProvider.notifier).state = '   ';
+      await container.read(searchStateProvider.notifier).run('   ');
       expect(container.read(searchResultsProvider), isEmpty);
+    });
+
+    test('la requete courante declenche la recherche', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      // Le notifier n'écoute la requête qu'une fois construit.
+      container.read(searchStateProvider);
+      container.read(searchQueryProvider.notifier).state = 'agents';
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(searchResultsProvider), isNotEmpty);
     });
   });
 }

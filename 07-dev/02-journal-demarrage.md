@@ -142,6 +142,15 @@ Le code est dans `api/` (README dedans : routes, commandes, déploiement). Ce qu
 - **Le FAI local bloque `workers.dev`** (Türk Telekom « Güvenli İnternet » : 307 vers sa page en HTTP, TLS cassé en HTTPS). La machine de dev ne peut pas tester la prod ; `probe.yml` le fait depuis un runner. Risque produit R12 : domaine propre à prévoir avant la soumission.
 - Un jeton Cloudflare a été affiché en clair par un script de contrôle qui ne masquait que les lignes `NOM=valeur` (l'utilisateur avait écrit `Nom: valeur`). Révoqué et régénéré dans la minute — la règle R9 appliquée à soi-même.
 
+**App ↔ API (18/09, nuit)** — ce qui a été tranché en branchant l'app :
+- **`clerk_flutter` beta épinglé + mode démo** → ADR-010. Le contrat `AuthSession` isole le SDK ; `DemoAuthSession` porte le profil de démo (« Morel Herval », Pro) pour que les 15 rendus de référence restent valables.
+- **Dépôt = frontière testable** (`LymarksRepository`) : API en mode réel, `MockLymarksRepository` en démo/tests, mêmes règles (doublon, retry, recherche pondérée). Le client HTTP est testé sur `MockClient` ; aucun test ne touche le réseau.
+- **Optimiste d'abord** : chaque geste modifie la liste locale puis part au serveur ; le serveur remplace l'entrée à sa réponse. Un compteur de mutations empêche un `refresh` parti avant un geste de l'écraser (bug trouvé par le test « une capture envoyée est consommée »). Après disposition du provider (fin de test, déconnexion), les continuations réseau ne touchent plus à l'état.
+- **Suppression réversible sans timer** : `remove` archive côté serveur tout de suite, `restore` désarchive, et la suppression réelle (`purge`) part quand le SnackBar se ferme sans « Undo » (`controller.closed`). Aucun `Timer` dans le notifier : `testWidgets` échoue sur tout timer en suspens, et le sondage des cartes `processing` (4 s, borné à 30 tours) n'existe qu'en mode réel pour la même raison.
+- **31ᵉ capture** : le serveur répond 403 `limit_reached`, la capture est consommée (pas rejouée), et la Home affiche le paywall — jamais la feuille de partage (Monetization §4).
+- **Formatage** : `dart format` (style Dart 3.11) appliqué à tout `lib/` et `test/` — d'où un diff large mais neutre sur des fichiers non modifiés.
+- Manifest : `INTERNET` ajouté explicitement (le debug l'obtient tout seul, pas la release). CI : `--dart-define` de la clé Clerk et de l'URL de l'API, échec si la clé manque.
+
 Ce qui n'est **pas** fait : Digest (M4, P1) — les colonnes existent, pas le cron ; push tokens ; test d'intégration sur branche Neon (ADR-009, conséquences). Et surtout : **rien n'est déployé** tant que les comptes n'existent pas — `api/.dev.vars` attend les clés, `api/scripts/push-secrets.ps1` les envoie en GitHub Secrets, `api.yml` fait le reste.
 
 ## 8. Questions ouvertes créées par les écrans

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lymarks/core/auth/auth_session.dart';
+import 'package:lymarks/features/auth/sign_in_screen.dart';
 import 'package:lymarks/features/category/category_path_screen.dart';
 import 'package:lymarks/features/category/cluster_screen.dart';
 import 'package:lymarks/features/detail/lymark_detail_screen.dart';
@@ -15,6 +17,7 @@ import 'package:lymarks/shared/widgets/app_bottom_nav.dart';
 /// Chemins nommés, pour éviter les chaînes littérales dans les écrans.
 abstract final class LyRoute {
   static const String onboarding = '/onboarding';
+  static const String signIn = '/sign-in';
   static const String home = '/home';
   static const String search = '/search';
   static const String digest = '/digest';
@@ -38,13 +41,29 @@ abstract final class LyRoute {
 /// Category Path, Lymark Detail et Settings sont **au-dessus** de la coquille,
 /// donc sans barre d'onglets : ce sont des parcours secondaires
 /// (wireframes 03, 04, 07 et §9 Navigation globale).
-GoRouter buildRouter() {
+///
+/// Garde d'authentification : tout ce qui n'est ni l'onboarding ni la
+/// connexion exige une session (F5). Le routeur écoute [auth] et réévalue la
+/// redirection à chaque connexion ou déconnexion.
+GoRouter buildRouter({required AuthSession auth}) {
   return GoRouter(
     initialLocation: LyRoute.onboarding,
+    refreshListenable: auth,
+    redirect: (_, state) {
+      final path = state.matchedLocation;
+      final public = path == LyRoute.onboarding || path == LyRoute.signIn;
+      if (!auth.isSignedIn && !public) return LyRoute.signIn;
+      if (auth.isSignedIn && path == LyRoute.signIn) return LyRoute.home;
+      return null;
+    },
     routes: [
       GoRoute(
         path: LyRoute.onboarding,
         builder: (_, _) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: LyRoute.signIn,
+        builder: (_, _) => const SignInScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (_, _, shell) => _ShellScaffold(shell: shell),

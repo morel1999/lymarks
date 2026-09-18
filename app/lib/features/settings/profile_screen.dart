@@ -151,8 +151,9 @@ class _IdentityCard extends StatelessWidget {
             ),
             child: Text(
               profile.initials,
-              style: context.texts.displaySmall
-                  ?.copyWith(color: ly.lavender.strong),
+              style: context.texts.displaySmall?.copyWith(
+                color: ly.lavender.strong,
+              ),
             ),
           ),
           const SizedBox(width: LySpace.l),
@@ -162,8 +163,9 @@ class _IdentityCard extends StatelessWidget {
               children: [
                 Text(
                   profile.name,
-                  style: context.texts.titleLarge
-                      ?.copyWith(color: ly.lavender.onFill),
+                  style: context.texts.titleLarge?.copyWith(
+                    color: ly.lavender.onFill,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -240,8 +242,10 @@ class _StatsRow extends ConsumerWidget {
           child: _Stat(
             icon: LyIcons.calendar,
             accent: ly.blue,
-            value: LyTime.relative(profile.memberSince, now: now)
-                .replaceAll(' ago', ''),
+            value: LyTime.relative(
+              profile.memberSince,
+              now: now,
+            ).replaceAll(' ago', ''),
             label: 'With Lymarks',
           ),
         ),
@@ -328,11 +332,10 @@ class _PlanBanner extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  profile.isPro
-                      ? "You're on Pro"
-                      : 'You are on the free plan',
-                  style: context.texts.titleSmall
-                      ?.copyWith(color: accent.onFill),
+                  profile.isPro ? "You're on Pro" : 'You are on the free plan',
+                  style: context.texts.titleSmall?.copyWith(
+                    color: accent.onFill,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

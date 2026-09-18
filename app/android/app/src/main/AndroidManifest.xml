@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- L'app ne parle qu'a l'API Lymarks et a Clerk (Security §2). Le debug
+         l'ajoute tout seul, la release non. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Lymarks"
         android:name="${applicationName}"

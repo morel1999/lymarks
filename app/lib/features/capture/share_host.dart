@@ -45,14 +45,15 @@ class MethodChannelShareHost implements ShareHost {
   Future<int?> close() => _channel.invokeMethod<int>('close');
 }
 
-final Provider<ShareHost> shareHostProvider =
-    Provider<ShareHost>((_) => MethodChannelShareHost());
+final Provider<ShareHost> shareHostProvider = Provider<ShareHost>(
+  (_) => MethodChannelShareHost(),
+);
 
 /// File de captures dans le dossier de support de l'app, partagé par les
 /// deux moteurs Flutter (feuille et app) puisqu'ils vivent dans le même
 /// processus Android.
 final FutureProvider<CaptureQueue> captureQueueProvider =
     FutureProvider<CaptureQueue>((_) async {
-  final dir = await getApplicationSupportDirectory();
-  return CaptureQueue(dir);
-});
+      final dir = await getApplicationSupportDirectory();
+      return CaptureQueue(dir);
+    });

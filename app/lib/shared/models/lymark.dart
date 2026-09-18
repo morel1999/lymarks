@@ -43,6 +43,7 @@ class Lymark {
     this.lastOpenedAt,
     this.archived = false,
     this.savedCount = 1,
+    this.failureReason,
   });
 
   final String id;
@@ -75,6 +76,10 @@ class Lymark {
   final bool archived;
   final int savedCount;
 
+  /// Code court renvoyé par l'API quand [status] vaut failed (`not_found`,
+  /// `timeout`, `unsafe_url`…). Null sinon.
+  final String? failureReason;
+
   bool get hasNote => note != null && note!.trim().isNotEmpty;
 
   /// Clé de repli quand aucun emplacement n'est connu.
@@ -89,6 +94,7 @@ class Lymark {
     DateTime? lastOpenedAt,
     bool? archived,
     int? savedCount,
+    Object? failureReason = _keep,
   }) {
     return Lymark(
       id: id,
@@ -107,8 +113,13 @@ class Lymark {
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       archived: archived ?? this.archived,
       savedCount: savedCount ?? this.savedCount,
+      failureReason: identical(failureReason, _keep)
+          ? this.failureReason
+          : failureReason as String?,
     );
   }
+
+  static const Object _keep = Object();
 
   @override
   bool operator ==(Object other) =>

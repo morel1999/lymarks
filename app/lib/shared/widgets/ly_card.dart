@@ -88,8 +88,7 @@ class IconBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: background ?? ly.badgeInk,
         shape: shape,
-        borderRadius:
-            shape == BoxShape.rectangle ? LyRadius.tileR : null,
+        borderRadius: shape == BoxShape.rectangle ? LyRadius.tileR : null,
       ),
       child: Icon(
         icon,

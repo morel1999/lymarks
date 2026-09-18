@@ -3,18 +3,17 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lymarks/features/capture/capture_queue.dart';
+import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/features/capture/share_host.dart';
-import 'package:lymarks/features/capture/shared_link.dart';
 import 'package:lymarks/shared/data/providers.dart';
-import 'package:lymarks/shared/models/lymark.dart';
 
 /// Vide la file de captures dans la bibliothèque.
 ///
-/// Chaque capture devient un lymark en `processing` : la carte squelette se
-/// remplira quand le pipeline IA aura répondu (UX Bible règle 4). Tant que
-/// l'API n'est pas branchée, elle reste en traitement — ce qui suffit à
-/// valider le geste de capture et son chrono, indépendamment du backend.
+/// Chaque capture est envoyée à l'API (`POST /bookmarks`) et apparaît en
+/// `processing` : la carte squelette se remplira quand le pipeline IA aura
+/// répondu (UX Bible règle 4). Ce qui n'a pas pu partir — réseau absent,
+/// serveur en panne — reste dans la file pour le prochain passage : c'est la
+/// file hors-ligne du PRD §3. Déconnecté, on ne touche à rien.
 class CaptureSync {
   CaptureSync(this._ref);
 
@@ -29,11 +28,19 @@ class CaptureSync {
     if (_running) return 0;
     _running = true;
     try {
+      if (!_ref.read(authSessionProvider).isSignedIn) return 0;
       final queue = await _ref.read(captureQueueProvider.future);
-      final pending = await queue.drain();
+      final pending = await queue.peek();
       if (pending.isEmpty) return 0;
-      _ref.read(lymarksProvider.notifier).addCaptures(pending);
-      return pending.length;
+
+      final retryLater = await _ref
+          .read(lymarksProvider.notifier)
+          .addCaptures(pending);
+      final keep = retryLater.map((c) => c.id).toSet();
+      await queue.remove(
+        pending.map((c) => c.id).where((id) => !keep.contains(id)),
+      );
+      return pending.length - retryLater.length;
     } on MissingPluginException {
       // Pas de path_provider sur cette plateforme : rien à synchroniser.
       return 0;
@@ -46,30 +53,6 @@ class CaptureSync {
   }
 }
 
-final Provider<CaptureSync> captureSyncProvider =
-    Provider<CaptureSync>(CaptureSync.new);
-
-/// Conversion d'une capture en lymark, partagée entre le notifier et les
-/// tests.
-extension PendingCaptureX on PendingCapture {
-  Lymark toLymark() => Lymark(
-        id: id,
-        url: url,
-        domain: SharedLink.domainOf(url),
-        title: title,
-        savedAt: capturedAt,
-        status: LymarkStatus.processing,
-        note: note,
-        source: _sourceOf(url),
-      );
-
-  static LymarkSource _sourceOf(String url) {
-    final host = SharedLink.domainOf(url);
-    if (host == 'x.com' || host == 'twitter.com') return LymarkSource.x;
-    if (host.endsWith('youtube.com') || host == 'youtu.be') {
-      return LymarkSource.youtube;
-    }
-    if (host.endsWith('linkedin.com')) return LymarkSource.linkedin;
-    return LymarkSource.web;
-  }
-}
+final Provider<CaptureSync> captureSyncProvider = Provider<CaptureSync>(
+  CaptureSync.new,
+);

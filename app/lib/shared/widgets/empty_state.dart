@@ -51,8 +51,9 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: LySpace.s),
             Text(
               message,
-              style: context.texts.bodyMedium
-                  ?.copyWith(color: ly.textSecondary),
+              style: context.texts.bodyMedium?.copyWith(
+                color: ly.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (action != null) ...[

@@ -119,11 +119,11 @@ class _ShareSheetViewState extends ConsumerState<ShareSheetView> {
                       _Phase.loading => const _Loading(),
                       _Phase.noLink => _NoLink(onClose: _close),
                       _Phase.ready || _Phase.saving => _Capture(
-                          link: _link!,
-                          note: _note,
-                          saving: _phase == _Phase.saving,
-                          onSave: _save,
-                        ),
+                        link: _link!,
+                        note: _note,
+                        saving: _phase == _Phase.saving,
+                        onSave: _save,
+                      ),
                     },
                   ),
                 ),
@@ -227,7 +227,7 @@ class _Capture extends StatelessWidget {
             link.ignoredUrlCount == 1
                 ? 'One more link in this share. Saving the first.'
                 : '${link.ignoredUrlCount} more links in this share. '
-                    'Saving the first.',
+                      'Saving the first.',
             style: context.texts.labelSmall,
           ),
         ],
@@ -243,8 +243,9 @@ class _Capture extends StatelessWidget {
           cursorColor: ly.primary,
           decoration: InputDecoration(
             hintText: 'Add a note (optional)',
-            hintStyle:
-                context.texts.bodyLarge?.copyWith(color: ly.textTertiary),
+            hintStyle: context.texts.bodyLarge?.copyWith(
+              color: ly.textTertiary,
+            ),
             filled: true,
             fillColor: ly.chipFill,
             contentPadding: const EdgeInsets.symmetric(

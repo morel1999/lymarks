@@ -137,8 +137,9 @@ class CategoryTile extends StatelessWidget {
                   const SizedBox(height: LySpace.l),
                   Text(
                     category.name,
-                    style: context.texts.titleLarge
-                        ?.copyWith(color: accent.onFill),
+                    style: context.texts.titleLarge?.copyWith(
+                      color: accent.onFill,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

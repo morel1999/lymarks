@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +14,7 @@ import 'package:lymarks/shared/widgets/category_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 
 /// 02 — Home / Knowledge Hub.
@@ -26,13 +29,31 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider);
     final lymarks = ref.watch(lymarksProvider);
+    final sync = ref.watch(librarySyncProvider);
     final recent = lymarks.where((l) => !l.archived).take(6).toList();
+
+    // 31ᵉ capture refusée par le serveur : le paywall s'affiche ici, après
+    // coup, jamais dans la feuille de partage (Monetization §4).
+    ref.listen(captureLimitHitProvider, (_, hit) {
+      if (!hit) return;
+      ref.read(captureLimitHitProvider.notifier).state = false;
+      unawaited(
+        PaywallSheet.show(context, trigger: PaywallTrigger.captureLimit),
+      );
+    });
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(child: _HomeHeader()),
-          if (lymarks.isEmpty)
+          if (sync == LibrarySync.offline)
+            const SliverToBoxAdapter(child: _OfflineBanner()),
+          if (lymarks.isEmpty && sync == LibrarySync.loading)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (lymarks.isEmpty)
             const SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
@@ -65,8 +86,7 @@ class HomeScreen extends ConsumerWidget {
                     horizontal: LySpace.screen,
                   ),
                   itemCount: categories.length - 1,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(width: LySpace.m),
+                  separatorBuilder: (_, _) => const SizedBox(width: LySpace.m),
                   itemBuilder: (context, i) {
                     final category = categories[i + 1];
                     return CategoryTile(
@@ -245,8 +265,9 @@ class LyScreenHeader extends StatelessWidget {
                   const SizedBox(height: LySpace.xs),
                   Text(
                     subtitle!,
-                    style: context.texts.bodyMedium
-                        ?.copyWith(color: ly.textSecondary),
+                    style: context.texts.bodyMedium?.copyWith(
+                      color: ly.textSecondary,
+                    ),
                   ),
                 ],
               ],
@@ -340,12 +361,58 @@ class FreeLimitBanner extends StatelessWidget {
             child: Text(
               'You reached the $count lymarks of the free plan. '
               'New links are saved and waiting.',
-              style: context.texts.bodySmall
-                  ?.copyWith(color: ly.yellow.onFill),
+              style: context.texts.bodySmall?.copyWith(color: ly.yellow.onFill),
             ),
           ),
           Icon(LyIcons.forward, size: 18, color: ly.yellow.onFill),
         ],
+      ),
+    );
+  }
+}
+
+/// Bandeau discret quand la dernière synchronisation a échoué : la liste
+/// affichée est celle du dernier passage réussi (PRD §3, hors-ligne).
+class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LySpace.screen,
+        0,
+        LySpace.screen,
+        LySpace.m,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: LySpace.m,
+          vertical: LySpace.s,
+        ),
+        decoration: BoxDecoration(
+          color: ly.yellow.fill,
+          borderRadius: LyRadius.tileR,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              LyIcons.offline,
+              size: LyIconSize.small,
+              color: ly.yellow.onFill,
+            ),
+            const SizedBox(width: LySpace.s),
+            Expanded(
+              child: Text(
+                'Offline — showing your last synced lymarks.',
+                style: context.texts.bodySmall?.copyWith(
+                  color: ly.yellow.onFill,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

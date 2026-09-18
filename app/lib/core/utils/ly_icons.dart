@@ -13,6 +13,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 abstract final class LyIcons {
   // Navigation principale.
   static const IconData home = LucideIcons.house;
+  static const IconData offline = LucideIcons.cloudOff;
   static const IconData search = LucideIcons.search;
   static const IconData digest = LucideIcons.sparkles;
 

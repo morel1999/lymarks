@@ -56,8 +56,9 @@ class DigestScreen extends ConsumerWidget {
                         const SizedBox(height: LySpace.s),
                         Text(
                           LyTime.digestHeading(today),
-                          style: context.texts.bodyMedium
-                              ?.copyWith(color: context.ly.textSecondary),
+                          style: context.texts.bodyMedium?.copyWith(
+                            color: context.ly.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -95,7 +96,8 @@ class DigestScreen extends ConsumerWidget {
               child: EmptyState(
                 icon: LyIcons.digest,
                 title: 'Nothing to revisit yet.',
-                message: "Keep saving things. We'll bring something back "
+                message:
+                    "Keep saving things. We'll bring something back "
                     'when it matters.',
               ),
             )
@@ -124,8 +126,7 @@ class DigestScreen extends ConsumerWidget {
                   return DigestCard(
                     lymark: entry.lymark,
                     reason: entry.reason,
-                    onOpen: () =>
-                        context.push(LyRoute.lymark(entry.lymark.id)),
+                    onOpen: () => context.push(LyRoute.lymark(entry.lymark.id)),
                     onSnooze: () => _snack(
                       context,
                       "Snoozed. We won't surface it for a week.",
@@ -181,8 +182,9 @@ class _DigestUpsell extends StatelessWidget {
               children: [
                 Text(
                   'Daily Digest is a Pro feature',
-                  style: context.texts.titleSmall
-                      ?.copyWith(color: ly.lime.onFill),
+                  style: context.texts.titleSmall?.copyWith(
+                    color: ly.lime.onFill,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

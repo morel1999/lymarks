@@ -28,8 +28,7 @@ class LymarkDetailScreen extends ConsumerStatefulWidget {
   final String lymarkId;
 
   @override
-  ConsumerState<LymarkDetailScreen> createState() =>
-      _LymarkDetailScreenState();
+  ConsumerState<LymarkDetailScreen> createState() => _LymarkDetailScreenState();
 }
 
 class _LymarkDetailScreenState extends ConsumerState<LymarkDetailScreen> {
@@ -51,7 +50,8 @@ class _LymarkDetailScreenState extends ConsumerState<LymarkDetailScreen> {
 
     final ly = context.ly;
     final accent = ly.accentOr(lymark.accentSlot, lymark.accentKey);
-    final related = ref.watch(relatedLymarksProvider(lymark.id));
+    final related =
+        ref.watch(relatedLymarksProvider(lymark.id)).valueOrNull ?? const [];
 
     return Scaffold(
       body: SafeArea(
@@ -183,8 +183,9 @@ class _SourceHeader extends StatelessWidget {
               // Le domaine, jamais l'URL entière (wireframe 04 §Source).
               Text(
                 lymark.domain,
-                style: context.texts.labelMedium
-                    ?.copyWith(color: ly.textSecondary),
+                style: context.texts.labelMedium?.copyWith(
+                  color: ly.textSecondary,
+                ),
               ),
               const SizedBox(height: LySpace.xs),
               Text(lymark.title, style: context.texts.displaySmall),
@@ -340,8 +341,7 @@ class _RememberThis extends StatelessWidget {
                   child: Text(
                     'This page could not be read in full. '
                     'The summary uses its metadata only.',
-                    style: context.texts.bodySmall
-                        ?.copyWith(color: ly.warning),
+                    style: context.texts.bodySmall?.copyWith(color: ly.warning),
                   ),
                 ),
               ],
@@ -401,8 +401,7 @@ class _YourNote extends ConsumerWidget {
                   ? lymark.note!
                   : 'Add why this mattered to you. Only you can see it.',
               style: context.texts.bodyLarge?.copyWith(
-                fontStyle:
-                    lymark.hasNote ? FontStyle.italic : FontStyle.normal,
+                fontStyle: lymark.hasNote ? FontStyle.italic : FontStyle.normal,
                 color: lymark.hasNote ? ly.textPrimary : ly.textTertiary,
               ),
             ),
@@ -474,8 +473,9 @@ class _ProcessingBlock extends StatelessWidget {
         Text(
           'Reading the page. This takes a few seconds — '
           'you can close the app.',
-          style: context.texts.bodySmall
-              ?.copyWith(color: context.ly.textSecondary),
+          style: context.texts.bodySmall?.copyWith(
+            color: context.ly.textSecondary,
+          ),
         ),
       ],
     );
@@ -504,8 +504,9 @@ class _FailedBlock extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Couldn't process this link.",
-                  style: context.texts.titleSmall
-                      ?.copyWith(color: ly.pink.onFill),
+                  style: context.texts.titleSmall?.copyWith(
+                    color: ly.pink.onFill,
+                  ),
                 ),
               ),
             ],

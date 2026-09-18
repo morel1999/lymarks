@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
-import 'package:lymarks/features/capture/capture_sync.dart';
 import 'package:lymarks/features/capture/share_app.dart';
 import 'package:lymarks/features/capture/share_host.dart';
 import 'package:lymarks/features/capture/shared_link.dart';
@@ -81,7 +80,8 @@ void main() {
 
     test('X : texte du post puis URL, sans sujet', () {
       final l = SharedLink.parse(
-        text: 'Thread on retrieval evaluation, worth a read '
+        text:
+            'Thread on retrieval evaluation, worth a read '
             'https://x.com/someone/status/1234567890',
       );
       expect(l?.url, 'https://x.com/someone/status/1234567890');
@@ -101,18 +101,21 @@ void main() {
       expect(l?.url, 'https://vercel.com/blog/nextjs-15');
     });
 
-    test('sujet qui recopie l URL : on retombe sur le texte, puis le domaine',
-        () {
-      final l = SharedLink.parse(
-        text: 'https://neon.tech/docs',
-        subject: 'https://neon.tech/docs',
-      );
-      expect(l?.title, 'neon.tech');
-    });
+    test(
+      'sujet qui recopie l URL : on retombe sur le texte, puis le domaine',
+      () {
+        final l = SharedLink.parse(
+          text: 'https://neon.tech/docs',
+          subject: 'https://neon.tech/docs',
+        );
+        expect(l?.title, 'neon.tech');
+      },
+    );
 
     test('plusieurs URL : la première est gardée, les autres comptées', () {
       final l = SharedLink.parse(
-        text: 'https://a.example/1 puis https://b.example/2 '
+        text:
+            'https://a.example/1 puis https://b.example/2 '
             'et https://c.example/3',
       );
       expect(l?.url, 'https://a.example/1');
@@ -166,12 +169,12 @@ void main() {
   });
 
   group('LymarksNotifier.addCaptures', () {
-    test('une capture devient un lymark processing en tête', () {
+    test('une capture devient un lymark processing en tête', () async {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final before = c.read(lymarksProvider).length;
 
-      c.read(lymarksProvider.notifier).addCaptures([
+      await c.read(lymarksProvider.notifier).addCaptures([
         PendingCapture(
           id: 'cap-1',
           url: 'https://example.org/article',
@@ -187,30 +190,32 @@ void main() {
       expect(list.first.domain, 'example.org');
     });
 
-    test('doublon d URL : saved_count +1, note remplacée, pas de doublon',
-        () {
-      final c = ProviderContainer();
-      addTearDown(c.dispose);
-      final notifier = c.read(lymarksProvider.notifier);
-      final existing = c.read(lymarksProvider).first;
-      final before = c.read(lymarksProvider).length;
+    test(
+      'doublon d URL : saved_count +1, note remplacée, pas de doublon',
+      () async {
+        final c = ProviderContainer();
+        addTearDown(c.dispose);
+        final notifier = c.read(lymarksProvider.notifier);
+        final existing = c.read(lymarksProvider).first;
+        final before = c.read(lymarksProvider).length;
 
-      notifier.addCaptures([
-        PendingCapture(
-          id: 'cap-dup',
-          url: '${existing.url}/',
-          title: 'peu importe',
-          note: 'nouvelle note',
-          capturedAt: DateTime.now(),
-        ),
-      ]);
+        await notifier.addCaptures([
+          PendingCapture(
+            id: 'cap-dup',
+            url: '${existing.url}/',
+            title: 'peu importe',
+            note: 'nouvelle note',
+            capturedAt: DateTime.now(),
+          ),
+        ]);
 
-      final list = c.read(lymarksProvider);
-      expect(list.length, before);
-      final updated = list.firstWhere((l) => l.id == existing.id);
-      expect(updated.savedCount, existing.savedCount + 1);
-      expect(updated.note, 'nouvelle note');
-    });
+        final list = c.read(lymarksProvider);
+        expect(list.length, before);
+        final updated = list.firstWhere((l) => l.id == existing.id);
+        expect(updated.savedCount, existing.savedCount + 1);
+        expect(updated.note, 'nouvelle note');
+      },
+    );
 
     test('la source est déduite du domaine', () {
       final x = PendingCapture(
@@ -237,15 +242,16 @@ void main() {
     tearDown(() => dir.deleteSync(recursive: true));
 
     Widget harness(_FakeHost host) => ProviderScope(
-          overrides: [
-            shareHostProvider.overrideWithValue(host),
-            captureQueueProvider.overrideWith((_) async => CaptureQueue(dir)),
-          ],
-          child: const ShareApp(),
-        );
+      overrides: [
+        shareHostProvider.overrideWithValue(host),
+        captureQueueProvider.overrideWith((_) async => CaptureQueue(dir)),
+      ],
+      child: const ShareApp(),
+    );
 
-    testWidgets('affiche la source et enregistre puis se ferme',
-        (tester) async {
+    testWidgets('affiche la source et enregistre puis se ferme', (
+      tester,
+    ) async {
       final host = _FakeHost(
         text: 'https://huggingface.co/learn/agents-course',
         subject: 'Building AI Agents',
@@ -267,8 +273,9 @@ void main() {
       expect(host.closeCalls, 1);
     });
 
-    testWidgets('sans lien : message clair, fermeture sans enregistrement',
-        (tester) async {
+    testWidgets('sans lien : message clair, fermeture sans enregistrement', (
+      tester,
+    ) async {
       final host = _FakeHost(text: 'juste du texte');
       await tester.pumpWidget(harness(host));
       await _settle(tester);

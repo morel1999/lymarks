@@ -45,8 +45,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   /// Une requête en langage naturel (plusieurs mots) part en sémantique.
   /// L'utilisateur ne choisit jamais le mode (wireframe 05 §Principe).
-  static bool _isSemantic(String q) =>
-      q.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length >= 3;
+  static bool _isSemantic(String q) => looksSemantic(q);
 
   void _submit(String value) {
     ref.read(recentSearchesProvider.notifier).push(value);
@@ -59,8 +58,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _setQuery(String value) {
     _controller.text = value;
-    _controller.selection =
-        TextSelection.collapsed(offset: _controller.text.length);
+    _controller.selection = TextSelection.collapsed(
+      offset: _controller.text.length,
+    );
     ref.read(searchQueryProvider.notifier).state = value;
     _submit(value);
   }
@@ -160,12 +160,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               const SliverToBoxAdapter(child: _NoResults())
             else
               SliverPadding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: LySpace.screen),
+                padding: const EdgeInsets.symmetric(horizontal: LySpace.screen),
                 sliver: SliverList.separated(
                   itemCount: results.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: LySpace.m),
+                  separatorBuilder: (_, _) => const SizedBox(height: LySpace.m),
                   itemBuilder: (context, i) {
                     final lymark = results[i];
                     return BookmarkCard(
@@ -327,8 +325,9 @@ class _SemanticUpsell extends StatelessWidget {
                 Text(
                   'These results match your words. '
                   'Pro also matches your intent.',
-                  style: context.texts.bodySmall
-                      ?.copyWith(color: ly.textSecondary),
+                  style: context.texts.bodySmall?.copyWith(
+                    color: ly.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -350,7 +349,8 @@ class _NoResults extends StatelessWidget {
       child: EmptyState(
         icon: LyIcons.search,
         title: 'Nothing surfaced yet.',
-        message: 'Try describing what you remember '
+        message:
+            'Try describing what you remember '
             'rather than searching exact words.',
       ),
     );

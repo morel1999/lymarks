@@ -121,8 +121,9 @@ abstract final class LymarkActions {
             const SizedBox(height: LySpace.s),
             Text(
               'Why you saved this. Only you can see it.',
-              style: context.texts.bodySmall
-                  ?.copyWith(color: context.ly.textSecondary),
+              style: context.texts.bodySmall?.copyWith(
+                color: context.ly.textSecondary,
+              ),
             ),
             const SizedBox(height: LySpace.l),
             TextField(
@@ -204,20 +205,27 @@ abstract final class LymarkActions {
     onDeleted?.call();
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: const Text('Lymark deleted'),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => ref
-                .read(lymarksProvider.notifier)
-                .restore(removed.lymark, removed.index),
-          ),
+    final notifier = ref.read(lymarksProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: const Text('Lymark deleted'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => notifier.restore(removed.lymark, removed.index),
         ),
-      );
+      ),
+    );
+    // Fenêtre d'annulation passée sans « Undo » : suppression définitive
+    // côté serveur (jusque-là, l'entrée n'était qu'archivée).
+    unawaited(
+      controller.closed.then((reason) {
+        if (reason != SnackBarClosedReason.action) {
+          unawaited(notifier.purge(lymark.id));
+        }
+      }),
+    );
   }
 
   static void _toast(BuildContext context, String message) {

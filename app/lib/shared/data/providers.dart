@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lymarks/core/api/api_client.dart';
+import 'package:lymarks/core/api/api_models.dart';
+import 'package:lymarks/core/auth/auth_session.dart';
+import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
-import 'package:lymarks/features/capture/capture_sync.dart';
+import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
+import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
 
@@ -18,35 +25,81 @@ final themeModeProvider = StateProvider<ThemeMode>((_) => ThemeMode.system);
 final Provider<DateTime Function()> clockProvider =
     Provider<DateTime Function()>((_) => DateTime.now);
 
-/// Profil et plan.
-///
-/// Le plan est modifiable ici **uniquement pour la démo** : en production, la
-/// source de vérité est la table `subscriptions` côté serveur, alimentée par
-/// le webhook RevenueCat (Core Principles §3).
-class ProfileNotifier extends Notifier<UserProfile> {
-  @override
-  UserProfile build() => MockData.profile;
+// ── Accès aux données ──────────────────────────────────────────────────────
 
-  void setPlan(UserPlan plan) => state = UserProfile(
-        name: state.name,
-        email: state.email,
-        plan: plan,
-        lymarkCount: state.lymarkCount,
-        noteCount: state.noteCount,
-        memberSince: state.memberSince,
-      );
+final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
+  final auth = ref.watch(authSessionProvider);
+  final client = ApiClient(baseUrl: AppConfig.apiBaseUrl, token: auth.token);
+  ref.onDispose(client.close);
+  return client;
+});
+
+/// Dépôt courant : l'API en mode réel, le mock en mode démo (et dans les
+/// tests, qui le surchargent pour contrôler le jeu de données).
+final Provider<LymarksRepository> lymarksRepositoryProvider =
+    Provider<LymarksRepository>((ref) {
+      if (AppConfig.isDemo) return MockLymarksRepository();
+      return ApiLymarksRepository(ref.watch(apiClientProvider));
+    });
+
+/// Intervalle de rafraîchissement tant qu'un lymark est en `processing`.
+/// Null = pas de sondage (mode démo, tests : aucun timer en suspens).
+final Provider<Duration?> processingPollProvider = Provider<Duration?>(
+  (_) => AppConfig.isLive ? const Duration(seconds: 4) : null,
+);
+
+/// État de synchronisation de la bibliothèque, pour l'écran d'accueil.
+enum LibrarySync { idle, loading, offline }
+
+class LibrarySyncNotifier extends Notifier<LibrarySync> {
+  @override
+  LibrarySync build() => LibrarySync.idle;
+
+  // Seul LymarksNotifier écrit ici.
+  LibrarySync get value => state;
+  set value(LibrarySync v) => state = v;
 }
 
-final profileProvider =
-    NotifierProvider<ProfileNotifier, UserProfile>(ProfileNotifier.new);
+final librarySyncProvider = NotifierProvider<LibrarySyncNotifier, LibrarySync>(
+  LibrarySyncNotifier.new,
+);
+
+/// Vrai après une capture refusée pour dépassement du plan Free : la Home
+/// affiche alors le paywall, jamais la feuille de partage (UX Bible règle 11).
+final captureLimitHitProvider = StateProvider<bool>((_) => false);
+
+// ── Bibliothèque ───────────────────────────────────────────────────────────
 
 /// Collection de lymarks, triée antéchronologiquement.
+///
+/// Cache local des données du dépôt : chaque action est appliquée ici
+/// d'abord (l'interface réagit sans attendre), puis envoyée ; le résultat du
+/// serveur remplace l'entrée locale quand il arrive. En cas d'échec réseau
+/// l'entrée locale reste, le prochain [refresh] remettra les choses d'aplomb.
 class LymarksNotifier extends Notifier<List<Lymark>> {
+  late LymarksRepository _repo;
+  Timer? _poll;
+  int _pollRounds = 0;
+  static const int _maxPollRounds = 30;
+
+  /// Compteur de modifications locales : un rafraîchissement parti avant
+  /// une modification ne doit pas l'écraser avec une réponse déjà périmée.
+  int _mutations = 0;
+
+  /// Les appels réseau survivent à la disposition du provider (fin de test,
+  /// déconnexion) : leurs continuations ne doivent plus toucher à l'état.
+  bool _disposed = false;
+
   @override
   List<Lymark> build() {
-    final list = [...MockData.lymarks]
-      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
-    return list;
+    _repo = ref.watch(lymarksRepositoryProvider);
+    ref.onDispose(() {
+      _disposed = true;
+      _poll?.cancel();
+    });
+    // Différé : un provider ne modifie pas les autres pendant sa construction.
+    unawaited(Future<void>.microtask(refresh));
+    return _sorted(_repo.initial);
   }
 
   Lymark? byId(String id) {
@@ -56,108 +109,254 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
     return null;
   }
 
-  /// Suppression réversible : la vue affiche un undo de 5 s
-  /// (UX Bible règle 7), d'où le retour de l'élément et de sa position.
+  /// Recharge tout depuis le dépôt. Silencieux si déconnecté ou hors-ligne :
+  /// la liste locale reste affichée.
+  Future<void> refresh() async {
+    if (!ref.read(authSessionProvider).isSignedIn) return;
+    final sync = ref.read(librarySyncProvider.notifier);
+    if (state.isEmpty) sync.value = LibrarySync.loading;
+    try {
+      final stamp = _mutations;
+      final items = await _repo.fetchAll();
+      if (_disposed) return;
+      if (stamp != _mutations) return refresh();
+      state = _sorted(items);
+      sync.value = LibrarySync.idle;
+    } on ApiException catch (e) {
+      if (_disposed) return;
+      debugPrint('[lymarks/library] refresh failed: $e');
+      sync.value = e.isNetwork ? LibrarySync.offline : LibrarySync.idle;
+    } finally {
+      _schedulePoll();
+    }
+  }
+
+  /// Envoie les captures de la file (menu de partage) et rend celles qu'il
+  /// faudra retenter : échec réseau ou serveur. Un refus définitif (URL
+  /// invalide, limite du plan) est consommé, jamais rejoué.
+  Future<List<PendingCapture>> addCaptures(
+    List<PendingCapture> captures,
+  ) async {
+    final retryLater = <PendingCapture>[];
+    for (final c in captures) {
+      try {
+        final result = await _repo.capture(c);
+        _upsert(result.lymark);
+      } on ApiException catch (e) {
+        if (e.isNetwork || e.status >= 500) {
+          retryLater.add(c);
+        } else if (e.isLimitReached) {
+          ref.read(captureLimitHitProvider.notifier).state = true;
+        } else {
+          debugPrint('[lymarks/library] capture dropped: $e');
+        }
+      }
+    }
+    _schedulePoll();
+    return retryLater;
+  }
+
+  /// Suppression réversible : la vue affiche un undo de 5 s (UX Bible
+  /// règle 7), d'où le retour de l'élément et de sa position. Côté serveur
+  /// l'entrée est archivée tout de suite (réversible) ; la suppression réelle
+  /// n'a lieu qu'à [purge], quand la fenêtre d'annulation est passée.
   ({Lymark lymark, int index})? remove(String id) {
     final index = state.indexWhere((l) => l.id == id);
     if (index == -1) return null;
     final removed = state[index];
+    _mutations += 1;
     state = [...state]..removeAt(index);
+    unawaited(_send(() => _repo.setArchived(id, archived: true)));
     return (lymark: removed, index: index);
   }
 
   void restore(Lymark lymark, int index) {
     final next = [...state];
     next.insert(index.clamp(0, next.length), lymark);
+    _mutations += 1;
     state = next;
+    unawaited(_send(() => _repo.setArchived(lymark.id, archived: false)));
   }
+
+  /// Efface définitivement (embedding et événements compris — Privacy §5).
+  Future<void> purge(String id) => _send(() => _repo.delete(id));
 
   void updateNote(String id, String? note) {
     final clean = note == null || note.trim().isEmpty ? '' : note;
     _patch(id, (l) => l.copyWith(note: clean));
+    unawaited(_send(() => _repo.updateNote(id, clean.isEmpty ? null : clean)));
   }
 
-  /// Intègre des captures venues du menu de partage, en tête de liste.
-  ///
-  /// Doublon d'URL (PRD §3) : pas de second lymark ; `saved_count` +1 et la
-  /// note remplacée si la capture en apporte une. L'URL est comparée après
-  /// normalisation légère (schéma et hôte en minuscules, sans `/` final),
-  /// en attendant le `url_hash` calculé côté serveur.
-  void addCaptures(List<PendingCapture> captures) {
-    if (captures.isEmpty) return;
-    var next = [...state];
-
-    for (final c in captures) {
-      final key = normalizeUrl(c.url);
-      final i = next.indexWhere((l) => normalizeUrl(l.url) == key);
-      if (i == -1) {
-        next.insert(0, c.toLymark());
-        continue;
-      }
-      final existing = next[i];
-      next[i] = existing.copyWith(
-        savedCount: existing.savedCount + 1,
-        note: c.note ?? existing.note,
-      );
-    }
-
-    next = next..sort((a, b) => b.savedAt.compareTo(a.savedAt));
-    state = next;
+  void markOpened(String id) {
+    _patch(id, (l) => l.copyWith(lastOpenedAt: ref.read(clockProvider)()));
+    unawaited(_send(() => _repo.markOpened(id)));
   }
 
-  /// Normalisation minimale pour l'anti-doublon local.
-  static String normalizeUrl(String url) {
-    final u = Uri.tryParse(url.trim());
-    if (u == null || u.host.isEmpty) return url.trim();
-    final path = u.path.endsWith('/') && u.path.length > 1
-        ? u.path.substring(0, u.path.length - 1)
-        : u.path;
-    return '${u.scheme.toLowerCase()}://${u.host.toLowerCase()}$path'
-        '${u.hasQuery ? '?${u.query}' : ''}';
+  void archive(String id) {
+    _patch(id, (l) => l.copyWith(archived: true));
+    unawaited(_send(() => _repo.setArchived(id, archived: true)));
   }
-
-  void markOpened(String id) =>
-      _patch(id, (l) => l.copyWith(lastOpenedAt: DateTime.now()));
-
-  void archive(String id) => _patch(id, (l) => l.copyWith(archived: true));
 
   /// Relance du pipeline après un échec (PRD §3 : jamais d'échec silencieux).
   void retry(String id) {
-    _patch(id, (l) => l.copyWith(status: LymarkStatus.processing));
-    Future<void>.delayed(const Duration(seconds: 3), () {
-      _patch(
-        id,
-        (l) => l.copyWith(
-          status: LymarkStatus.ready,
-          bullets: const [
-            'Evaluation needs a fixed question set before it needs a model.',
-            'Measure retrieval and generation separately.',
-            'Human review stays the tie-breaker on ambiguous answers.',
-          ],
-          keywords: const ['AI', 'Evaluation', 'Retrieval'],
-        ),
-      );
-    });
+    _patch(
+      id,
+      (l) => l.copyWith(status: LymarkStatus.processing, failureReason: null),
+    );
+    unawaited(
+      _send(() async {
+        _upsert(await _repo.retry(id));
+        _schedulePoll();
+      }),
+    );
+  }
+
+  // ── Interne ────────────────────────────────────────────────────────────
+
+  static List<Lymark> _sorted(Iterable<Lymark> items) =>
+      [...items]..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+
+  void _upsert(Lymark lymark) {
+    if (_disposed) return;
+    _mutations += 1;
+    final i = state.indexWhere((l) => l.id == lymark.id);
+    if (i == -1) {
+      state = _sorted([lymark, ...state]);
+    } else {
+      final next = [...state];
+      next[i] = lymark;
+      state = next;
+    }
   }
 
   void _patch(String id, Lymark Function(Lymark) fn) {
+    if (_disposed) return;
+    _mutations += 1;
     state = [
       for (final l in state)
         if (l.id == id) fn(l) else l,
     ];
   }
+
+  /// Exécute un appel au dépôt sans jamais propager l'erreur : l'état local
+  /// a déjà changé, et l'utilisateur ne doit pas être bloqué par le réseau.
+  Future<void> _send(Future<void> Function() call) async {
+    try {
+      await call();
+    } on ApiException catch (e) {
+      if (_disposed) return;
+      debugPrint('[lymarks/library] write failed: $e');
+      if (e.isNetwork) {
+        ref.read(librarySyncProvider.notifier).value = LibrarySync.offline;
+      }
+    }
+  }
+
+  /// Tant qu'une carte est en traitement, on redemande la liste à intervalle
+  /// régulier : le pipeline IA remplit la carte sans que l'utilisateur ne
+  /// fasse rien (UX Bible règle 4). Borné, pour ne pas tourner à vide.
+  void _schedulePoll() {
+    if (_disposed) return;
+    final interval = ref.read(processingPollProvider);
+    if (interval == null) return;
+    final busy = state.any((l) => l.status == LymarkStatus.processing);
+    if (!busy) {
+      _pollRounds = 0;
+      _poll?.cancel();
+      return;
+    }
+    if (_pollRounds >= _maxPollRounds) return;
+    _poll?.cancel();
+    _poll = Timer(interval, () {
+      _pollRounds += 1;
+      unawaited(refresh());
+    });
+  }
 }
 
-final lymarksProvider =
-    NotifierProvider<LymarksNotifier, List<Lymark>>(LymarksNotifier.new);
+final lymarksProvider = NotifierProvider<LymarksNotifier, List<Lymark>>(
+  LymarksNotifier.new,
+);
 
 final Provider<Lymark?> Function(String) lymarkByIdProvider =
     Provider.family<Lymark?, String>((ref, id) {
-  for (final l in ref.watch(lymarksProvider)) {
-    if (l.id == id) return l;
+      for (final l in ref.watch(lymarksProvider)) {
+        if (l.id == id) return l;
+      }
+      return null;
+    });
+
+/// Lymarks liés : top-3 par cosinus côté serveur (Knowledge Vault §3), ou
+/// recouvrement de mots-clés dans le mock.
+final FutureProvider<List<Lymark>> Function(String) relatedLymarksProvider =
+    FutureProvider.family<List<Lymark>, String>((ref, id) {
+      // Dépend de la liste pour se recalculer quand un lymark devient `ready`.
+      ref.watch(lymarksProvider);
+      return ref.watch(lymarksRepositoryProvider).similar(id);
+    });
+
+// ── Profil ─────────────────────────────────────────────────────────────────
+
+/// Plan et compteurs côté serveur (`GET /me`).
+final FutureProvider<MeInfo?> meProvider = FutureProvider<MeInfo?>((ref) async {
+  if (!ref.watch(authSessionProvider).isSignedIn) return null;
+  try {
+    return await ref.watch(lymarksRepositoryProvider).me();
+  } on ApiException catch (e) {
+    debugPrint('[lymarks/profile] me failed: $e');
+    return null;
   }
-  return null;
 });
+
+/// Profil affiché : identité Clerk + plan serveur + compteurs locaux.
+///
+/// [setPlan] n'existe que pour la démo du paywall : en production la source
+/// de vérité est la table `subscriptions`, alimentée par le webhook
+/// RevenueCat (Core Principles §3) — un plan « forcé » ici est écrasé au
+/// prochain `GET /me`.
+class ProfileNotifier extends Notifier<UserProfile> {
+  UserPlan? _forcedPlan;
+
+  @override
+  UserProfile build() {
+    final user = ref.watch(authSessionProvider).user;
+    final me = ref.watch(meProvider).valueOrNull;
+    final lymarks = ref.watch(lymarksProvider);
+    final fallback = MockData.profile;
+
+    final plan =
+        _forcedPlan ??
+        (me == null
+            ? fallback.plan
+            : (me.isPro ? UserPlan.pro : UserPlan.free));
+    return UserProfile(
+      name: user?.displayName ?? fallback.name,
+      email: user?.email ?? fallback.email,
+      plan: plan,
+      lymarkCount: lymarks.where((l) => !l.archived).length,
+      noteCount: lymarks.where((l) => l.hasNote).length,
+      memberSince: me?.createdAt ?? user?.createdAt ?? fallback.memberSince,
+    );
+  }
+
+  void setPlan(UserPlan plan) {
+    _forcedPlan = plan;
+    state = UserProfile(
+      name: state.name,
+      email: state.email,
+      plan: plan,
+      lymarkCount: state.lymarkCount,
+      noteCount: state.noteCount,
+      memberSince: state.memberSince,
+    );
+  }
+}
+
+final profileProvider = NotifierProvider<ProfileNotifier, UserProfile>(
+  ProfileNotifier.new,
+);
+
+// ── Connaissances (mock tant que le serveur ne les calcule pas) ────────────
 
 final categoriesProvider = Provider<List<KnowledgeCategory>>(
   (_) => MockData.categories,
@@ -165,46 +364,22 @@ final categoriesProvider = Provider<List<KnowledgeCategory>>(
 
 final Provider<KnowledgeCategory?> Function(String) categoryByIdProvider =
     Provider.family<KnowledgeCategory?, String>(
-  (ref, id) {
-    for (final c in ref.watch(categoriesProvider)) {
-      if (c.id == id) return c;
-    }
-    return null;
-  },
-);
+      (ref, id) {
+        for (final c in ref.watch(categoriesProvider)) {
+          if (c.id == id) return c;
+        }
+        return null;
+      },
+    );
 
 /// Lymarks d'un cluster donné.
 final Provider<List<Lymark>> Function(String) clusterLymarksProvider =
     Provider.family<List<Lymark>, String>(
-  (ref, clusterId) => ref
-      .watch(lymarksProvider)
-      .where((l) => l.clusterId == clusterId)
-      .toList(),
-);
-
-/// Lymarks liés : approximation locale du top-3 par cosinus (Knowledge Vault
-/// §3). Ici, recouvrement de mots-clés — le serveur fera le vrai calcul.
-final Provider<List<Lymark>> Function(String) relatedLymarksProvider =
-    Provider.family<List<Lymark>, String>(
-  (ref, id) {
-    final all = ref.watch(lymarksProvider);
-    final source = all.where((l) => l.id == id).firstOrNull;
-    if (source == null) return const [];
-    final keys = source.keywords.map((k) => k.toLowerCase()).toSet();
-
-    final scored = <(Lymark, int)>[];
-    for (final l in all) {
-      if (l.id == id || l.status != LymarkStatus.ready) continue;
-      var score = l.keywords
-          .where((k) => keys.contains(k.toLowerCase()))
-          .length;
-      if (l.clusterId != null && l.clusterId == source.clusterId) score += 2;
-      if (score > 0) scored.add((l, score));
-    }
-    scored.sort((a, b) => b.$2.compareTo(a.$2));
-    return scored.take(3).map((e) => e.$1).toList();
-  },
-);
+      (ref, clusterId) => ref
+          .watch(lymarksProvider)
+          .where((l) => l.clusterId == clusterId)
+          .toList(),
+    );
 
 /// Entrées du Daily Digest résolues en lymarks.
 final digestProvider = Provider<List<({Lymark lymark, String reason})>>((ref) {
@@ -219,9 +394,99 @@ final digestProvider = Provider<List<({Lymark lymark, String reason})>>((ref) {
   return out;
 });
 
+// ── Recherche ──────────────────────────────────────────────────────────────
+
 /// Requête courante. Conservée dans le provider pour que la recherche et sa
 /// position soient restaurées au retour d'un détail (UX Bible règle 10).
 final searchQueryProvider = StateProvider<String>((_) => '');
+
+/// Une requête en langage naturel (plusieurs mots) part en sémantique.
+/// L'utilisateur ne choisit jamais le mode (wireframe 05 §Principe).
+bool looksSemantic(String q) =>
+    q.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length >= 3;
+
+@immutable
+class SearchState {
+  const SearchState({
+    this.query = '',
+    this.results = const [],
+    this.loading = false,
+    this.semantic = false,
+    this.error,
+  });
+
+  final String query;
+  final List<Lymark> results;
+  final bool loading;
+
+  /// Mode réellement servi par le dépôt.
+  final bool semantic;
+  final String? error;
+
+  SearchState copyWith({
+    String? query,
+    List<Lymark>? results,
+    bool? loading,
+    bool? semantic,
+    String? error,
+  }) => SearchState(
+    query: query ?? this.query,
+    results: results ?? this.results,
+    loading: loading ?? this.loading,
+    semantic: semantic ?? this.semantic,
+    error: error,
+  );
+}
+
+/// Exécute la recherche à chaque changement de requête. Les réponses en
+/// retard (requête déjà remplacée) sont ignorées.
+///
+/// V1.0 Free = plein texte sur titre, note, puces et mots-clés (PRD F4). Le
+/// mode sémantique (F8) n'est demandé que si le plan le permet : le serveur
+/// le refuserait de toute façon (Monetization §3).
+class SearchNotifier extends Notifier<SearchState> {
+  int _seq = 0;
+
+  @override
+  SearchState build() {
+    ref.listen(searchQueryProvider, (_, q) => unawaited(run(q)));
+    return const SearchState();
+  }
+
+  Future<void> run(String query) async {
+    final q = query.trim();
+    final seq = ++_seq;
+    if (q.isEmpty) {
+      state = const SearchState();
+      return;
+    }
+    state = state.copyWith(query: q, loading: true);
+    final semantic = looksSemantic(q) && ref.read(profileProvider).isPro;
+    try {
+      final page = await ref
+          .read(lymarksRepositoryProvider)
+          .search(q, semantic: semantic);
+      if (seq != _seq) return;
+      state = SearchState(
+        query: q,
+        results: page.items,
+        semantic: page.semantic,
+      );
+    } on ApiException catch (e) {
+      if (seq != _seq) return;
+      state = SearchState(query: q, error: e.message);
+    }
+  }
+}
+
+final searchStateProvider = NotifierProvider<SearchNotifier, SearchState>(
+  SearchNotifier.new,
+);
+
+/// Résultats de la requête courante.
+final Provider<List<Lymark>> searchResultsProvider = Provider<List<Lymark>>(
+  (ref) => ref.watch(searchStateProvider).results,
+);
 
 class RecentSearchesNotifier extends Notifier<List<String>> {
   @override
@@ -230,9 +495,10 @@ class RecentSearchesNotifier extends Notifier<List<String>> {
   void push(String query) {
     final q = query.trim();
     if (q.isEmpty) return;
-    state = [q, ...state.where((s) => s.toLowerCase() != q.toLowerCase())]
-        .take(5)
-        .toList();
+    state = [
+      q,
+      ...state.where((s) => s.toLowerCase() != q.toLowerCase()),
+    ].take(5).toList();
   }
 
   void clear() => state = const [];
@@ -240,41 +506,5 @@ class RecentSearchesNotifier extends Notifier<List<String>> {
 
 final recentSearchesProvider =
     NotifierProvider<RecentSearchesNotifier, List<String>>(
-  RecentSearchesNotifier.new,
-);
-
-/// Résultats de recherche.
-///
-/// V1.0 Free = plein texte sur titre, note, puces et mots-clés (PRD F4).
-/// Le mode sémantique Pro (F8) est simulé : même corpus, mais le libellé et
-/// le paywall suivent le plan réel de l'utilisateur.
-final searchResultsProvider = Provider<List<Lymark>>((ref) {
-  final q = ref.watch(searchQueryProvider).trim().toLowerCase();
-  if (q.isEmpty) return const [];
-  final terms = q.split(RegExp(r'\s+'));
-
-  final scored = <(Lymark, int)>[];
-  for (final l in ref.watch(lymarksProvider)) {
-    if (l.archived) continue;
-    final haystack = [
-      l.title,
-      l.domain,
-      l.note ?? '',
-      ...l.bullets,
-      ...l.keywords,
-    ].join(' ').toLowerCase();
-
-    var score = 0;
-    for (final t in terms) {
-      if (l.title.toLowerCase().contains(t)) score += 3;
-      if (l.keywords.any((k) => k.toLowerCase().contains(t))) score += 2;
-      if (haystack.contains(t)) score += 1;
-    }
-    if (score > 0) scored.add((l, score));
-  }
-  scored.sort((a, b) {
-    final byScore = b.$2.compareTo(a.$2);
-    return byScore != 0 ? byScore : b.$1.savedAt.compareTo(a.$1.savedAt);
-  });
-  return scored.map((e) => e.$1).toList();
-});
+      RecentSearchesNotifier.new,
+    );

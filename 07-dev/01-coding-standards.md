@@ -33,7 +33,9 @@ lymarks/
 | `receive_sharing_intent` | Share extension | Standard de fait Flutter | Maintenance variable → alternative : canal natif maison |
 | `purchases_flutter` | RevenueCat | SDK officiel | Faible |
 | `flutter_secure_storage` | Tokens | Keychain/Keystore | Faible |
-| `freezed`, `riverpod` (⚠️) | Modèles / état | Écosystème mûr | Faible |
+| `riverpod` | État | Écosystème mûr, testable | Faible |
+| `clerk_flutter` + `clerk_auth` (`0.0.18-beta`, épinglés) | Auth Clerk côté app | Seul SDK Flutter de Clerk (ADR-010) | Beta : pas d'upgrade pendant le sprint, OAuth en WebView |
+| `http` | Client HTTP de l'API | Standard Dart, `MockClient` pour les tests | Faible |
 | `hono` | Framework API | Minimal, edge-first | Faible |
 | `zod` | Validation | Standard TS | Faible |
 | `@neondatabase/serverless` | DB (pilote HTTP, SQL brut) | Compatible Workers, zéro ORM (ADR-009) | Faible |

@@ -25,8 +25,9 @@ class ClusterScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final category = ref.watch(categoryByIdProvider(categoryId));
-    final cluster =
-        category?.clusters.where((c) => c.id == clusterId).firstOrNull;
+    final cluster = category?.clusters
+        .where((c) => c.id == clusterId)
+        .firstOrNull;
     final lymarks = ref.watch(clusterLymarksProvider(clusterId));
 
     if (cluster == null) {
@@ -50,7 +51,8 @@ class ClusterScreen extends ConsumerWidget {
                 icon: LyIcons.topic(cluster.iconKey),
                 accent: context.ly.accentFor(cluster.id),
                 title: 'Nothing here yet.',
-                message: 'Save something related to '
+                message:
+                    'Save something related to '
                     '${cluster.name} to start building this path.',
               ),
             )
@@ -70,8 +72,7 @@ class ClusterScreen extends ConsumerWidget {
                   return BookmarkCard(
                     lymark,
                     onTap: () => context.push(LyRoute.lymark(lymark.id)),
-                    onMenu: () =>
-                        LymarkActions.showMenu(context, ref, lymark),
+                    onMenu: () => LymarkActions.showMenu(context, ref, lymark),
                     onRetry: () =>
                         ref.read(lymarksProvider.notifier).retry(lymark.id),
                   );

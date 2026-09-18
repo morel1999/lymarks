@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
@@ -11,14 +13,14 @@ import 'package:lymarks/core/utils/ly_icons.dart';
 ///
 /// L'utilisateur doit comprendre trois choses : ses liens deviennent une
 /// mémoire, la capture est rapide, Lymarks comprend le contenu tout seul.
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pages = PageController();
   int _index = 0;
 
@@ -28,7 +30,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _finish() => context.go(LyRoute.home);
+  /// Déjà connecté (retour dans l'app, mode démo) : droit à la Home ; sinon
+  /// la connexion, dont le routeur ressort vers la Home une fois la session
+  /// ouverte.
+  void _finish() => context.go(
+    ref.read(authSessionProvider).isSignedIn ? LyRoute.home : LyRoute.signIn,
+  );
 
   void _next() {
     if (_index == 0) {
@@ -67,8 +74,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _finish,
                     child: Text(
                       'Skip',
-                      style: context.texts.labelMedium
-                          ?.copyWith(color: ly.textSecondary),
+                      style: context.texts.labelMedium?.copyWith(
+                        color: ly.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -275,8 +283,9 @@ class _Step extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 caption,
-                style: context.texts.bodySmall
-                    ?.copyWith(color: context.ly.textSecondary),
+                style: context.texts.bodySmall?.copyWith(
+                  color: context.ly.textSecondary,
+                ),
               ),
             ],
           ),

@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lymarks/main.dart';
+import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 
@@ -36,9 +37,12 @@ Future<void> _settle(WidgetTester tester) async {
 /// casse tout seul le lendemain.
 final DateTime _fixedNow = DateTime(2026, 9, 4, 9);
 
-ProviderContainer _container() {
+ProviderContainer _container({List<Override> overrides = const []}) {
   final container = ProviderContainer(
-    overrides: [clockProvider.overrideWithValue(() => _fixedNow)],
+    overrides: [
+      clockProvider.overrideWithValue(() => _fixedNow),
+      ...overrides,
+    ],
   );
   addTearDown(container.dispose);
   return container;
@@ -208,8 +212,13 @@ void main() {
     await tester.binding.setSurfaceSize(_phone);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final container = _container();
-    container.read(lymarksProvider.notifier).state = [];
+    final container = _container(
+      overrides: [
+        lymarksRepositoryProvider.overrideWithValue(
+          MockLymarksRepository(seed: const []),
+        ),
+      ],
+    );
 
     await tester.pumpWidget(
       UncontrolledProviderScope(

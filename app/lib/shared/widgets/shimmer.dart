@@ -64,7 +64,7 @@ class SkeletonBar extends StatelessWidget {
   });
 
   const SkeletonBar.line({double height = 12, Key? key})
-      : this(width: double.infinity, height: height, key: key);
+    : this(width: double.infinity, height: height, key: key);
 
   final double width;
   final double height;

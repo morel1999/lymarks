@@ -23,16 +23,17 @@ abstract final class LyTheme {
       canvasColor: p.surface,
       splashFactory: InkSparkle.splashFactory,
       extensions: [p],
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: p.primary,
-        brightness: brightness,
-      ).copyWith(
-        primary: p.primary,
-        onPrimary: p.onPrimary,
-        surface: p.surface,
-        onSurface: p.textPrimary,
-        error: p.danger,
-      ),
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: p.primary,
+            brightness: brightness,
+          ).copyWith(
+            primary: p.primary,
+            onPrimary: p.onPrimary,
+            surface: p.surface,
+            onSurface: p.textPrimary,
+            error: p.danger,
+          ),
       textTheme: texts,
       iconTheme: IconThemeData(
         color: p.textPrimary,

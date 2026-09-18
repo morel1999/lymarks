@@ -104,8 +104,7 @@ class _NavItem extends StatelessWidget {
                     spec.label,
                     style: context.texts.labelMedium?.copyWith(
                       color: fg,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

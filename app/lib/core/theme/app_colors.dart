@@ -16,10 +16,10 @@ class LyAccent {
 
   /// Interpolation entre deux familles, pour l'animation de thème.
   factory LyAccent.lerp(LyAccent a, LyAccent b, double t) => LyAccent(
-        fill: Color.lerp(a.fill, b.fill, t)!,
-        strong: Color.lerp(a.strong, b.strong, t)!,
-        onFill: Color.lerp(a.onFill, b.onFill, t)!,
-      );
+    fill: Color.lerp(a.fill, b.fill, t)!,
+    strong: Color.lerp(a.strong, b.strong, t)!,
+    onFill: Color.lerp(a.onFill, b.onFill, t)!,
+  );
 
   /// Fond des grandes surfaces (cartes catégorie, tuiles, hero).
   final Color fill;
@@ -307,8 +307,11 @@ class LyPalette extends ThemeExtension<LyPalette> {
       warning: Color.lerp(warning, other.warning, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
       skeleton: Color.lerp(skeleton, other.skeleton, t)!,
-      skeletonHighlight:
-          Color.lerp(skeletonHighlight, other.skeletonHighlight, t)!,
+      skeletonHighlight: Color.lerp(
+        skeletonHighlight,
+        other.skeletonHighlight,
+        t,
+      )!,
       lime: LyAccent.lerp(lime, other.lime, t),
       lavender: LyAccent.lerp(lavender, other.lavender, t),
       blue: LyAccent.lerp(blue, other.blue, t),

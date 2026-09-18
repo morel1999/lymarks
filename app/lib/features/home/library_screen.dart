@@ -16,8 +16,10 @@ class LibraryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lymarks =
-        ref.watch(lymarksProvider).where((l) => !l.archived).toList();
+    final lymarks = ref
+        .watch(lymarksProvider)
+        .where((l) => !l.archived)
+        .toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -48,8 +50,7 @@ class LibraryScreen extends ConsumerWidget {
                   return BookmarkCard(
                     lymark,
                     onTap: () => context.push(LyRoute.lymark(lymark.id)),
-                    onMenu: () =>
-                        LymarkActions.showMenu(context, ref, lymark),
+                    onMenu: () => LymarkActions.showMenu(context, ref, lymark),
                     onRetry: () =>
                         ref.read(lymarksProvider.notifier).retry(lymark.id),
                     onTagTap: (tag) {

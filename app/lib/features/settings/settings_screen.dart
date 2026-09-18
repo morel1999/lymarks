@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lymarks/core/api/api_client.dart';
+import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
@@ -107,7 +111,7 @@ class SettingsScreen extends ConsumerWidget {
                       title: 'Delete account',
                       subtitle: 'Removes everything, permanently',
                       danger: true,
-                      onTap: () => _confirmDeleteAccount(context),
+                      onTap: () => _confirmDeleteAccount(context, ref),
                     ),
                   ],
                 ),
@@ -146,7 +150,10 @@ class SettingsScreen extends ConsumerWidget {
 
                 const SizedBox(height: LySpace.xl),
                 OutlinedButton.icon(
-                  onPressed: () => context.go(LyRoute.onboarding),
+                  // Le routeur redirige vers la connexion dès que la session
+                  // se ferme (garde d'authentification).
+                  onPressed: () =>
+                      unawaited(ref.read(authSessionProvider).signOut()),
                   icon: const Icon(LyIcons.logout, size: LyIconSize.regular),
                   label: const Text('Log out'),
                 ),
@@ -159,8 +166,13 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   /// Suppression de compte : confirmation explicite double, jamais un simple
-  /// tap (UX Bible règle 7, exigence Apple du PRD F7).
-  static Future<void> _confirmDeleteAccount(BuildContext context) async {
+  /// tap (UX Bible règle 7, exigence Google Play et Apple du PRD F7). Le
+  /// serveur purge tout (Neon, Clerk, RevenueCat — Privacy §5), puis la
+  /// session locale est fermée.
+  static Future<void> _confirmDeleteAccount(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final ly = context.ly;
 
     final first = await showDialog<bool>(
@@ -186,7 +198,7 @@ class SettingsScreen extends ConsumerWidget {
 
     if (first != true || !context.mounted) return;
 
-    await showDialog<void>(
+    final second = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         title: const Text('Are you sure?'),
@@ -196,16 +208,32 @@ class SettingsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(c).pop(),
+            onPressed: () => Navigator.of(c).pop(false),
             child: const Text('Keep my account'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(c).pop(),
+            onPressed: () => Navigator.of(c).pop(true),
             child: Text('Delete forever', style: TextStyle(color: ly.danger)),
           ),
         ],
       ),
     );
+    if (second != true || !context.mounted) return;
+
+    try {
+      await ref.read(lymarksRepositoryProvider).deleteAccount();
+    } on ApiException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Could not delete your account: ${e.message}'),
+          ),
+        );
+      return;
+    }
+    await ref.read(authSessionProvider).signOut();
   }
 }
 
@@ -232,8 +260,9 @@ class _AccountRow extends StatelessWidget {
             ),
             child: Text(
               profile.initials,
-              style: context.texts.titleMedium
-                  ?.copyWith(color: ly.lavender.onFill),
+              style: context.texts.titleMedium?.copyWith(
+                color: ly.lavender.onFill,
+              ),
             ),
           ),
           const SizedBox(width: LySpace.l),
@@ -289,8 +318,9 @@ class _PlanCard extends ConsumerWidget {
               children: [
                 Text(
                   profile.isPro ? 'Lymarks Pro' : 'Free plan',
-                  style: context.texts.titleSmall
-                      ?.copyWith(color: accent.onFill),
+                  style: context.texts.titleSmall?.copyWith(
+                    color: accent.onFill,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -434,8 +464,9 @@ class _DigestSheetState extends ConsumerState<_DigestSheet> {
             const SizedBox(height: LySpace.s),
             Text(
               'One forgotten link a day. Never two, never marketing.',
-              style: context.texts.bodyMedium
-                  ?.copyWith(color: ly.textSecondary),
+              style: context.texts.bodyMedium?.copyWith(
+                color: ly.textSecondary,
+              ),
             ),
             const SizedBox(height: LySpace.xl),
             LyCard(
@@ -471,8 +502,9 @@ class _DigestSheetState extends ConsumerState<_DigestSheet> {
                       Text(
                         '${h.toString().padLeft(2, '0')}:'
                         '${m.toString().padLeft(2, '0')}',
-                        style: context.texts.titleSmall
-                            ?.copyWith(color: ly.primary),
+                        style: context.texts.titleSmall?.copyWith(
+                          color: ly.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -481,8 +513,9 @@ class _DigestSheetState extends ConsumerState<_DigestSheet> {
                     min: 5,
                     max: 22,
                     divisions: 34,
-                    onChanged:
-                        _enabled ? (v) => setState(() => _hour = v) : null,
+                    onChanged: _enabled
+                        ? (v) => setState(() => _hour = v)
+                        : null,
                   ),
                   Text(
                     'Your local time. Delivery lands within 15 minutes.',

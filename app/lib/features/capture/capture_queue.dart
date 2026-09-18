@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:lymarks/features/capture/shared_link.dart';
+import 'package:lymarks/shared/models/lymark.dart';
 
 /// Une capture en attente d'envoi.
 ///
@@ -20,12 +22,12 @@ class PendingCapture {
   });
 
   factory PendingCapture.fromJson(Map<String, dynamic> json) => PendingCapture(
-        id: json['id'] as String,
-        url: json['url'] as String,
-        title: json['title'] as String,
-        note: json['note'] as String?,
-        capturedAt: DateTime.parse(json['capturedAt'] as String),
-      );
+    id: json['id'] as String,
+    url: json['url'] as String,
+    title: json['title'] as String,
+    note: json['note'] as String?,
+    capturedAt: DateTime.parse(json['capturedAt'] as String),
+  );
 
   final String id;
   final String url;
@@ -34,12 +36,12 @@ class PendingCapture {
   final DateTime capturedAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'url': url,
-        'title': title,
-        'note': note,
-        'capturedAt': capturedAt.toUtc().toIso8601String(),
-      };
+    'id': id,
+    'url': url,
+    'title': title,
+    'note': note,
+    'capturedAt': capturedAt.toUtc().toIso8601String(),
+  };
 }
 
 /// File de captures persistée dans un fichier JSON.
@@ -54,8 +56,10 @@ class CaptureQueue {
 
   final Directory directory;
 
-  File get _file => File('${directory.path}${Platform.pathSeparator}'
-      'capture_queue.json');
+  File get _file => File(
+    '${directory.path}${Platform.pathSeparator}'
+    'capture_queue.json',
+  );
 
   Future<List<PendingCapture>> peek() async {
     if (!_file.existsSync()) return const [];
@@ -85,6 +89,21 @@ class CaptureQueue {
     return all;
   }
 
+  /// Retire les captures envoyées, en laissant celles arrivées entre-temps
+  /// (la feuille de partage peut écrire pendant que l'app envoie).
+  Future<void> remove(Iterable<String> ids) async {
+    final drop = ids.toSet();
+    if (drop.isEmpty) return;
+    final remaining = (await peek())
+        .where((c) => !drop.contains(c.id))
+        .toList();
+    if (remaining.isEmpty) {
+      if (_file.existsSync()) await _file.delete();
+    } else {
+      await _write(remaining);
+    }
+  }
+
   Future<void> _write(List<PendingCapture> captures) async {
     if (!directory.existsSync()) await directory.create(recursive: true);
     final tmp = File('${_file.path}.tmp');
@@ -93,5 +112,31 @@ class CaptureQueue {
       flush: true,
     );
     await tmp.rename(_file.path);
+  }
+}
+
+/// Conversion d'une capture en lymark local, en `processing` : la carte
+/// squelette apparaît tout de suite, le serveur remplace l'entrée dès qu'il
+/// a répondu.
+extension PendingCaptureX on PendingCapture {
+  Lymark toLymark() => Lymark(
+    id: id,
+    url: url,
+    domain: SharedLink.domainOf(url),
+    title: title,
+    savedAt: capturedAt,
+    status: LymarkStatus.processing,
+    note: note,
+    source: sourceOf(url),
+  );
+
+  static LymarkSource sourceOf(String url) {
+    final host = SharedLink.domainOf(url);
+    if (host == 'x.com' || host == 'twitter.com') return LymarkSource.x;
+    if (host.endsWith('youtube.com') || host == 'youtu.be') {
+      return LymarkSource.youtube;
+    }
+    if (host.endsWith('linkedin.com')) return LymarkSource.linkedin;
+    return LymarkSource.web;
   }
 }

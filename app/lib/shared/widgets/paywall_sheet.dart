@@ -36,8 +36,7 @@ class PaywallSheet extends ConsumerWidget {
   }
 
   static const Map<PaywallTrigger, String> _headlines = {
-    PaywallTrigger.semanticSearch:
-        'Search by meaning, not by exact words',
+    PaywallTrigger.semanticSearch: 'Search by meaning, not by exact words',
     PaywallTrigger.dailyDigest: 'Let one good link come back to you',
     PaywallTrigger.captureLimit: 'Keep saving without a ceiling',
     PaywallTrigger.settings: 'Everything Lymarks can remember',
@@ -188,8 +187,9 @@ class _Argument extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 spec.body,
-                style: context.texts.bodySmall
-                    ?.copyWith(color: context.ly.textSecondary),
+                style: context.texts.bodySmall?.copyWith(
+                  color: context.ly.textSecondary,
+                ),
               ),
             ],
           ),
