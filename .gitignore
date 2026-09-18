@@ -40,3 +40,5 @@ Thumbs.db
 # Skills d agents : la source est .agents/skills/ (versionnee, reproductible
 # via skills-lock.json) ; .claude/skills/ n en contient que des jonctions Windows.
 .claude/skills/
+.neon
+node_modules/

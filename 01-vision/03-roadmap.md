@@ -7,7 +7,7 @@
 ## Sprint Shipaton 2026 (V1.0)
 | Étape | Jours | Contenu | Critère de sortie |
 |---|---|---|---|
-| 1. Infra cloud | J1–J2 | Neon + pgvector (schéma initial), Clerk configuré, API Hono déployée sur Workers | **Code prêt le 18/09** : API complète (104 tests, ADR-009), migration 001, CI de déploiement. Reste : comptes et clés (Neon, Clerk, Groq, Gemini, Cloudflare) → `GET /health` OK en prod |
+| 1. Infra cloud | J1–J2 | Neon + pgvector (schéma initial), Clerk configuré, API Hono déployée sur Workers | **Atteint le 18/09** : `https://lymarks-api.lymarks.workers.dev/health` → `{ok:true, db:ok}`, `/me` → 401 sans jeton. Neon eu-central-1 migré, Clerk lié, secrets en CI. |
 | 2. Core Flutter + Share | J3–J6 | Projet Flutter ✔ (04/09), share sheet **Android** en canal natif ✔ (ADR-008, 18/09), liste + états ✔ | **Atteint le 18/09** : capture réelle depuis Chrome sur un Android physique, réactivité jugée bonne, cartes `processing` visibles. X et YouTube à confirmer. |
 | 3. Pipeline IA + recherche | J7–J10 | Scraper → Groq → Gemini → Neon ; recherche plein texte + cosinus | Code prêt le 18/09 (pipeline, anti-SSRF, recherche hybride, sur mocks). Critère inchangé : un lien partagé ressort via une requête sémantique **en prod** |
 | 4. Monétisation + store | J11–J14 | Produits Play, paywall RevenueCat, gel des features à J11, soumission ≤ J14 | Build soumis à Google Play |
