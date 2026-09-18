@@ -166,6 +166,8 @@ Le code est dans `api/` (README dedans : routes, commandes, déploiement). Ce qu
 - **UA de robot refusé** (403 Les Échos, L'Équipe) → UA de navigateur ; les deux pages passent.
 - Côté app : sondage stoppé hors-ligne ; à faire : **debounce de la recherche** (une requête par lettre tapée, 20 pour « mot de passe »).
 
+**Catégorie, image, avatar, repli client (18/09, nuit)** — migration 002 : `bookmarks.category` (taxonomie fermée de 10 entrées, `other` par défaut, index `(user_id, category)`), `bookmarks.image_url` (og:image puis twitter:image, https absolu seulement), `users.avatar` (emoji, 1 à 8 points de code, jamais un fichier). Le prompt passe en **v2** (v1 gardée pour rejeu) : le modèle rend `category`, absente ou farfelue → `other`, sans jamais faire échouer le résumé. `POST /bookmarks/:id/content` : quand le serveur est `blocked`, le téléphone lit la page et la confie au même pipeline, étape scrape sautée (cache inter-utilisateurs consulté avant) ; journal de la taille du texte, jamais du texte. `PATCH /me {avatar}` pose ou retire (null). Le schéma doc `05-data/02-database-schema.md` reste à aligner sur 002.
+
 Ce qui n'est **pas** fait : Digest (M4, P1) — les colonnes existent, pas le cron ; push tokens ; test d'intégration sur branche Neon (ADR-009, conséquences). Et surtout : **rien n'est déployé** tant que les comptes n'existent pas — `api/.dev.vars` attend les clés, `api/scripts/push-secrets.ps1` les envoie en GitHub Secrets, `api.yml` fait le reste.
 
 ## 8. Questions ouvertes créées par les écrans

@@ -15,6 +15,8 @@ export interface BookmarkDto {
   status: BookmarkRow["status"];
   bullets: string[];
   keywords: string[];
+  category: string;
+  imageUrl: string | null;
   lang: string | null;
   note: string | null;
   savedAt: string;
@@ -38,6 +40,8 @@ export function toBookmarkDto(b: BookmarkRow, now: Date = new Date()): BookmarkD
     status: stalled ? "failed" : b.status,
     bullets: b.summary?.bullets ?? [],
     keywords: b.keywords,
+    category: b.category,
+    imageUrl: b.imageUrl,
     lang: b.summary?.lang ?? null,
     note: b.note,
     savedAt: b.createdAt.toISOString(),
@@ -57,6 +61,7 @@ export interface MeDto {
   tz: string;
   digestHour: number;
   digestOptin: boolean;
+  avatar: string | null;
   createdAt: string;
 }
 
@@ -69,6 +74,7 @@ export function toMeDto(u: UserRow, plan: Plan, lymarkCount: number): MeDto {
     tz: u.tz,
     digestHour: u.digestHour,
     digestOptin: u.digestOptin,
+    avatar: u.avatar,
     createdAt: u.createdAt.toISOString(),
   };
 }

@@ -13,6 +13,7 @@ import {
   CAPTURES_PER_HOUR,
 } from "../services/plan.js";
 import { STALL_AFTER_MS, isStalled } from "../services/pipeline.js";
+import { MAX_IMAGE_URL_CHARS } from "../services/scraper.js";
 import { SIMILAR_MIN_SCORE } from "../services/search.js";
 import { detectSource, normalizeUrl, urlHash } from "../services/url.js";
 import { toBookmarkDto } from "./serialize.js";
@@ -38,6 +39,19 @@ const listSchema = z.object({
     .transform((v) => v === "true")
     .optional(),
   status: z.enum(["processing", "ready", "partial", "failed"]).optional(),
+});
+
+// Page lue par le téléphone (repli quand le serveur est bloqué). Le texte est
+// borné large : le pipeline le tronque au même budget que le scraper.
+const contentSchema = z.object({
+  title: z.string().trim().max(300).optional(),
+  text: z.string().trim().min(1).max(50_000),
+  description: z.string().trim().max(1000).optional(),
+  lang: z.string().trim().min(2).max(8).optional(),
+  imageUrl: z
+    .url({ protocol: /^https$/ })
+    .max(MAX_IMAGE_URL_CHARS)
+    .optional(),
 });
 
 const idSchema = z.uuid();
@@ -189,6 +203,46 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
     }
     background(
       deps.runPipeline({ id: row.id, url: row.url, urlHash: row.urlHash, title: row.title }),
+      () => c.executionCtx,
+    );
+    return c.json({ bookmark: toBookmarkDto(row, deps.now()) }, 202);
+  });
+
+  // Repli client : le serveur n'a pas pu lire la page (anti-robot, paywall),
+  // le téléphone l'a lue et nous la confie. Mêmes conditions que `retry`,
+  // même pipeline, l'étape scrape en moins.
+  app.post("/:id/content", async (c) => {
+    const id = idSchema.parse(c.req.param("id"));
+    const body = await parseBody(c, contentSchema);
+    const user = c.var.user;
+    const row = await deps.db.bookmarks.resetForRetry(user.id, id, stalledBefore());
+    if (!row) {
+      const exists = await deps.db.bookmarks.get(user.id, id);
+      if (!exists) throw notFound();
+      throw new HttpError(409, "not_retryable", "Ce lymark n'est ni en échec ni partiel");
+    }
+    // Jamais le texte lui-même dans les journaux (Privacy §4), sa taille suffit.
+    deps.log({
+      event: "bookmark_content_received",
+      userId: user.id,
+      bookmarkId: row.id,
+      chars: body.text.length,
+      hasImage: body.imageUrl !== undefined,
+    });
+    background(
+      deps.runPipeline({
+        id: row.id,
+        url: row.url,
+        urlHash: row.urlHash,
+        title: row.title,
+        page: {
+          title: body.title || null,
+          description: body.description || null,
+          text: body.text,
+          lang: body.lang ?? null,
+          imageUrl: body.imageUrl ?? null,
+        },
+      }),
       () => c.executionCtx,
     );
     return c.json({ bookmark: toBookmarkDto(row, deps.now()) }, 202);

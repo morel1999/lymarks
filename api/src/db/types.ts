@@ -5,6 +5,8 @@
 // qui touche une ressource utilisateur reçoit `userId` explicitement — c'est
 // la garantie anti-IDOR (Threat Model M6).
 
+import type { Category } from "../services/categories.js";
+
 export type BookmarkStatus = "processing" | "ready" | "partial" | "failed";
 export type BookmarkSource = "x" | "youtube" | "linkedin" | "web";
 export type Plan = "free" | "pro";
@@ -15,6 +17,8 @@ export interface UserRow {
   tz: string;
   digestHour: number;
   digestOptin: boolean;
+  /** Emoji (séquences comprises) ou null ; jamais un fichier. */
+  avatar: string | null;
   createdAt: Date;
 }
 
@@ -33,6 +37,10 @@ export interface BookmarkRow {
   note: string | null;
   summary: Summary | null;
   keywords: string[];
+  /** Entrée de la taxonomie fermée (services/categories.ts) ; `other` tant que rien n'est résumé. */
+  category: string;
+  /** Aperçu og:image en https absolu, ou null. */
+  imageUrl: string | null;
   status: BookmarkStatus;
   failureReason: string | null;
   summaryVersion: number;
@@ -60,6 +68,8 @@ export interface PipelineResult {
   title: string | null;
   summary: Summary | null;
   keywords: string[];
+  category: Category;
+  imageUrl: string | null;
   embedding: number[] | null;
   failureReason: string | null;
 }
@@ -69,6 +79,8 @@ export interface CachedSummary {
   title: string | null;
   summary: Summary;
   keywords: string[];
+  category: string;
+  imageUrl: string | null;
   embedding: number[] | null;
 }
 
@@ -110,6 +122,8 @@ export interface Db {
     create(clerkId: string): Promise<UserRow>;
     get(userId: string): Promise<UserRow | null>;
     updateSettings(userId: string, patch: UserSettingsPatch): Promise<UserRow | null>;
+    /** Pose (string) ou retire (null) l'avatar. Null si l'utilisateur n'existe pas. */
+    setAvatar(userId: string, avatar: string | null): Promise<UserRow | null>;
     /** Purge tout (cascade) — Privacy §5. */
     delete(userId: string): Promise<void>;
   };

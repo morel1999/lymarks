@@ -6,8 +6,8 @@ import type {
   BookmarkRow,
   CachedSummary,
   Db,
+  PipelineResult,
   SearchHit,
-  Summary,
   SubscriptionEvent,
   UserRow,
 } from "../../src/db/types.js";
@@ -55,6 +55,7 @@ export class MemoryDb implements Db {
         tz: "Europe/Istanbul",
         digestHour: 8,
         digestOptin: false,
+        avatar: null,
         createdAt: this.stamp(),
       };
       this.users_.set(user.id, user);
@@ -77,6 +78,13 @@ export class MemoryDb implements Db {
         digestHour: patch.digestHour ?? u.digestHour,
         digestOptin: patch.digestOptin ?? u.digestOptin,
       };
+      this.users_.set(userId, next);
+      return next;
+    },
+    setAvatar: async (userId: string, avatar: string | null): Promise<UserRow | null> => {
+      const u = this.users_.get(userId);
+      if (!u) return null;
+      const next: UserRow = { ...u, avatar };
       this.users_.set(userId, next);
       return next;
     },
@@ -111,6 +119,8 @@ export class MemoryDb implements Db {
         note: data.note,
         summary: null,
         keywords: [],
+        category: "other",
+        imageUrl: null,
         status: "processing",
         failureReason: null,
         summaryVersion: 1,
@@ -200,17 +210,7 @@ export class MemoryDb implements Db {
       row.updatedAt = this.stamp();
       return this.strip(row);
     },
-    setResult: async (
-      id: string,
-      result: {
-        status: BookmarkRow["status"];
-        title: string | null;
-        summary: Summary | null;
-        keywords: string[];
-        embedding: number[] | null;
-        failureReason: string | null;
-      },
-    ) => {
+    setResult: async (id: string, result: PipelineResult) => {
       const row = this.bookmarks_.get(id);
       if (!row) return;
       if (row.status === "processing" && row.summary) row.summaryVersion += 1;
@@ -218,6 +218,8 @@ export class MemoryDb implements Db {
       row.title = result.title ?? row.title;
       row.summary = result.summary;
       row.keywords = result.keywords;
+      row.category = result.category;
+      row.imageUrl = result.imageUrl;
       row.embedding = result.embedding;
       row.failureReason = result.failureReason;
       row.updatedAt = this.stamp();
@@ -231,6 +233,8 @@ export class MemoryDb implements Db {
         title: row.title,
         summary: row.summary!,
         keywords: row.keywords,
+        category: row.category,
+        imageUrl: row.imageUrl,
         embedding: row.embedding,
       };
     },

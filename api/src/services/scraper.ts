@@ -25,6 +25,8 @@ export interface PageContent {
   lang: string | null;
   /** Texte principal, déjà tronqué (voir MAX_CHARS). */
   text: string;
+  /** Image d'aperçu (og:image, sinon twitter:image) en https absolu, ou null. */
+  imageUrl: string | null;
 }
 
 export class ScrapeError extends Error {
@@ -210,6 +212,27 @@ function meta(html: string, attr: "property" | "name", key: string): string | nu
   return value || null;
 }
 
+/** Plafond de la colonne et du corps client (`POST /bookmarks/:id/content`). */
+export const MAX_IMAGE_URL_CHARS = 2048;
+
+/**
+ * Résout une adresse d'image contre la page qui la déclare. Seul https est
+ * gardé : l'app affiche l'image telle quelle, un `http:` serait bloqué par
+ * la politique de transport et un `data:` pourrait peser des mégaoctets.
+ */
+export function resolveImageUrl(raw: string | null, base: string): string | null {
+  if (!raw) return null;
+  let url: URL;
+  try {
+    url = new URL(raw, base);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  const href = url.toString();
+  return href.length > MAX_IMAGE_URL_CHARS ? null : href;
+}
+
 const BLOCK_TAG =
   /<\/?(?:p|div|li|ul|ol|h[1-6]|tr|td|th|table|section|article|main|blockquote|pre|dd|dt|dl|figcaption|figure|br|hr)\b[^>]*>/gi;
 
@@ -252,6 +275,16 @@ export function extractContent(html: string, finalUrl: string): PageContent {
     meta(cleaned, "property", "og:description") ?? meta(cleaned, "name", "description");
   const siteName = meta(cleaned, "property", "og:site_name");
   const lang = /<html[^>]*\blang=["']?([a-zA-Z-]{2,8})/i.exec(html)?.[1]?.toLowerCase() ?? null;
+  // Première adresse exploitable : un og:image en http n'empêche pas de
+  // prendre le twitter:image (déclaré tantôt en `name`, tantôt en `property`).
+  const imageUrl =
+    [
+      meta(cleaned, "property", "og:image"),
+      meta(cleaned, "name", "twitter:image"),
+      meta(cleaned, "property", "twitter:image"),
+    ]
+      .map((raw) => resolveImageUrl(raw, finalUrl))
+      .find((u) => u !== null) ?? null;
 
   const main =
     /<article\b[^>]*>([\s\S]*?)<\/article>/i.exec(cleaned)?.[1] ??
@@ -261,7 +294,7 @@ export function extractContent(html: string, finalUrl: string): PageContent {
   let text = stripTags(main);
   if (text.length > MAX_CHARS) text = `${text.slice(0, MAX_CHARS)}…`;
 
-  return { finalUrl, title: title || null, description, siteName, lang, text };
+  return { finalUrl, title: title || null, description, siteName, lang, text, imageUrl };
 }
 
 // ── Sources particulières ───────────────────────────────────────────────────
@@ -298,6 +331,8 @@ export async function fetchXPost(
     siteName: "X",
     lang: null,
     text,
+    // oEmbed ne livre pas les médias du post.
+    imageUrl: null,
   };
 }
 

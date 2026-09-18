@@ -1,10 +1,10 @@
 // Pipeline d'ingestion : page OK / paywall (mince) / 404 / cache / embedding
-// en panne (Test Strategy, intégration API).
+// en panne / page fournie par le client (Test Strategy, intégration API).
 
 import { describe, expect, it } from "vitest";
 import type { Embedder } from "../src/services/embedder.js";
 import { processBookmark, type PipelineDeps } from "../src/services/pipeline.js";
-import { ScrapeError, type PageContent } from "../src/services/scraper.js";
+import { MAX_CHARS, ScrapeError, type PageContent } from "../src/services/scraper.js";
 import type { Summarizer } from "../src/services/summarizer.js";
 import { fakeEmbedding } from "./helpers/app.js";
 import { MemoryDb } from "./helpers/memory-db.js";
@@ -16,6 +16,7 @@ const page = (over: Partial<PageContent> = {}): PageContent => ({
   siteName: null,
   lang: "fr",
   text: "Contenu ".repeat(100),
+  imageUrl: "https://example.com/og.jpg",
   ...over,
 });
 
@@ -40,7 +41,12 @@ function setup(
         calls.summarize += 1;
         return (
           opts.summarize ??
-          (async () => ({ bullets: ["Un", "Deux", "Trois"], keywords: ["k1", "k2"], lang: "fr" }))
+          (async () => ({
+            bullets: ["Un", "Deux", "Trois"],
+            keywords: ["k1", "k2"],
+            lang: "fr",
+            category: "development" as const,
+          }))
         )(input);
       },
     },
@@ -73,7 +79,7 @@ async function seed(
 }
 
 describe("processBookmark", () => {
-  it("page OK → ready avec titre, 3 puces, mots-clés, embedding", async () => {
+  it("page OK → ready avec titre, 3 puces, mots-clés, catégorie, image, embedding", async () => {
     const { db, deps, calls } = setup();
     const { user, row } = await seed(db);
     const result = await processBookmark(deps, {
@@ -89,6 +95,8 @@ describe("processBookmark", () => {
     expect(saved?.summary?.bullets).toEqual(["Un", "Deux", "Trois"]);
     expect(saved?.summary?.lang).toBe("fr");
     expect(saved?.keywords).toEqual(["k1", "k2"]);
+    expect(saved?.category).toBe("development");
+    expect(saved?.imageUrl).toBe("https://example.com/og.jpg");
     expect(saved?.embedding).toHaveLength(768);
     expect(calls).toEqual({ scrape: 1, summarize: 1, embed: 1 });
   });
@@ -99,7 +107,7 @@ describe("processBookmark", () => {
       scrape: async () => page({ text: "Abonnez-vous", description: "Résumé OG de l'article" }),
       summarize: async ({ content }) => {
         received = content;
-        return { bullets: ["Depuis OG"], keywords: ["og"], lang: "fr" };
+        return { bullets: ["Depuis OG"], keywords: ["og"], lang: "fr", category: "other" };
       },
     });
     const { user, row } = await seed(db);
@@ -114,7 +122,7 @@ describe("processBookmark", () => {
     expect((await db.bookmarks.get(user.id, row.id))?.summary?.bullets).toEqual(["Depuis OG"]);
   });
 
-  it("404 → failed avec la raison, titre du partage conservé", async () => {
+  it("404 → failed avec la raison, titre du partage conservé, catégorie other", async () => {
     const { db, deps, calls } = setup({
       scrape: async () => {
         throw new ScrapeError("not_found", "HTTP 404");
@@ -131,6 +139,8 @@ describe("processBookmark", () => {
     expect(saved?.status).toBe("failed");
     expect(saved?.failureReason).toBe("not_found");
     expect(saved?.title).toBe("Titre partagé");
+    expect(saved?.category).toBe("other");
+    expect(saved?.imageUrl).toBeNull();
     expect(calls.summarize).toBe(0);
   });
 
@@ -190,5 +200,74 @@ describe("processBookmark", () => {
     const saved = await db.bookmarks.get(b.user.id, b.row.id);
     expect(saved?.title).toBe("Titre page");
     expect(saved?.summary?.bullets).toEqual(["Un", "Deux", "Trois"]);
+    // La catégorie et l'image voyagent avec le résumé.
+    expect(saved?.category).toBe("development");
+    expect(saved?.imageUrl).toBe("https://example.com/og.jpg");
+  });
+
+  it("page fournie par le client : pas de scrape, ready avec catégorie et image", async () => {
+    let received: { title: string | null; content: string } | null = null;
+    const { db, deps, calls } = setup({
+      summarize: async (input) => {
+        received = input;
+        return { bullets: ["A", "B", "C"], keywords: ["k"], lang: null, category: "science" };
+      },
+    });
+    const { user, row } = await seed(db);
+    const result = await processBookmark(deps, {
+      id: row.id,
+      url: row.url,
+      urlHash: row.urlHash,
+      title: row.title,
+      page: {
+        title: "Lu par le téléphone",
+        description: null,
+        text: "Texte lu côté client. ".repeat(20),
+        lang: "en-GB",
+        imageUrl: "https://example.com/phone.jpg",
+      },
+    });
+    expect(calls).toEqual({ scrape: 0, summarize: 1, embed: 1 });
+    expect(received).toMatchObject({ title: "Lu par le téléphone" });
+    expect(result.status).toBe("ready");
+    expect(await db.bookmarks.get(user.id, row.id)).toMatchObject({
+      status: "ready",
+      title: "Lu par le téléphone",
+      category: "science",
+      imageUrl: "https://example.com/phone.jpg",
+      summary: { bullets: ["A", "B", "C"], lang: "en" },
+    });
+  });
+
+  it("page fournie : le cache inter-utilisateurs passe avant, le texte est tronqué au budget du scraper", async () => {
+    let received = "";
+    const { db, deps, calls } = setup({
+      summarize: async ({ content }) => {
+        received = content;
+        return { bullets: ["A"], keywords: [], lang: "fr", category: "other" };
+      },
+    });
+    const { row } = await seed(db);
+    const provided = { title: null, description: null, lang: null, imageUrl: null };
+    await processBookmark(deps, {
+      id: row.id,
+      url: row.url,
+      urlHash: row.urlHash,
+      title: row.title,
+      page: { ...provided, text: "x".repeat(40_000) },
+    });
+    expect(received.length).toBe(MAX_CHARS + 1);
+    expect(received.endsWith("…")).toBe(true);
+
+    // Résumé déjà en base pour cette URL : la page fournie n'est même pas lue.
+    const other = await seed(db, "bob", "https://example.com/a", null);
+    await processBookmark(deps, {
+      id: other.row.id,
+      url: other.row.url,
+      urlHash: other.row.urlHash,
+      title: null,
+      page: { ...provided, text: "autre texte" },
+    });
+    expect(calls.summarize).toBe(1);
   });
 });
