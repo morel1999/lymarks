@@ -2,7 +2,6 @@ import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
-import 'package:lymarks/core/auth/clerk_session.dart';
 import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
@@ -58,7 +57,7 @@ class SignInScreen extends ConsumerWidget {
                   ? const _ClerkPanel()
                   : _DemoPanel(
                       onContinue: () {
-                        final auth = ref.watch(authSessionProvider);
+                        final auth = ref.read(authSessionProvider);
                         if (auth is DemoAuthSession) auth.signIn();
                       },
                     ),
@@ -71,12 +70,11 @@ class SignInScreen extends ConsumerWidget {
 }
 
 /// Panneau Clerk, thémé aux couleurs de l'app.
-class _ClerkPanel extends ConsumerWidget {
+class _ClerkPanel extends StatelessWidget {
   const _ClerkPanel();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authSessionProvider);
+  Widget build(BuildContext context) {
     return ClerkErrorListener(
       // `message` est un gabarit (« {arg} (ERROR RECEIVED FROM SERVER) ») :
       // le texte utile est le message serveur, sinon le gabarit résolu.
@@ -92,42 +90,13 @@ class _ClerkPanel extends ConsumerWidget {
             ),
           );
       },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
+      child: const SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
           horizontal: LySpace.m,
           vertical: LySpace.s,
         ),
-        child: Column(
-          children: [
-            const ClerkAuthentication(),
-            // Diagnostic du retour OAuth sur device (temporaire).
-            if (auth is ClerkAuthSession) _OAuthTrace(session: auth),
-          ],
-        ),
+        child: ClerkAuthentication(),
       ),
-    );
-  }
-}
-
-class _OAuthTrace extends StatelessWidget {
-  const _OAuthTrace({required this.session});
-
-  final ClerkAuthSession session;
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<List<String>>(
-      valueListenable: session.oauthTrace,
-      builder: (context, lines, _) {
-        if (lines.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(top: LySpace.m),
-          child: SelectableText(
-            lines.join('\n'),
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-          ),
-        );
-      },
     );
   }
 }

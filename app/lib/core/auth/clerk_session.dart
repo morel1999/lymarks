@@ -14,26 +14,7 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
 
   final ClerkAuthState state;
 
-  /// Journal du dernier retour OAuth, affiché sur l'écran de connexion
-  /// (diagnostic sur device : les traces logcat ne suffisent pas).
-  final ValueNotifier<List<String>> oauthTrace = ValueNotifier(const []);
-
-  /// Note une étape à l'écran, sans passer par logcat.
-  void note(String message) {
-    final stamp = DateTime.now().toIso8601String().substring(11, 19);
-    oauthTrace.value = [...oauthTrace.value, '$stamp $message'];
-  }
-
-  void _trace(String message) {
-    note(message);
-    // Sur device, l'exécution semble s'arrêter après un `debugPrint` dans ce
-    // chemin : on l'isole pour que la trace écran survive dans tous les cas.
-    try {
-      debugPrint('[lymarks/auth] $message');
-    } on Object catch (e) {
-      note('debugPrint threw: $e');
-    }
-  }
+  void _trace(String message) => debugPrint('[lymarks/auth] $message');
 
   @override
   bool get isSignedIn => state.isSignedIn;
@@ -167,7 +148,6 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
   @override
   void dispose() {
     state.removeListener(notifyListeners);
-    oauthTrace.dispose();
     super.dispose();
   }
 }
