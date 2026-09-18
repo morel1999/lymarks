@@ -10,6 +10,7 @@ import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
+import 'package:lymarks/shared/data/taxonomy.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
 
@@ -401,23 +402,79 @@ final profileProvider = NotifierProvider<ProfileNotifier, UserProfile>(
   ProfileNotifier.new,
 );
 
-// ── Connaissances (mock tant que le serveur ne les calcule pas) ────────────
+// ── Connaissances ──────────────────────────────────────────────────────────
 
-final categoriesProvider = Provider<List<KnowledgeCategory>>(
-  (_) => MockData.categories,
-);
+/// D'où viennent les catégories de la Home.
+enum CategoriesMode {
+  /// Le jeu de démonstration (`MockData.categories`, clusters compris) :
+  /// c'est ce que voient les rendus de référence et les tests d'écran.
+  demo,
 
+  /// Dérivées de la bibliothèque : une carte par catégorie de la taxonomie
+  /// présente parmi les lymarks, comptée, sans cluster.
+  live,
+}
+
+/// Mode courant, aligné sur la configuration de build. `AppConfig.isDemo`
+/// dépend d'un `--dart-define`, hors de portée des tests : ceux-ci
+/// surchargent ce provider pour forcer le mode réel sur un jeu de données
+/// contrôlé (voir `test/category_test.dart`).
+final Provider<CategoriesMode> categoriesModeProvider =
+    Provider<CategoriesMode>(
+      (_) => AppConfig.isDemo ? CategoriesMode.demo : CategoriesMode.live,
+    );
+
+/// Cartes de catégories de la Home.
+///
+/// En mode réel : les catégories de la taxonomie dans lesquelles au moins un
+/// lymark non archivé a été rangé, avec leur compte réel, de la plus
+/// fournie à la moins fournie (ordre de la taxonomie à égalité). Un lymark
+/// sans catégorie (`other`, ou encore en traitement) ne compte nulle part.
+final categoriesProvider = Provider<List<KnowledgeCategory>>((ref) {
+  if (ref.watch(categoriesModeProvider) == CategoriesMode.demo) {
+    return MockData.categories;
+  }
+  final counts = <String, int>{};
+  for (final l in ref.watch(lymarksProvider)) {
+    final id = l.categoryId;
+    if (l.archived || id == null) continue;
+    counts[id] = (counts[id] ?? 0) + 1;
+  }
+  return [
+    for (final c in Taxonomy.cards)
+      if (counts[c.id] case final n?) c.copyWith(count: n),
+  ]..sort((a, b) {
+    final byCount = b.count.compareTo(a.count);
+    if (byCount != 0) return byCount;
+    return Taxonomy.rank(a.id).compareTo(Taxonomy.rank(b.id));
+  });
+});
+
+/// Une catégorie par identifiant : celle affichée si elle l'est, sinon son
+/// entrée de taxonomie (compte 0). Une catégorie vide s'ouvre donc toujours,
+/// et une route vers une catégorie inconnue rend null.
 final Provider<KnowledgeCategory?> Function(String) categoryByIdProvider =
     Provider.family<KnowledgeCategory?, String>(
       (ref, id) {
         for (final c in ref.watch(categoriesProvider)) {
           if (c.id == id) return c;
         }
-        return null;
+        return Taxonomy.byId(id);
       },
     );
 
-/// Lymarks d'un cluster donné.
+/// Lymarks non archivés d'une catégorie, du plus récent au plus ancien.
+final Provider<List<Lymark>> Function(String) categoryLymarksProvider =
+    Provider.family<List<Lymark>, String>(
+      (ref, categoryId) =>
+          ref
+              .watch(lymarksProvider)
+              .where((l) => !l.archived && l.categoryId == categoryId)
+              .toList()
+            ..sort((a, b) => b.savedAt.compareTo(a.savedAt)),
+    );
+
+/// Lymarks d'un cluster donné (démo : les clusters ne sont pas calculés).
 final Provider<List<Lymark>> Function(String) clusterLymarksProvider =
     Provider.family<List<Lymark>, String>(
       (ref, clusterId) => ref
