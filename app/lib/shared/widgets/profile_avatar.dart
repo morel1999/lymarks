@@ -135,75 +135,79 @@ class _AvatarPickerSheet extends StatelessWidget {
           LySpace.xl,
           LySpace.xl,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Your avatar', style: context.texts.headlineSmall),
-            const SizedBox(height: LySpace.s),
-            Text(
-              'Pick an emoji, or keep your initials.',
-              style: context.texts.bodyMedium?.copyWith(
-                color: ly.textSecondary,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Your avatar', style: context.texts.headlineSmall),
+              const SizedBox(height: LySpace.s),
+              Text(
+                'Pick an emoji, or keep your initials.',
+                style: context.texts.bodyMedium?.copyWith(
+                  color: ly.textSecondary,
+                ),
               ),
-            ),
-            const SizedBox(height: LySpace.xl),
-            GridView.count(
-              crossAxisCount: 5,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              mainAxisSpacing: LySpace.m,
-              crossAxisSpacing: LySpace.m,
-              children: [
-                for (final emoji in kAvatarChoices)
-                  _EmojiChoice(
-                    emoji: emoji,
-                    selected: profile.avatar == emoji,
-                    onTap: () => onSelect(emoji),
-                  ),
-              ],
-            ),
-            const SizedBox(height: LySpace.l),
-            LyCard(
-              color: useInitials ? ly.primarySoft : ly.card,
-              borderColor: useInitials ? ly.primary : ly.cardBorder,
-              onTap: () => onSelect(null),
-              padding: const EdgeInsets.symmetric(
-                horizontal: LySpace.l,
-                vertical: LySpace.m,
-              ),
-              child: Row(
+              const SizedBox(height: LySpace.xl),
+              // Cellules bornées : sur un écran large (tablette, paysage, surface
+              // de test) cinq colonnes à largeur libre débordaient de la feuille.
+              GridView.extent(
+                maxCrossAxisExtent: 72,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                mainAxisSpacing: LySpace.m,
+                crossAxisSpacing: LySpace.m,
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: ly.lavender.fill,
-                      shape: BoxShape.circle,
+                  for (final emoji in kAvatarChoices)
+                    _EmojiChoice(
+                      emoji: emoji,
+                      selected: profile.avatar == emoji,
+                      onTap: () => onSelect(emoji),
                     ),
-                    child: Text(
-                      profile.initials,
-                      style: context.texts.labelMedium?.copyWith(
-                        color: ly.lavender.onFill,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: LySpace.m),
-                  Expanded(
-                    child: Text(
-                      'Use my initials',
-                      style: context.texts.bodyLarge,
-                    ),
-                  ),
-                  if (useInitials)
-                    Icon(LyIcons.check, size: 18, color: ly.primary),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: LySpace.l),
+              LyCard(
+                color: useInitials ? ly.primarySoft : ly.card,
+                borderColor: useInitials ? ly.primary : ly.cardBorder,
+                onTap: () => onSelect(null),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: LySpace.l,
+                  vertical: LySpace.m,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: ly.lavender.fill,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        profile.initials,
+                        style: context.texts.labelMedium?.copyWith(
+                          color: ly.lavender.onFill,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: LySpace.m),
+                    Expanded(
+                      child: Text(
+                        'Use my initials',
+                        style: context.texts.bodyLarge,
+                      ),
+                    ),
+                    if (useInitials)
+                      Icon(LyIcons.check, size: 18, color: ly.primary),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
