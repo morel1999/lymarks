@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Cle de debug partagee CI/dev, sans valeur de securite (voir build.gradle.kts).
+!app/debug.keystore

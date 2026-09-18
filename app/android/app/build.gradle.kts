@@ -30,10 +30,25 @@ android {
         versionName = flutter.versionName
     }
 
+    // Cle de debug versionnee : la meme sur la machine de dev et sur chaque
+    // runner CI, sinon chaque APK est signe differemment et Android refuse la
+    // mise a jour par-dessus (INSTALL_FAILED_UPDATE_INCOMPATIBLE — constate le
+    // 18/09, chaque test perdait la session). Sans valeur de securite : ce
+    // n'est PAS la cle de publication Play (a creer avant la soumission,
+    // voir 09-produit/03-store-compliance.md).
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // TODO: cle de publication Play pour la release finale.
+            // En attendant, la cle de debug versionnee : sideload et tests.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

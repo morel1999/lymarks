@@ -24,3 +24,4 @@
 Crash au premier lancement (checklist E2E), paywall sans restore (✔ prévu), suppression de compte absente (✔ P0-F7), métadonnées mentionnant d'autres plateformes, permission notifications injustifiée (✔ en contexte).
 
 - [ ] **Clerk production** : allowlister `lymarks://oauth/oauth_google` sur l'instance prod (`clerk api /redirect_urls --instance prod`) et passer l'app sur la `pk_live_…` — sinon Google OAuth échoue en prod (ADR-010).
+- [ ] **Clé de publication** : créer une clé de release (upload key) hors dépôt, la configurer en secret CI (`ANDROID_KEYSTORE_B64`, mots de passe) et signer la release avec — les builds actuels utilisent `app/android/app/debug.keystore`, versionnée, sans valeur de sécurité.

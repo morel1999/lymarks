@@ -29,6 +29,8 @@ api/dist/
 .dev.vars
 *.jks
 *.keystore
+# Cle de debug partagee CI/dev (sans valeur de securite) : versionnee.
+!app/android/app/debug.keystore
 **/google-services.json
 **/GoogleService-Info.plist
 
