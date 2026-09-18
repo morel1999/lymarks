@@ -93,17 +93,23 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
         return;
       }
       final nonce = uri.queryParameters['rotating_token_nonce'];
-      final clerk.AuthObject? attempt = state.signIn ?? state.signUp;
+      final signIn = state.signIn;
+      final signUp = state.signUp;
+      final attemptPath = signIn != null
+          ? '/client/sign_ins/${signIn.id}'
+          : signUp != null
+          ? '/client/sign_ups/${signUp.id}'
+          : null;
       _trace(
         'params=${uri.queryParameters.keys.join(',')} '
         'signIn=${state.signIn?.status}/${state.signIn?.verification?.status} '
         'signUp=${state.signUp?.status}',
       );
-      if (nonce != null && attempt != null) {
+      if (nonce != null && attemptPath != null) {
         // Échange du nonce : le Client revient avec la tentative avancée
         // (complète, ou `transferable` si le compte n'existe pas encore).
         final r = await state.fetchApiResponse(
-          '/client/${attempt.urlType}/${attempt.id}',
+          attemptPath,
           method: clerk.HttpMethod.get,
           params: {'rotating_token_nonce': nonce},
         );
