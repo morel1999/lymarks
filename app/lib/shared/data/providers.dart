@@ -7,6 +7,7 @@ import 'package:lymarks/core/api/api_models.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
+import 'package:lymarks/features/capture/page_rescue.dart';
 import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
@@ -42,6 +43,11 @@ final Provider<LymarksRepository> lymarksRepositoryProvider =
       if (AppConfig.isDemo) return MockLymarksRepository();
       return ApiLymarksRepository(ref.watch(apiClientProvider));
     });
+
+/// Lecteur de pages bloquées côté serveur (repli client). Surchargé en test.
+final Provider<PageRescue> pageRescueProvider = Provider<PageRescue>(
+  (_) => const PageRescue(),
+);
 
 /// Intervalle de rafraîchissement tant qu'un lymark est en `processing`.
 /// Null = pas de sondage (mode démo, tests : aucun timer en suspens).
@@ -104,6 +110,11 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
   /// serveur les ait acceptées.
   final Set<String> _pending = {};
 
+  /// Pages bloquées déjà tentées depuis le téléphone (une fois par session,
+  /// sauf demande explicite) : un site qui refuse aussi le téléphone ne doit
+  /// pas être relu à chaque rafraîchissement.
+  final Set<String> _rescued = {};
+
   @override
   List<Lymark> build() {
     _repo = ref.watch(lymarksRepositoryProvider);
@@ -137,6 +148,7 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
       final placeholders = state.where((l) => _pending.contains(l.id));
       state = _sorted([...items, ...placeholders]);
       sync.value = LibrarySync.idle;
+      unawaited(_rescueBlocked());
     } on ApiException catch (e) {
       if (_disposed) return;
       debugPrint('[lymarks/library] refresh failed: $e');
@@ -227,6 +239,11 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
 
   /// Relance du pipeline après un échec (PRD §3 : jamais d'échec silencieux).
   void retry(String id) {
+    // Le serveur rebloquerait : c'est le téléphone qui relit la page.
+    if (byId(id)?.failureReason == 'blocked') {
+      unawaited(rescue(id, force: true));
+      return;
+    }
     _patch(
       id,
       (l) => l.copyWith(status: LymarkStatus.processing, failureReason: null),
@@ -237,6 +254,58 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
         _schedulePoll();
       }),
     );
+  }
+
+  /// Repli client pour une page que le serveur n'a pas pu lire (échec
+  /// `blocked`) : le téléphone la lit, l'API la résume. Rend true si un
+  /// contenu a été envoyé. Une seule tentative par lymark et par session,
+  /// sauf [force] (bouton « Try again »).
+  Future<bool> rescue(String id, {bool force = false}) async {
+    final before = byId(id);
+    if (before == null || (!force && _rescued.contains(id))) return false;
+    _rescued.add(id);
+    _patch(
+      id,
+      (l) => l.copyWith(status: LymarkStatus.processing, failureReason: null),
+    );
+    final reader = ref.read(pageRescueProvider);
+    final content = await reader.read(Uri.parse(before.url));
+    if (_disposed) return false;
+    if (content == null) {
+      _upsert(before);
+      return false;
+    }
+    try {
+      _upsert(await _repo.sendContent(id, content));
+      _schedulePoll();
+      return true;
+    } on ApiException catch (e) {
+      if (_disposed) return false;
+      debugPrint('[lymarks/library] rescue failed: $e');
+      _upsert(before);
+      if (e.isNetwork) {
+        ref.read(librarySyncProvider.notifier).value = LibrarySync.offline;
+      }
+      return false;
+    }
+  }
+
+  /// Après un rafraîchissement : les pages bloquées non encore tentées, une
+  /// à la fois (pas dix connexions d'un coup sur un téléphone).
+  Future<void> _rescueBlocked() async {
+    final todo = state
+        .where(
+          (l) =>
+              l.status == LymarkStatus.failed &&
+              l.failureReason == 'blocked' &&
+              !_rescued.contains(l.id),
+        )
+        .map((l) => l.id)
+        .toList();
+    for (final id in todo) {
+      if (_disposed) return;
+      await rescue(id);
+    }
   }
 
   // ── Interne ────────────────────────────────────────────────────────────
