@@ -166,7 +166,7 @@ void main() {
   testWidgets('07 profile', (tester) async {
     await _boot(tester);
     await _skipOnboarding(tester);
-    await tester.tap(find.bySemanticsLabel('Account and settings'));
+    await tester.tap(find.bySemanticsLabel('Profile'));
     await _settle(tester);
     await _shoot(tester, '09-profile');
   });
@@ -174,7 +174,7 @@ void main() {
   testWidgets('07b settings', (tester) async {
     await _boot(tester);
     await _skipOnboarding(tester);
-    await tester.tap(find.bySemanticsLabel('Account and settings'));
+    await tester.tap(find.bySemanticsLabel('Profile'));
     await _settle(tester);
     await tester.tap(find.text('All settings'));
     await _settle(tester);
@@ -184,7 +184,7 @@ void main() {
   testWidgets('paywall sheet', (tester) async {
     await _boot(tester);
     await _skipOnboarding(tester);
-    await tester.tap(find.bySemanticsLabel('Account and settings'));
+    await tester.tap(find.bySemanticsLabel('Profile'));
     await _settle(tester);
     // Le compte de démo est Pro : on repasse en Free pour voir le paywall.
     await tester.tap(find.text('Manage'));
