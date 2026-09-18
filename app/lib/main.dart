@@ -57,13 +57,25 @@ Future<void> main() async {
     ),
   );
   final session = ClerkAuthSession(clerk);
-  AppLinks().uriLinkStream.listen((uri) {
-    // Trace sans la query (elle porte le jeton).
-    debugPrint(
-      '[lymarks/auth] deep link ${uri.scheme}://${uri.host}${uri.path}',
-    );
-    unawaited(session.handleDeepLink(uri));
-  });
+  AppLinks().uriLinkStream.listen(
+    (uri) {
+      // Trace sans la query (elle porte le jeton).
+      debugPrint(
+        '[lymarks/auth] deep link ${uri.scheme}://${uri.host}${uri.path}',
+      );
+      debugPrint('[lymarks/auth] deep link → handler');
+      unawaited(
+        session
+            .handleDeepLink(uri)
+            .then(
+              (_) => debugPrint('[lymarks/auth] handler returned'),
+              onError: (Object e) =>
+                  debugPrint('[lymarks/auth] handler threw: $e'),
+            ),
+      );
+    },
+    onError: (Object e) => debugPrint('[lymarks/auth] link stream error: $e'),
+  );
   runApp(
     ProviderScope(
       overrides: [authSessionProvider.overrideWithValue(session)],
