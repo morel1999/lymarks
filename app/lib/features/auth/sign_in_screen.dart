@@ -76,10 +76,19 @@ class _ClerkPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClerkErrorListener(
+      // `message` est un gabarit (« {arg} (ERROR RECEIVED FROM SERVER) ») :
+      // le texte utile est le message serveur, sinon le gabarit résolu.
       handler: (context, error) {
+        final text = error.errors?.errorMessage ?? error.toString();
+        debugPrint('[lymarks/auth] clerk ${error.code.name}: $text');
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(error.message)));
+          ..showSnackBar(
+            SnackBar(
+              content: Text(text),
+              duration: const Duration(seconds: 6),
+            ),
+          );
       },
       child: const SingleChildScrollView(
         padding: EdgeInsets.symmetric(
