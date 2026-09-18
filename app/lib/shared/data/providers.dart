@@ -48,6 +48,14 @@ final Provider<Duration?> processingPollProvider = Provider<Duration?>(
   (_) => AppConfig.isLive ? const Duration(seconds: 4) : null,
 );
 
+/// Délai entre la dernière frappe et l'appel de recherche : une requête par
+/// lettre tapée (constaté sur device : 20 appels pour « mot de passe ») est
+/// du gaspillage et des réponses qui se croisent. Null = immédiat (démo,
+/// tests : aucun timer en suspens).
+final Provider<Duration?> searchDebounceProvider = Provider<Duration?>(
+  (_) => AppConfig.isLive ? const Duration(milliseconds: 350) : null,
+);
+
 /// État de synchronisation de la bibliothèque, pour l'écran d'accueil.
 enum LibrarySync { idle, loading, offline }
 
@@ -481,14 +489,30 @@ class SearchState {
 /// le refuserait de toute façon (Monetization §3).
 class SearchNotifier extends Notifier<SearchState> {
   int _seq = 0;
+  Timer? _debounce;
 
   @override
   SearchState build() {
-    ref.listen(searchQueryProvider, (_, q) => unawaited(run(q)));
+    ref
+      ..listen(searchQueryProvider, (_, q) => _schedule(q))
+      ..onDispose(() => _debounce?.cancel());
     return const SearchState();
   }
 
+  /// Attend la fin de la frappe avant d'interroger ; une saisie vidée
+  /// s'applique tout de suite (l'écran repasse en état initial).
+  void _schedule(String query) {
+    _debounce?.cancel();
+    final delay = ref.read(searchDebounceProvider);
+    if (delay == null || query.trim().isEmpty) {
+      unawaited(run(query));
+      return;
+    }
+    _debounce = Timer(delay, () => unawaited(run(query)));
+  }
+
   Future<void> run(String query) async {
+    _debounce?.cancel();
     final q = query.trim();
     final seq = ++_seq;
     if (q.isEmpty) {
