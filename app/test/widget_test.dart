@@ -183,6 +183,9 @@ void main() {
 
       expect(find.byKey(fallbackKey), findsOneWidget);
       expect(find.byType(RawImage), findsNothing);
+    });
+  });
+
   group('Avatar du profil', () {
     Widget host(Widget child) => ProviderScope(
       child: MaterialApp(
