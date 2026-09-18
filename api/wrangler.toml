@@ -19,6 +19,9 @@ head_sampling_rate = 1
 # redeployer le code (fallback Groq → Gemini Flash, AI Architecture §1).
 [vars]
 APP_VERSION = "0.1.0"
-GROQ_MODEL = "llama-3.3-70b-versatile"
-GEMINI_SUMMARY_MODEL = "gemini-2.5-flash"
-GEMINI_EMBEDDING_MODEL = "text-embedding-004"
+# Modèles vérifiés vivants le 18/09/2026 (les précédents — llama-3.3-70b,
+# gemini-2.5-flash, text-embedding-004 — répondaient 404). En changer ici,
+# jamais dans le code ; `GET /models` de chaque fournisseur fait foi.
+GROQ_MODEL = "openai/gpt-oss-120b"
+GEMINI_SUMMARY_MODEL = "gemini-flash-lite-latest"
+GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"

@@ -114,6 +114,12 @@ export interface ChatProvider {
   baseUrl: string;
   apiKey: string;
   model: string;
+  /**
+   * Modèle raisonnant (gpt-oss, Gemini 3.x) : il dépense des jetons de
+   * réflexion avant la réponse. On lui demande le minimum et on laisse de
+   * la marge, sinon `content` revient vide avec `finish_reason: length`.
+   */
+  reasoning?: boolean;
 }
 
 export const groqProvider = (apiKey: string, model: string): ChatProvider => ({
@@ -121,6 +127,7 @@ export const groqProvider = (apiKey: string, model: string): ChatProvider => ({
   baseUrl: "https://api.groq.com/openai/v1",
   apiKey,
   model,
+  reasoning: /gpt-oss|qwen3|deepseek-r/i.test(model),
 });
 
 export const geminiChatProvider = (apiKey: string, model: string): ChatProvider => ({
@@ -128,6 +135,7 @@ export const geminiChatProvider = (apiKey: string, model: string): ChatProvider 
   baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
   apiKey,
   model,
+  reasoning: /gemini-[3-9]/i.test(model),
 });
 
 interface ChatMessage {
@@ -221,7 +229,8 @@ export class ChatSummarizer implements Summarizer {
         body: JSON.stringify({
           model: provider.model,
           temperature: 0.2,
-          max_tokens: 400,
+          max_tokens: provider.reasoning ? 1200 : 400,
+          ...(provider.reasoning ? { reasoning_effort: "low" } : {}),
           response_format: { type: "json_object" },
           messages,
         }),

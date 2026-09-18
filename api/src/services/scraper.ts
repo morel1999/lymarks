@@ -42,7 +42,11 @@ export const MAX_CHARS = 30_000;
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_BYTES = 2 * 1024 * 1024;
 const DEFAULT_MAX_REDIRECTS = 3;
-const USER_AGENT = "LymarksBot/1.0 (+https://lymarks.app/bot)";
+// Un UA de robot déclaré se fait refuser (403) par la plupart des sites de
+// presse (constaté le 18/09 : Les Échos, Eurosport). La page est demandée
+// pour un utilisateur qui l'a explicitement sauvegardée : UA de navigateur.
+const USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36";
 const ALLOWED_TYPES = ["text/html", "application/xhtml+xml"];
 
 /**

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { EMBEDDING_DIMENSIONS, embeddingInput, GeminiEmbedder } from "../src/services/embedder.js";
+import {
+  EMBEDDING_DIMENSIONS,
+  embeddingInput,
+  GeminiEmbedder,
+  normalize,
+} from "../src/services/embedder.js";
 
 describe("embeddingInput", () => {
   it("assemble titre + puces, jamais la note", () => {
@@ -20,14 +25,14 @@ describe("GeminiEmbedder", () => {
     }) as typeof fetch;
     const e = new GeminiEmbedder({
       apiKey: "AIza-test",
-      model: "text-embedding-004",
+      model: "gemini-embedding-001",
       fetch: fetchFn,
     });
     const v = await e.embed("hello", "RETRIEVAL_DOCUMENT");
     expect(v).toHaveLength(EMBEDDING_DIMENSIONS);
     const { url, init } = captured!;
     expect(url).toBe(
-      "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
     );
     expect(url).not.toContain("AIza-test");
     expect(new Headers(init.headers).get("x-goog-api-key")).toBe("AIza-test");
@@ -63,5 +68,25 @@ describe("GeminiEmbedder — fetch global", () => {
     vi.stubGlobal("fetch", strictFetch);
     const e = new GeminiEmbedder({ apiKey: "k", model: "m" });
     expect(await e.embed("x", "RETRIEVAL_QUERY")).toHaveLength(EMBEDDING_DIMENSIONS);
+  });
+});
+
+describe("normalize", () => {
+  it("ramène à la norme 1, laisse tel quel un vecteur unitaire ou nul", () => {
+    const v = normalize([3, 4]);
+    expect(v[0]).toBeCloseTo(0.6);
+    expect(v[1]).toBeCloseTo(0.8);
+    expect(normalize([0, 1])).toEqual([0, 1]);
+    expect(normalize([0, 0])).toEqual([0, 0]);
+  });
+
+  it("l'embedder renvoie un vecteur unitaire même si le modèle ne l'est pas", async () => {
+    const raw = new Array(EMBEDDING_DIMENSIONS).fill(2);
+    const fetchFn = (async () =>
+      new Response(JSON.stringify({ embedding: { values: raw } }))) as typeof fetch;
+    const e = new GeminiEmbedder({ apiKey: "k", model: "m", fetch: fetchFn });
+    const v = await e.embed("x", "RETRIEVAL_DOCUMENT");
+    const norm = Math.sqrt(v.reduce((a, x) => a + x * x, 0));
+    expect(norm).toBeCloseTo(1, 6);
   });
 });

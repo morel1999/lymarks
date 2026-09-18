@@ -4,6 +4,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ChatSummarizer,
+  groqProvider,
   parseModelJson,
   tidySummary,
   type ChatProvider,
@@ -156,5 +157,27 @@ describe("ChatSummarizer — fetch global", () => {
     const s = new ChatSummarizer({ providers: [groq], retryDelayMs: 0 });
     const out = await s.summarize({ title: "T", content: "Un texte assez long pour résumer." });
     expect(out.bullets).toEqual(["Un", "Deux", "Trois"]);
+  });
+});
+
+describe("modèles raisonnants", () => {
+  it("gpt-oss chez Groq : effort de raisonnement minimal et marge de sortie", async () => {
+    const { fetch, calls } = fakeFetch([GOOD]);
+    const p = groqProvider("k", "openai/gpt-oss-120b");
+    expect(p.reasoning).toBe(true);
+    const s = new ChatSummarizer({ providers: [p], fetch, retryDelayMs: 0 });
+    await s.summarize({ title: "T", content: "Un texte." });
+    const body = calls[0]!.body as unknown as { max_tokens: number; reasoning_effort?: string };
+    expect(body.reasoning_effort).toBe("low");
+    expect(body.max_tokens).toBeGreaterThanOrEqual(1000);
+  });
+
+  it("un modèle classique ne reçoit pas de paramètre de raisonnement", async () => {
+    const { fetch, calls } = fakeFetch([GOOD]);
+    const s = new ChatSummarizer({ providers: [groq], fetch, retryDelayMs: 0 });
+    await s.summarize({ title: "T", content: "Un texte." });
+    const body = calls[0]!.body as unknown as { max_tokens: number; reasoning_effort?: string };
+    expect(body.reasoning_effort).toBeUndefined();
+    expect(body.max_tokens).toBe(400);
   });
 });

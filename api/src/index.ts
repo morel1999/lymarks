@@ -40,14 +40,14 @@ export function buildDeps(env: Env): AppDeps {
   const db = createNeonDb(required(env, "DATABASE_URL"));
   const embedder = new GeminiEmbedder({
     apiKey: required(env, "GEMINI_API_KEY"),
-    model: env.GEMINI_EMBEDDING_MODEL || "text-embedding-004",
+    model: env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001",
   });
   const summarizer = new ChatSummarizer({
     providers: [
-      groqProvider(required(env, "GROQ_API_KEY"), env.GROQ_MODEL || "llama-3.3-70b-versatile"),
+      groqProvider(required(env, "GROQ_API_KEY"), env.GROQ_MODEL || "openai/gpt-oss-120b"),
       geminiChatProvider(
         required(env, "GEMINI_API_KEY"),
-        env.GEMINI_SUMMARY_MODEL || "gemini-2.5-flash",
+        env.GEMINI_SUMMARY_MODEL || "gemini-flash-lite-latest",
       ),
     ],
     log,

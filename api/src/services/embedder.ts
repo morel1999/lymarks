@@ -80,7 +80,10 @@ export class GeminiEmbedder implements Embedder {
       if (!values.every((v) => typeof v === "number" && Number.isFinite(v))) {
         throw new EmbedError("dimensions", "Embedding non numérique");
       }
-      return values as number[];
+      // gemini-embedding-001 ne normalise que sa sortie native (3072) ; tronqué
+      // à 768, le vecteur ne l'est plus. Norme unitaire pour que cosinus et
+      // produit scalaire coïncident, quel que soit le modèle.
+      return normalize(values as number[]);
     } catch (err) {
       if (controller.signal.aborted) throw new EmbedError("timeout", "gemini : délai dépassé");
       throw err;
@@ -88,4 +91,11 @@ export class GeminiEmbedder implements Embedder {
       clearTimeout(timer);
     }
   }
+}
+
+/** Vecteur ramené à la norme 1 (inchangé s'il l'est déjà ou s'il est nul). */
+export function normalize(v: number[]): number[] {
+  const norm = Math.sqrt(v.reduce((acc, x) => acc + x * x, 0));
+  if (norm === 0 || Math.abs(norm - 1) < 1e-6) return v;
+  return v.map((x) => x / norm);
 }

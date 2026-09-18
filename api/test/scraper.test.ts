@@ -124,7 +124,7 @@ describe("safeFetch", () => {
     });
   });
 
-  it("envoie un User-Agent identifié et ne suit pas les redirections automatiquement", async () => {
+  it("envoie un User-Agent de navigateur et ne suit pas les redirections automatiquement", async () => {
     let init: RequestInit | undefined;
     const fetchFn = (async (_: unknown, i?: RequestInit) => {
       init = i;
@@ -132,7 +132,8 @@ describe("safeFetch", () => {
     }) as typeof fetch;
     await safeFetch("https://example.com/", { fetch: fetchFn, resolve });
     expect(init?.redirect).toBe("manual");
-    expect(new Headers(init?.headers).get("user-agent")).toMatch(/^LymarksBot\/1\.0/);
+    // UA de navigateur : un robot déclaré se fait refuser par les sites de presse.
+    expect(new Headers(init?.headers).get("user-agent")).toMatch(/^Mozilla\/5\.0 .*Chrome\//);
   });
 
   it("décode un charset déclaré", async () => {
