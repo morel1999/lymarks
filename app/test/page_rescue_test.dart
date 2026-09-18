@@ -61,7 +61,7 @@ void main() {
 
     test('sans og:title : la balise title, entités décodées', () {
       final c = PageRescue.extract(
-        '<html><head><title>A &amp; B</title></head>'
+        '<html><head><title>A &amp; B</title></head> '
         '<body><main>Texte</main></body></html>',
         base: base,
       )!;
@@ -71,7 +71,7 @@ void main() {
 
     test('image http ou relative vers http : ignorée', () {
       final c = PageRescue.extract(
-        '<html><head><meta property="og:image" content="http://x.test/i.png">'
+        '<html><head><meta property="og:image" content="http://x.test/i.png"> '
         '</head><body>t</body></html>',
         base: base,
       )!;
