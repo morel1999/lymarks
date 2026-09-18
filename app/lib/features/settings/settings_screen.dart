@@ -14,6 +14,7 @@ import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
+import 'package:lymarks/shared/widgets/profile_avatar.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 import 'package:lymarks/shared/widgets/settings_tile.dart';
 
@@ -250,21 +251,7 @@ class _AccountRow extends StatelessWidget {
       onTap: () => context.push(LyRoute.profile),
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: ly.lavender.fill,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              profile.initials,
-              style: context.texts.titleMedium?.copyWith(
-                color: ly.lavender.onFill,
-              ),
-            ),
-          ),
+          ProfileAvatar(profile: profile, size: 52),
           const SizedBox(width: LySpace.l),
           Expanded(
             child: Column(

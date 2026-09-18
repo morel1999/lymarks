@@ -13,6 +13,7 @@ import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
+import 'package:lymarks/shared/widgets/profile_avatar.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 import 'package:lymarks/shared/widgets/settings_tile.dart';
 
@@ -120,13 +121,13 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _IdentityCard extends StatelessWidget {
+class _IdentityCard extends ConsumerWidget {
   const _IdentityCard({required this.profile});
 
   final UserProfile profile;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ly = context.ly;
 
     return Container(
@@ -141,20 +142,9 @@ class _IdentityCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: ly.card,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              profile.initials,
-              style: context.texts.displaySmall?.copyWith(
-                color: ly.lavender.strong,
-              ),
-            ),
+          _EditableAvatar(
+            profile: profile,
+            onTap: () => showAvatarPicker(context, ref),
           ),
           const SizedBox(width: LySpace.l),
           Expanded(
@@ -204,6 +194,48 @@ class _IdentityCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Avatar de la carte d'identité, avec sa pastille « modifier ». La pastille
+/// est décorative : c'est tout le cercle qui ouvre la feuille de choix.
+class _EditableAvatar extends StatelessWidget {
+  const _EditableAvatar({required this.profile, required this.onTap});
+
+  final UserProfile profile;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ProfileAvatar(
+          profile: profile,
+          size: 72,
+          onTap: onTap,
+          semanticsLabel: 'Change avatar',
+        ),
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: ExcludeSemantics(
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: ly.card,
+                  shape: BoxShape.circle,
+                ),
+                child: const IconBadge(LyIcons.edit, size: 22),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

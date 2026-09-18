@@ -360,6 +360,11 @@ final FutureProvider<MeInfo?> meProvider = FutureProvider<MeInfo?>((ref) async {
 class ProfileNotifier extends Notifier<UserProfile> {
   UserPlan? _forcedPlan;
 
+  /// Avatar choisi localement, en attendant que `GET /me` le confirme.
+  /// Un enregistrement plutôt qu'une chaîne : « pas d'écrasement » et
+  /// « écrasé par null (initiales) » sont deux états distincts.
+  ({String? avatar})? _avatarOverride;
+
   @override
   UserProfile build() {
     final user = ref.watch(authSessionProvider).user;
@@ -372,6 +377,13 @@ class ProfileNotifier extends Notifier<UserProfile> {
         (me == null
             ? fallback.plan
             : (me.isPro ? UserPlan.pro : UserPlan.free));
+
+    // Le serveur a rattrapé le choix local : il redevient la référence.
+    final override = _avatarOverride;
+    if (override != null && me != null && me.avatar == override.avatar) {
+      _avatarOverride = null;
+    }
+
     return UserProfile(
       name: user?.displayName ?? fallback.name,
       email: user?.email ?? fallback.email,
@@ -379,20 +391,47 @@ class ProfileNotifier extends Notifier<UserProfile> {
       lymarkCount: lymarks.where((l) => !l.archived).length,
       noteCount: lymarks.where((l) => l.hasNote).length,
       memberSince: me?.createdAt ?? user?.createdAt ?? fallback.memberSince,
-      avatar: me?.avatar,
+      avatar: override != null ? override.avatar : me?.avatar,
     );
   }
 
   void setPlan(UserPlan plan) {
     _forcedPlan = plan;
-    state = UserProfile(
+    state = _copy(plan: plan, avatar: state.avatar);
+  }
+
+  /// Avatar choisi (un emoji) ; null revient aux initiales.
+  ///
+  /// Optimiste : l'avatar s'affiche tout de suite, le serveur est prévenu
+  /// ensuite (`PATCH /me`) puis `me` est rafraîchi. En cas d'échec on
+  /// revient à l'ancien. En démo, le choix reste local.
+  Future<void> setAvatar(String? avatar) async {
+    final previousOverride = _avatarOverride;
+    final previousAvatar = state.avatar;
+
+    _avatarOverride = (avatar: avatar);
+    state = _copy(plan: state.plan, avatar: avatar);
+    if (AppConfig.isDemo) return;
+
+    try {
+      await ref.read(apiClientProvider).updateAvatar(avatar);
+      ref.invalidate(meProvider);
+    } on ApiException catch (e) {
+      debugPrint('[lymarks/profile] avatar update failed: $e');
+      _avatarOverride = previousOverride;
+      state = _copy(plan: state.plan, avatar: previousAvatar);
+    }
+  }
+
+  UserProfile _copy({required UserPlan plan, required String? avatar}) {
+    return UserProfile(
       name: state.name,
       email: state.email,
       plan: plan,
       lymarkCount: state.lymarkCount,
       noteCount: state.noteCount,
       memberSince: state.memberSince,
-      avatar: state.avatar,
+      avatar: avatar,
     );
   }
 }
