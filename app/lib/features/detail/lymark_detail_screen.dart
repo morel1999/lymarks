@@ -12,6 +12,7 @@ import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/preview_image.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 import 'package:lymarks/shared/widgets/shimmer.dart';
 import 'package:lymarks/shared/widgets/source_avatar.dart';
@@ -215,13 +216,36 @@ class _SourceHeader extends StatelessWidget {
   }
 }
 
-/// Aperçu de la source.
+/// Hauteur du bandeau d'aperçu.
+const double _previewHeight = 168;
+
+/// Aperçu de la source : l'image `og:image` de la page en `cover`.
 ///
-/// L'image OG sera affichée quand le pipeline la fournira. En attendant — et
-/// pour les pages qui n'en ont pas — un aplat coloré tenant de l'accent du
-/// lymark : jamais un cadre vide (wireframe 04 §Source Preview).
+/// Pour les pages qui n'en ont pas, tant qu'elle charge ou si elle échoue,
+/// un aplat coloré tenant de l'accent du lymark : jamais un cadre vide
+/// (wireframe 04 §Source Preview). Aucune icône de source en surimpression :
+/// l'en-tête juste au-dessus montre déjà la vignette et le domaine, et un
+/// glyphe posé sur une photo exigerait un voile pour rester lisible.
 class _SourcePreview extends StatelessWidget {
   const _SourcePreview({required this.lymark, required this.accent});
+
+  final Lymark lymark;
+  final LyAccent accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return PreviewImage(
+      url: lymark.status == LymarkStatus.failed ? null : lymark.imageUrl,
+      height: _previewHeight,
+      radius: LyRadius.heroR,
+      fallback: _SourceFallback(lymark: lymark, accent: accent),
+    );
+  }
+}
+
+/// Aplat d'accent avec l'icône du domaine, repli de [_SourcePreview].
+class _SourceFallback extends StatelessWidget {
+  const _SourceFallback({required this.lymark, required this.accent});
 
   final Lymark lymark;
   final LyAccent accent;
@@ -233,7 +257,7 @@ class _SourcePreview extends StatelessWidget {
     return ClipRRect(
       borderRadius: LyRadius.heroR,
       child: Container(
-        height: 168,
+        height: _previewHeight,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,

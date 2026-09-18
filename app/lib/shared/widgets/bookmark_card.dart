@@ -5,15 +5,21 @@ import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/core/utils/relative_time.dart';
 import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
+import 'package:lymarks/shared/widgets/preview_image.dart';
 import 'package:lymarks/shared/widgets/shimmer.dart';
 import 'package:lymarks/shared/widgets/source_avatar.dart';
 import 'package:lymarks/shared/widgets/tag_chip.dart';
+
+/// Côté de la vignette carrée (aperçu ou icône de source).
+const double _tileSize = 52;
+const double _denseTileSize = 44;
 
 /// Carte lymark — le composant central du produit.
 ///
 /// Variantes portées par [Lymark.status] (Design System §Composants) :
 ///   * `processing` : squelette animé qui se remplit seul ;
-///   * `ready` : source, titre, 3 puces, note, tags ;
+///   * `ready` : aperçu de la page (ou icône de source), titre, 3 puces,
+///     note, tags ;
 ///   * `partial` : badge « Limited summary » et métadonnées conservées ;
 ///   * `failed` : message clair et bouton de relance.
 class BookmarkCard extends StatelessWidget {
@@ -45,6 +51,7 @@ class BookmarkCard extends StatelessWidget {
     final ly = context.ly;
     final texts = context.texts;
     final accent = ly.accentOr(lymark.accentSlot, lymark.accentKey);
+    final tile = dense ? _denseTileSize : _tileSize;
 
     return LyCard(
       onTap: onTap,
@@ -54,10 +61,20 @@ class BookmarkCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SourceAvatar(
-                domain: lymark.domain,
-                accent: accent,
-                size: dense ? 44 : 52,
+              PreviewImage(
+                // Une carte en échec garde son icône : une image récupérée
+                // avant l'échec ne dit rien de fiable sur la page.
+                url: lymark.status == LymarkStatus.failed
+                    ? null
+                    : lymark.imageUrl,
+                width: tile,
+                height: tile,
+                radius: LyRadius.tileR,
+                fallback: SourceAvatar(
+                  domain: lymark.domain,
+                  accent: accent,
+                  size: tile,
+                ),
               ),
               const SizedBox(width: LySpace.m),
               Expanded(
@@ -305,8 +322,8 @@ class _ProcessingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: _tileSize,
+                  height: _tileSize,
                   decoration: BoxDecoration(
                     color: context.ly.skeleton,
                     borderRadius: LyRadius.tileR,

@@ -5,6 +5,7 @@ import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/main.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/widgets/preview_image.dart';
 
 /// Avance l'horloge de test sans attendre la stabilisation de l'arbre.
 ///
@@ -129,6 +130,55 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(container.read(searchResultsProvider), isNotEmpty);
+    });
+  });
+
+  group('PreviewImage', () {
+    const fallbackKey = Key('fallback');
+
+    /// Hôte minimal : `PreviewImage` lit le `devicePixelRatio` et `Stack`
+    /// a besoin d'une direction de texte.
+    Widget host(Widget child) => MediaQuery(
+      data: const MediaQueryData(devicePixelRatio: 2),
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(child: child),
+      ),
+    );
+
+    testWidgets('sans URL, le repli est rendu tel quel', (tester) async {
+      await tester.pumpWidget(
+        host(
+          const PreviewImage(
+            url: null,
+            width: 52,
+            height: 52,
+            fallback: SizedBox(key: fallbackKey),
+          ),
+        ),
+      );
+
+      expect(find.byKey(fallbackKey), findsOneWidget);
+      expect(find.byType(Image), findsNothing);
+    });
+
+    testWidgets('sans reseau, l echec retombe sur le repli', (tester) async {
+      // flutter_test répond 400 à toute requête HTTP : l'échec passe par
+      // `errorBuilder`, qui remplace l'image par le repli.
+      await tester.pumpWidget(
+        host(
+          const PreviewImage(
+            url: 'https://example.com/og.jpg',
+            width: 52,
+            height: 52,
+            fallback: SizedBox(key: fallbackKey),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(fallbackKey), findsOneWidget);
+      expect(find.byType(RawImage), findsNothing);
     });
   });
 }
