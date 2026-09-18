@@ -37,18 +37,19 @@ Future<void> main() async {
     config: ClerkAuthConfig(
       publishableKey: AppConfig.clerkPublishableKey,
       redirectionGenerator: (_, strategy) => oauthRedirectUri(strategy),
-      // Trace sans la query (elle porte le jeton) : suffit à vérifier que le
-      // lien de retour atteint bien l'app.
-      deepLinkStream: AppLinks().uriLinkStream.map((uri) {
-        debugPrint(
-          '[lymarks/auth] deep link ${uri.scheme}://${uri.host}${uri.path}',
-        );
-        return uri;
-      }),
+      // Pas de `deepLinkStream` : le retour est traité par
+      // ClerkAuthSession.handleDeepLink (transfert connexion ↔ inscription).
       defaultLaunchMode: LaunchMode.inAppBrowserView,
     ),
   );
   final session = ClerkAuthSession(clerk);
+  AppLinks().uriLinkStream.listen((uri) {
+    // Trace sans la query (elle porte le jeton).
+    debugPrint(
+      '[lymarks/auth] deep link ${uri.scheme}://${uri.host}${uri.path}',
+    );
+    unawaited(session.handleDeepLink(uri));
+  });
   runApp(
     ProviderScope(
       overrides: [authSessionProvider.overrideWithValue(session)],

@@ -49,6 +49,41 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
   @override
   Future<void> signOut() => state.signOut();
 
+  /// Termine une connexion OAuth revenue du navigateur par lien profond
+  /// (`lymarks://oauth/<stratégie>?rotating_token_nonce=…`).
+  ///
+  /// Pris en charge ici plutôt que par `deepLinkStream` du SDK : sa version
+  /// 0.0.18 s'arrête après `completeOAuthSignIn` et ne fait jamais le
+  /// **transfert** — quand le compte Google ne correspond à aucun utilisateur
+  /// (connexion → inscription) ou l'inverse (inscription → connexion). Sur le
+  /// web, Clerk le fait d'office ; sans lui, l'utilisateur reste sur l'écran
+  /// de connexion sans message (constaté sur device le 18/09, ADR-010).
+  Future<void> handleDeepLink(Uri uri) async {
+    if (uri.scheme != 'lymarks' || uri.host != 'oauth') return;
+    final nonce = uri.queryParameters['rotating_token_nonce'];
+    try {
+      if (nonce != null && (state.signIn != null || state.signUp != null)) {
+        await state.completeOAuthSignIn(token: nonce);
+      } else {
+        await state.refreshClient();
+      }
+      if (state.signIn?.isTransferable == true ||
+          state.signUp?.isTransferable == true) {
+        await state.transfer();
+      }
+      debugPrint(
+        '[lymarks/auth] oauth return handled, signedIn=${state.isSignedIn}',
+      );
+    } on Object catch (e) {
+      debugPrint('[lymarks/auth] oauth return failed: $e');
+      // Remonte à l'écran de connexion (ClerkErrorListener) s'il écoute ;
+      // sinon le SDK relance l'erreur, qu'on ne laisse pas planter l'app.
+      try {
+        state.handleError(e);
+      } on Object catch (_) {}
+    }
+  }
+
   @override
   void dispose() {
     state.removeListener(notifyListeners);
