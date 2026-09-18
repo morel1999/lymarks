@@ -2,6 +2,7 @@ import 'package:lymarks/core/api/api_client.dart';
 import 'package:lymarks/core/api/api_models.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/models/page_content.dart';
 
 /// Source des lymarks vue par les notifiers.
 ///
@@ -20,6 +21,9 @@ abstract class LymarksRepository {
   Future<void> delete(String id);
   Future<void> markOpened(String id);
   Future<Lymark> retry(String id);
+
+  /// Repli client pour une page que le serveur n'a pas pu lire.
+  Future<Lymark> sendContent(String id, PageContent content);
   Future<SearchPage> search(String query, {required bool semantic});
   Future<List<Lymark>> similar(String id);
   Future<MeInfo?> me();
@@ -63,6 +67,10 @@ class ApiLymarksRepository implements LymarksRepository {
 
   @override
   Future<Lymark> retry(String id) => _api.retryBookmark(id);
+
+  @override
+  Future<Lymark> sendContent(String id, PageContent content) =>
+      _api.sendContent(id, content);
 
   @override
   Future<SearchPage> search(String query, {required bool semantic}) =>

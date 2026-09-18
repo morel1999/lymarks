@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:lymarks/core/api/api_models.dart';
 import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/models/page_content.dart';
 
 /// Erreur renvoyée par l'API (`{error, message, details?}`) ou par le réseau.
 @immutable
@@ -133,6 +134,16 @@ class ApiClient {
     return lymarkFromJson(json['bookmark'] as Map<String, dynamic>);
   }
 
+  /// Repli client : le contenu lu par le téléphone, résumé par le serveur.
+  Future<Lymark> sendContent(String id, PageContent content) async {
+    final json = await _send(
+      'POST',
+      '/bookmarks/$id/content',
+      body: content.toJson(),
+    );
+    return lymarkFromJson(json['bookmark'] as Map<String, dynamic>);
+  }
+
   Future<List<Lymark>> similar(String id) async {
     final json = await _send('GET', '/bookmarks/$id/similar');
     return _hits(json);
@@ -165,6 +176,12 @@ class ApiClient {
 
   Future<MeInfo> me() async {
     final json = await _send('GET', '/me');
+    return meFromJson(json['me'] as Map<String, dynamic>);
+  }
+
+  /// Avatar (un emoji) ; null le retire.
+  Future<MeInfo> updateAvatar(String? avatar) async {
+    final json = await _send('PATCH', '/me', body: {'avatar': avatar});
     return meFromJson(json['me'] as Map<String, dynamic>);
   }
 

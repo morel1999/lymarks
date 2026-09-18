@@ -379,6 +379,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       lymarkCount: lymarks.where((l) => !l.archived).length,
       noteCount: lymarks.where((l) => l.hasNote).length,
       memberSince: me?.createdAt ?? user?.createdAt ?? fallback.memberSince,
+      avatar: me?.avatar,
     );
   }
 
@@ -391,6 +392,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       lymarkCount: state.lymarkCount,
       noteCount: state.noteCount,
       memberSince: state.memberSince,
+      avatar: state.avatar,
     );
   }
 }

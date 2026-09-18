@@ -72,6 +72,7 @@ class UserProfile {
     required this.lymarkCount,
     required this.noteCount,
     required this.memberSince,
+    this.avatar,
   });
 
   final String name;
@@ -80,6 +81,9 @@ class UserProfile {
   final int lymarkCount;
   final int noteCount;
   final DateTime memberSince;
+
+  /// Avatar choisi (un emoji) ; null = initiales.
+  final String? avatar;
 
   bool get isPro => plan == UserPlan.pro;
 

@@ -44,6 +44,7 @@ class Lymark {
     this.archived = false,
     this.savedCount = 1,
     this.failureReason,
+    this.imageUrl,
   });
 
   final String id;
@@ -80,6 +81,10 @@ class Lymark {
   /// `timeout`, `unsafe_url`…). Null sinon.
   final String? failureReason;
 
+  /// Image d'aperçu de la page (`og:image`), chargée depuis le site
+  /// d'origine. Null quand la page n'en expose pas (posts X, échecs).
+  final String? imageUrl;
+
   bool get hasNote => note != null && note!.trim().isNotEmpty;
 
   /// Clé de repli quand aucun emplacement n'est connu.
@@ -95,6 +100,7 @@ class Lymark {
     bool? archived,
     int? savedCount,
     Object? failureReason = _keep,
+    String? imageUrl,
   }) {
     return Lymark(
       id: id,
@@ -116,6 +122,7 @@ class Lymark {
       failureReason: identical(failureReason, _keep)
           ? this.failureReason
           : failureReason as String?,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 

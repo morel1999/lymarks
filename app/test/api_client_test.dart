@@ -35,6 +35,8 @@ Map<String, Object?> _bookmarkJson({
   'archived': false,
   'savedCount': 1,
   'failureReason': null,
+  'category': 'science',
+  'imageUrl': 'https://example.com/og.jpg',
 };
 
 http.Response _json(Object body, {int status = 200}) => http.Response(
@@ -79,6 +81,8 @@ void main() {
       expect(result.lymark.id, 'b1');
       expect(result.lymark.status, LymarkStatus.processing);
       expect(result.lymark.domain, 'example.com');
+      expect(result.lymark.categoryId, 'science');
+      expect(result.lymark.imageUrl, 'https://example.com/og.jpg');
       expect(result.lymark.savedAt.isUtc, isFalse);
 
       final req = sent.single;
@@ -351,6 +355,18 @@ void main() {
   });
 
   group('MeInfo', () {
+    test('catégorie other = aucune catégorie, avatar optionnel', () {
+      final l = lymarkFromJson({..._bookmarkJson(), 'category': 'other'});
+      expect(l.categoryId, isNull);
+      final me = meFromJson({
+        'id': 'u',
+        'plan': 'free',
+        'createdAt': '2026-01-01T00:00:00Z',
+        'avatar': '🦊',
+      });
+      expect(me.avatar, '🦊');
+    });
+
     test('Pro = limite nulle', () {
       final me = meFromJson({
         'id': 'u',

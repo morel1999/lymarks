@@ -24,6 +24,13 @@ Lymark lymarkFromJson(Map<String, dynamic> j) {
     archived: j['archived'] == true,
     savedCount: (j['savedCount'] as num?)?.toInt() ?? 1,
     failureReason: j['failureReason'] as String?,
+    // Catégorie choisie par l'IA au résumé (taxonomie fermée côté API) ;
+    // `other` ne rattache à aucune carte de la Home.
+    categoryId: switch (j['category']) {
+      final String c when c.isNotEmpty && c != 'other' => c,
+      _ => null,
+    },
+    imageUrl: j['imageUrl'] as String?,
   );
 }
 
@@ -72,6 +79,7 @@ class MeInfo {
     required this.digestOptin,
     required this.digestHour,
     required this.tz,
+    this.avatar,
   });
 
   final String id;
@@ -84,6 +92,9 @@ class MeInfo {
   final bool digestOptin;
   final int digestHour;
   final String tz;
+
+  /// Avatar choisi par l'utilisateur (un emoji), null = initiales.
+  final String? avatar;
 }
 
 MeInfo meFromJson(Map<String, dynamic> j) => MeInfo(
@@ -95,4 +106,5 @@ MeInfo meFromJson(Map<String, dynamic> j) => MeInfo(
   digestOptin: j['digestOptin'] == true,
   digestHour: (j['digestHour'] as num?)?.toInt() ?? 8,
   tz: j['tz'] as String? ?? 'UTC',
+  avatar: j['avatar'] as String?,
 );

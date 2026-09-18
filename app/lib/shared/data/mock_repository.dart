@@ -3,6 +3,7 @@ import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/models/page_content.dart';
 
 /// Dépôt du mode démo : le jeu de données de `MockData`, en mémoire, avec les
 /// mêmes règles métier que l'API (doublon par URL normalisée, retry qui
@@ -93,6 +94,26 @@ class MockLymarksRepository implements LymarksRepository {
           'Human review stays the tie-breaker on ambiguous answers.',
         ],
         keywords: const ['AI', 'Evaluation', 'Retrieval'],
+      ),
+    );
+  }
+
+  @override
+  Future<Lymark> sendContent(String id, PageContent content) async {
+    calls.add('sendContent:$id:${content.text.length}');
+    return _patch(
+      id,
+      (l) => l.copyWith(
+        title: content.title ?? l.title,
+        status: LymarkStatus.ready,
+        failureReason: null,
+        bullets: const [
+          'Read by the phone, summarised by the server.',
+          'Sites that block robots still end up in your memory.',
+          'Nothing changes for you: the card fills itself.',
+        ],
+        keywords: const ['Rescue', 'Content'],
+        imageUrl: content.imageUrl,
       ),
     );
   }
