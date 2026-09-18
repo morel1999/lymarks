@@ -15,6 +15,7 @@ import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
+import 'package:lymarks/shared/widgets/profile_avatar.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 
 /// 02 — Home / Knowledge Hub.
@@ -197,46 +198,22 @@ class _HomeHeader extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: LySpace.m),
-          _AccountButton(initials: profile.initials),
+          // L'avatar mène au profil ; les réglages s'ouvrent depuis là.
+          ProfileAvatar(
+            profile: profile,
+            onTap: () => context.push(LyRoute.profile),
+          ),
         ],
       ),
     );
   }
 }
 
-class _AccountButton extends StatelessWidget {
-  const _AccountButton({required this.initials});
-
-  final String initials;
-
-  @override
-  Widget build(BuildContext context) {
-    final ly = context.ly;
-    return Semantics(
-      button: true,
-      label: 'Account and settings',
-      child: Material(
-        color: ly.card,
-        shape: CircleBorder(side: BorderSide(color: ly.cardBorder)),
-        child: InkWell(
-          onTap: () => context.push(LyRoute.profile),
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: 48,
-            height: 48,
-            child: Icon(
-              LyIcons.settings,
-              size: LyIconSize.large,
-              color: ly.textPrimary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Coquille réutilisée par les écrans secondaires : un titre, une action.
+///
+/// Un cran sous le titre de la Home (`displayMedium`, 28) : ces pages sont
+/// des sous-écrans, pas des points d'entrée. Le [SafeArea] tient le titre
+/// à distance de la barre de statut.
 class LyScreenHeader extends StatelessWidget {
   const LyScreenHeader({
     required this.title,
@@ -255,42 +232,49 @@ class LyScreenHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ly = context.ly;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LySpace.screen,
-        LySpace.xl,
-        LySpace.screen,
-        LySpace.l,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (onBack != null) ...[
-            _CircleButton(icon: LyIcons.back, onTap: onBack!, tooltip: 'Back'),
-            const SizedBox(width: LySpace.l),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: context.texts.displayLarge),
-                if (subtitle != null) ...[
-                  const SizedBox(height: LySpace.xs),
-                  Text(
-                    subtitle!,
-                    style: context.texts.bodyMedium?.copyWith(
-                      color: ly.textSecondary,
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          LySpace.screen,
+          LySpace.l,
+          LySpace.screen,
+          LySpace.l,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (onBack != null) ...[
+              _CircleButton(
+                icon: LyIcons.back,
+                onTap: onBack!,
+                tooltip: 'Back',
+              ),
+              const SizedBox(width: LySpace.l),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.texts.displayMedium),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: LySpace.xs),
+                    Text(
+                      subtitle!,
+                      style: context.texts.bodyLarge?.copyWith(
+                        color: ly.textSecondary,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: LySpace.m),
-            trailing!,
+            if (trailing != null) ...[
+              const SizedBox(width: LySpace.m),
+              trailing!,
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

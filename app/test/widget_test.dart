@@ -1,11 +1,15 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
+import 'package:lymarks/core/theme/app_theme.dart';
 import 'package:lymarks/main.dart';
+import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/providers.dart';
+import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/preview_image.dart';
+import 'package:lymarks/shared/widgets/profile_avatar.dart';
 
 /// Avance l'horloge de test sans attendre la stabilisation de l'arbre.
 ///
@@ -179,6 +183,85 @@ void main() {
 
       expect(find.byKey(fallbackKey), findsOneWidget);
       expect(find.byType(RawImage), findsNothing);
+  group('Avatar du profil', () {
+    Widget host(Widget child) => ProviderScope(
+      child: MaterialApp(
+        theme: LyTheme.light(),
+        home: Scaffold(body: Center(child: child)),
+      ),
+    );
+
+    testWidgets('ProfileAvatar affiche les initiales, sinon l emoji', (
+      tester,
+    ) async {
+      final base = MockData.profile;
+      await tester.pumpWidget(host(ProfileAvatar(profile: base)));
+      expect(find.text('MH'), findsOneWidget);
+
+      final withEmoji = UserProfile(
+        name: base.name,
+        email: base.email,
+        plan: base.plan,
+        lymarkCount: base.lymarkCount,
+        noteCount: base.noteCount,
+        memberSince: base.memberSince,
+        avatar: '🦊',
+      );
+      await tester.pumpWidget(host(ProfileAvatar(profile: withEmoji)));
+      expect(find.text('🦊'), findsOneWidget);
+      expect(find.text('MH'), findsNothing);
+    });
+
+    testWidgets('choisir un emoji ferme la feuille et met a jour le profil', (
+      tester,
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: LyTheme.light(),
+            home: Scaffold(
+              body: Consumer(
+                builder: (context, ref, _) => TextButton(
+                  onPressed: () => showAvatarPicker(context, ref),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await settle(tester);
+      expect(find.text('Use my initials'), findsOneWidget);
+
+      await tester.tap(find.text('🦊'));
+      await settle(tester);
+
+      expect(container.read(profileProvider).avatar, '🦊');
+      expect(find.text('Use my initials'), findsNothing);
+    });
+
+    test('en mode demo, setAvatar survit au rafraichissement de me', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(profileProvider.notifier);
+      expect(container.read(profileProvider).avatar, isNull);
+
+      await notifier.setAvatar('🦊');
+      expect(container.read(profileProvider).avatar, '🦊');
+
+      // `build()` repart de `me` quand celui-ci arrive : le choix tient.
+      await container.read(meProvider.future);
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(profileProvider).avatar, '🦊');
+
+      await notifier.setAvatar(null);
+      expect(container.read(profileProvider).avatar, isNull);
     });
   });
 }
