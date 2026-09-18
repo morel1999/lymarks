@@ -99,6 +99,11 @@ describe("safeFetch", () => {
     await expect(
       safeFetch("https://example.com/x", { fetch: f500, resolve }),
     ).rejects.toMatchObject({ reason: "http_error" });
+    // Anti-robot : distinct, l'app peut aller chercher la page elle-même.
+    const f403 = (async () => new Response("denied", { status: 403 })) as typeof fetch;
+    await expect(
+      safeFetch("https://example.com/x", { fetch: f403, resolve }),
+    ).rejects.toMatchObject({ reason: "blocked", message: "HTTP 403" });
   });
 
   it("tronque le corps au plafond de taille sans échouer", async () => {

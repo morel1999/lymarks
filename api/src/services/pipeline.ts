@@ -80,7 +80,12 @@ async function run(deps: PipelineDeps, job: PipelineJob): Promise<PipelineResult
     page = await deps.scrape(job.url, deps.scrapeOptions);
   } catch (err) {
     const reason = err instanceof ScrapeError ? err.reason : "scrape_error";
-    deps.log({ event: "pipeline_scrape_failed", bookmarkId: job.id, reason });
+    deps.log({
+      event: "pipeline_scrape_failed",
+      bookmarkId: job.id,
+      reason,
+      detail: (err as Error).message,
+    });
     return failed(job.title, reason);
   }
 

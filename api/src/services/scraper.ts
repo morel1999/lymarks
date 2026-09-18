@@ -95,6 +95,14 @@ export async function safeFetch(
         await res.body?.cancel();
         throw new ScrapeError("not_found", `HTTP ${res.status}`);
       }
+      if (res.status === 401 || res.status === 403 || res.status === 429) {
+        // Protection anti-robot (Datadome, Akamai…) : elle filtre l'origine
+        // (IP Cloudflare), pas seulement le user-agent — constaté sur Les
+        // Échos et Eurosport le 18/09, qui passent depuis un téléphone.
+        // Distingué pour que l'app puisse aller chercher la page elle-même.
+        await res.body?.cancel();
+        throw new ScrapeError("blocked", `HTTP ${res.status}`);
+      }
       if (!res.ok) {
         await res.body?.cancel();
         throw new ScrapeError("http_error", `HTTP ${res.status}`);
