@@ -37,7 +37,14 @@ Future<void> main() async {
     config: ClerkAuthConfig(
       publishableKey: AppConfig.clerkPublishableKey,
       redirectionGenerator: (_, strategy) => oauthRedirectUri(strategy),
-      deepLinkStream: AppLinks().uriLinkStream,
+      // Trace sans la query (elle porte le jeton) : suffit à vérifier que le
+      // lien de retour atteint bien l'app.
+      deepLinkStream: AppLinks().uriLinkStream.map((uri) {
+        debugPrint(
+          '[lymarks/auth] deep link ${uri.scheme}://${uri.host}${uri.path}',
+        );
+        return uri;
+      }),
       defaultLaunchMode: LaunchMode.inAppBrowserView,
     ),
   );
