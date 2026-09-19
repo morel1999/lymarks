@@ -49,6 +49,19 @@ const DEFAULT_MAX_REDIRECTS = 3;
 // pour un utilisateur qui l'a explicitement sauvegardée : UA de navigateur.
 const USER_AGENT =
   "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36";
+// Instagram et Threads ne servent leurs métadonnées (image, compte) qu'aux
+// robots d'aperçu ; un navigateur non connecté reçoit une coquille vide.
+const PREVIEW_USER_AGENT =
+  "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
+const PREVIEW_HOSTS = ["instagram.com", "threads.net"];
+
+/** UA à présenter à un hôte donné. */
+export function userAgentFor(host: string): string {
+  const h = host.toLowerCase();
+  return PREVIEW_HOSTS.some((p) => h === p || h.endsWith(`.${p}`))
+    ? PREVIEW_USER_AGENT
+    : USER_AGENT;
+}
 const ALLOWED_TYPES = ["text/html", "application/xhtml+xml"];
 
 /**
@@ -75,7 +88,7 @@ export async function safeFetch(
           redirect: "manual",
           signal: controller.signal,
           headers: {
-            "user-agent": opts.userAgent ?? USER_AGENT,
+            "user-agent": opts.userAgent ?? userAgentFor(target.hostname),
             accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
             "accept-language": "fr,en;q=0.8",
           },

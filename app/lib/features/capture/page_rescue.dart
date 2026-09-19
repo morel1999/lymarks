@@ -120,9 +120,16 @@ class PageRescue {
       caseSensitive: false,
     ).firstMatch(html)?.group(1);
 
-    final text = _mainText(html);
-    if (text.isEmpty && (description == null || description.isEmpty)) {
-      return null;
+    var text = _mainText(html);
+    final hasDescription = description != null && description.isNotEmpty;
+    if (text.isEmpty && !hasDescription) {
+      // Instagram (robot d'aperçu) : ni texte ni légende, mais le compte et
+      // l'image — assez pour une carte partielle. Le titre fait office de
+      // texte, l'API exige un contenu non vide ; une page vraiment vide
+      // (titre générique, sans image) n'apporte rien.
+      final worth = imageUrl != null && title != null && title != 'Instagram';
+      if (!worth) return null;
+      text = title;
     }
     return PageContent(
       title: title,

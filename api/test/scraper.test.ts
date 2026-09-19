@@ -6,6 +6,7 @@ import {
   MAX_CHARS,
   safeFetch,
   scrape,
+  userAgentFor,
 } from "../src/services/scraper.js";
 import type { Resolver } from "../src/services/ssrf.js";
 
@@ -175,6 +176,13 @@ describe("safeFetch", () => {
     expect(init?.redirect).toBe("manual");
     // UA de navigateur : un robot déclaré se fait refuser par les sites de presse.
     expect(new Headers(init?.headers).get("user-agent")).toMatch(/^Mozilla\/5\.0 .*Chrome\//);
+  });
+
+  it("Instagram et Threads reçoivent l'agent d'aperçu, les autres un navigateur", () => {
+    expect(userAgentFor("www.instagram.com")).toMatch(/^facebookexternalhit/);
+    expect(userAgentFor("threads.net")).toMatch(/^facebookexternalhit/);
+    expect(userAgentFor("notinstagram.com")).toMatch(/^Mozilla/);
+    expect(userAgentFor("lesechos.fr")).toMatch(/^Mozilla/);
   });
 
   it("décode un charset déclaré", async () => {

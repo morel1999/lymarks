@@ -78,6 +78,18 @@ void main() {
       expect(c.imageUrl, isNull);
     });
 
+    test('compte + image sans texte (Instagram) : envoyé quand même', () {
+      final c = PageRescue.extract(
+        '<html><head><meta name="twitter:title" content="Mrl (@mrl)"> '
+        '<meta property="og:image" content="https://i.test/p.jpg"> '
+        '</head><body><script>app()</script></body></html>',
+        base: base,
+      )!;
+      expect(c.title, 'Mrl (@mrl)');
+      expect(c.text, 'Mrl (@mrl)');
+      expect(c.imageUrl, 'https://i.test/p.jpg');
+    });
+
     test('ni texte ni description : rien à envoyer', () {
       expect(
         PageRescue.extract(

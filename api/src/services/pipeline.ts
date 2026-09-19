@@ -39,6 +39,8 @@ export interface PipelineJob {
 
 /** En dessous, la page n'a pas livré de vrai contenu : on résume ses métadonnées → `partial`. */
 const THIN_CONTENT_CHARS = 200;
+/** En dessous, sans description, image ni vrai titre : page non rendue (voir `isShell`). */
+const SHELL_TEXT_CHARS = 40;
 
 /**
  * Au-delà, une entrée `processing` est tenue pour abandonnée : le pipeline ne
@@ -111,6 +113,15 @@ async function run(deps: PipelineDeps, job: PipelineJob): Promise<PipelineResult
   const thin = page.text.length < THIN_CONTENT_CHARS;
   const content = thin ? [page.description, page.text].filter(Boolean).join("\n") : page.text;
   if (!content.trim() && !title) return failed(null, "empty_page");
+  // Une « coquille » (texte quasi nul, aucune métadonnée) est une page rendue
+  // en JavaScript ou un mur de connexion servi 200 aux IP Cloudflare
+  // (Instagram, Dribbble, pages de partage Xiaomi — constaté le 19/09) : rien
+  // à résumer ici, mais le téléphone, lui, peut la lire — même issue que
+  // `blocked`, que l'app sait rattraper.
+  if (isShell(page)) {
+    deps.log({ event: "pipeline_shell_page", bookmarkId: job.id });
+    return failed(job.title, "blocked");
+  }
 
   // 3. Résumé (le résumeur gère retry et fallback).
   let summary;
@@ -159,6 +170,14 @@ async function run(deps: PipelineDeps, job: PipelineJob): Promise<PipelineResult
 function providedPage(url: string, page: ProvidedPage): PageContent {
   const text = page.text.length > MAX_CHARS ? `${page.text.slice(0, MAX_CHARS)}…` : page.text;
   return { ...page, text, finalUrl: url, siteName: null };
+}
+
+/**
+ * Texte quasi nul, ni description ni image : la page n'a pas été rendue. Un
+ * titre seul (« Instagram », « Dribbble - … ») ne vaut rien à résumer.
+ */
+export function isShell(page: PageContent): boolean {
+  return page.text.trim().length < SHELL_TEXT_CHARS && !page.description?.trim() && !page.imageUrl;
 }
 
 function failed(title: string | null, reason: string): PipelineResult {

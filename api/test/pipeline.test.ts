@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Embedder } from "../src/services/embedder.js";
-import { processBookmark, type PipelineDeps } from "../src/services/pipeline.js";
+import { isShell, processBookmark, type PipelineDeps } from "../src/services/pipeline.js";
 import { MAX_CHARS, ScrapeError, type PageContent } from "../src/services/scraper.js";
 import type { Summarizer } from "../src/services/summarizer.js";
 import { fakeEmbedding } from "./helpers/app.js";
@@ -120,6 +120,32 @@ describe("processBookmark", () => {
     expect(result.status).toBe("partial");
     expect(received).toContain("Résumé OG de l'article");
     expect((await db.bookmarks.get(user.id, row.id))?.summary?.bullets).toEqual(["Depuis OG"]);
+  });
+
+  it("coquille (texte nul, ni description ni image) → failed blocked, le téléphone relira", async () => {
+    let summarized = 0;
+    const { db, deps } = setup({
+      scrape: async () => page({ title: "Instagram", text: "", description: null, imageUrl: null }),
+      summarize: async () => {
+        summarized += 1;
+        return { bullets: [], keywords: [], lang: null, category: "other" };
+      },
+    });
+    const { user, row } = await seed(db);
+    const result = await processBookmark(deps, {
+      id: row.id,
+      url: row.url,
+      urlHash: row.urlHash,
+      title: row.title,
+    });
+    expect(result).toMatchObject({ status: "failed", failureReason: "blocked" });
+    expect(summarized).toBe(0);
+    expect((await db.bookmarks.get(user.id, row.id))?.failureReason).toBe("blocked");
+    // Une image ou une description suffisent à sortir de la coquille.
+    expect(isShell(page({ text: "", description: null, imageUrl: "https://x.test/i.jpg" }))).toBe(
+      false,
+    );
+    expect(isShell(page({ text: "", description: "Un résumé OG", imageUrl: null }))).toBe(false);
   });
 
   it("404 → failed avec la raison, titre du partage conservé, catégorie other", async () => {
