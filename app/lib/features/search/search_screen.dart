@@ -78,6 +78,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final isPro = ref.watch(profileProvider).isPro;
     final results = ref.watch(searchResultsProvider);
     final semantic = _isSemantic(query);
+    final error = ref.watch(searchStateProvider).error;
 
     return Scaffold(
       body: CustomScrollView(
@@ -157,7 +158,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             if (results.isEmpty)
-              const SliverToBoxAdapter(child: _NoResults())
+              SliverToBoxAdapter(child: _NoResults(error: error))
             else
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: LySpace.screen),
@@ -340,18 +341,23 @@ class _SemanticUpsell extends StatelessWidget {
 }
 
 class _NoResults extends StatelessWidget {
-  const _NoResults();
+  const _NoResults({this.error});
+
+  /// Message du serveur quand la recherche a été refusée (plan, réseau) :
+  /// un « 0 résultat » muet cacherait la vraie cause.
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(top: LySpace.xxl),
+    return Padding(
+      padding: const EdgeInsets.only(top: LySpace.xxl),
       child: EmptyState(
         icon: LyIcons.search,
-        title: 'Nothing surfaced yet.',
+        title: error == null ? 'Nothing surfaced yet.' : 'Search unavailable.',
         message:
+            error ??
             'Try describing what you remember '
-            'rather than searching exact words.',
+                'rather than searching exact words.',
       ),
     );
   }

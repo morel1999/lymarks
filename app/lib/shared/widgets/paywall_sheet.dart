@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
@@ -138,10 +139,21 @@ class PaywallSheet extends ConsumerWidget {
           const SizedBox(height: LySpace.l),
           FilledButton(
             onPressed: () {
-              // Démo : en production, l'achat passe par RevenueCat et
-              // l'entitlement est confirmé côté serveur par webhook.
-              ref.read(profileProvider.notifier).setPlan(UserPlan.pro);
+              // L'achat passe par RevenueCat et l'entitlement est confirmé
+              // côté serveur par webhook (étape 4). Tant qu'il n'est pas
+              // branché, l'app ne fait pas semblant : seul le mode démo
+              // bascule le plan localement.
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.of(context).pop();
+              if (AppConfig.isDemo) {
+                ref.read(profileProvider.notifier).setPlan(UserPlan.pro);
+                return;
+              }
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Purchases arrive with the next update.'),
+                ),
+              );
             },
             child: const Text('Continue'),
           ),
