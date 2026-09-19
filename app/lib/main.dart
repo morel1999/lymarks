@@ -73,7 +73,7 @@ Future<void> main() async {
   // Achats : le SDK RevenueCat suit la session (appUserID = identifiant
   // Clerk). Sans clé au build, pas de store — le paywall le dit.
   final billing = AppConfig.hasPurchases
-      ? RevenueCatBilling(apiKey: AppConfig.revenuecatApiKey)
+      ? RevenueCatBilling(apiKey: AppConfig.revenuecatPublicKey)
       : const NoBilling();
   BillingLink(billing, session);
   runApp(

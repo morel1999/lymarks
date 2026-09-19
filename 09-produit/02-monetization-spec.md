@@ -20,7 +20,7 @@ Entitlement unique **`pro`** ; offerings `default` (monthly, annual). App : `pur
 | Offering courante | `default` (« current ») | `Purchases.getOfferings().current` |
 | Packages | `$rc_monthly` → mensuel, `$rc_annual` → annuel (types standard RevenueCat ; tout autre package est ignoré) | `RevenueCatBilling.offer()` |
 | Produits (Test Store) | `lymarks_pro_monthly` (P1M), `lymarks_pro_annual` (P1Y) | RevenueCat seulement — l'app ne connaît que les packages |
-| Clé SDK | `--dart-define=REVENUECAT_API_KEY` (GitHub Secret, clé publique du SDK) | `AppConfig.revenuecatApiKey` |
+| Clé SDK | `--dart-define=REVENUECAT_PUBLIC_KEY` (GitHub Secret, clé publique du SDK ; `REVENUECAT_API_KEY` reste la clé secrète REST de l'API) | `AppConfig.revenuecatPublicKey` |
 | Webhook | `POST https://lymarks-api…/webhooks/revenuecat`, en-tête `Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>` (secret Workers) | `api/src/routes/webhooks.ts` |
 
 **Chemin Shipaton Next Gen : le Test Store.** Sans compte développeur Play, RevenueCat fournit une app de type *Test Store* : le SDK, configuré avec sa clé, affiche une feuille d'achat simulée (réussir / échouer / annuler), les abonnements se renouvellent en accéléré (5 renouvellements, puis annulation) et **les webhooks partent comme en production** (`environment: SANDBOX`). Passer à Google Play plus tard = créer l'app Play dans RevenueCat, y rattacher les mêmes produits/entitlement/offering, changer la clé au build. Le code ne bouge pas.

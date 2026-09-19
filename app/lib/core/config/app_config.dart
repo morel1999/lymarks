@@ -16,17 +16,18 @@ abstract final class AppConfig {
     'CLERK_PUBLISHABLE_KEY',
   );
 
-  /// Clé publique du SDK RevenueCat (`test_…` pour le Test Store, clé Play
-  /// ensuite). Vide : pas d'achats dans ce build, le paywall le dit.
-  static const String revenuecatApiKey = String.fromEnvironment(
-    'REVENUECAT_API_KEY',
+  /// Clé publique du SDK RevenueCat (Test Store pendant le Shipaton, clé
+  /// Play ensuite) — jamais la clé secrète REST, qui reste côté API. Vide :
+  /// pas d'achats dans ce build, le paywall le dit.
+  static const String revenuecatPublicKey = String.fromEnvironment(
+    'REVENUECAT_PUBLIC_KEY',
   );
 
   /// Vrai quand une clé Clerk est fournie : auth réelle + API réelle.
   static bool get isLive => clerkPublishableKey.isNotEmpty;
 
   /// Vrai quand un store est branché (mode réel et clé RevenueCat fournie).
-  static bool get hasPurchases => isLive && revenuecatApiKey.isNotEmpty;
+  static bool get hasPurchases => isLive && revenuecatPublicKey.isNotEmpty;
 
   /// Mode démo : mock local, session factice.
   static bool get isDemo => !isLive;
