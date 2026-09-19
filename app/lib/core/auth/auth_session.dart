@@ -6,12 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 @immutable
 class AuthUser {
   const AuthUser({
+    required this.id,
     required this.email,
     this.name,
     this.avatarUrl,
     this.createdAt,
   });
 
+  /// Identifiant Clerk (`user_…`). C'est lui que l'API connaît, et lui que
+  /// RevenueCat reçoit comme `appUserID` (Monetization Spec §2).
+  final String id;
   final String email;
   final String? name;
   final String? avatarUrl;
@@ -47,6 +51,7 @@ class DemoAuthSession extends ChangeNotifier implements AuthSession {
   DemoAuthSession({
     this.signedIn = true,
     this.user = const AuthUser(
+      id: 'demo-user',
       email: 'morel@lymarks.app',
       name: 'Morel Herval',
     ),

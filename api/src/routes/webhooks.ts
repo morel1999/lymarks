@@ -18,6 +18,8 @@ const eventSchema = z.object({
     entitlement_ids: z.array(z.string()).nullable().optional(),
     expiration_at_ms: z.number().nullable().optional(),
     event_timestamp_ms: z.number(),
+    /** `SANDBOX` (Test Store, achats de test) ou `PRODUCTION` : journalisé, pas filtré. */
+    environment: z.string().optional(),
   }),
 });
 
@@ -81,6 +83,7 @@ export function webhookRoutes(deps: AppDeps): Hono {
     deps.log({
       event: "revenuecat_webhook",
       type: payload.event.type,
+      environment: payload.event.environment ?? null,
       outcome,
       entitlement: event.entitlement,
     });

@@ -10,6 +10,9 @@ import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/auth/clerk_session.dart';
+import 'package:lymarks/core/billing/billing.dart';
+import 'package:lymarks/core/billing/billing_link.dart';
+import 'package:lymarks/core/billing/revenuecat_billing.dart';
 import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_theme.dart';
@@ -67,9 +70,18 @@ Future<void> main() async {
     },
     onError: (Object e) => debugPrint('[lymarks/auth] link stream error: $e'),
   );
+  // Achats : le SDK RevenueCat suit la session (appUserID = identifiant
+  // Clerk). Sans clé au build, pas de store — le paywall le dit.
+  final billing = AppConfig.hasPurchases
+      ? RevenueCatBilling(apiKey: AppConfig.revenuecatApiKey)
+      : const NoBilling();
+  BillingLink(billing, session);
   runApp(
     ProviderScope(
-      overrides: [authSessionProvider.overrideWithValue(session)],
+      overrides: [
+        authSessionProvider.overrideWithValue(session),
+        billingProvider.overrideWithValue(billing),
+      ],
       child: ClerkAuth(authState: clerk, child: const LymarksApp()),
     ),
   );

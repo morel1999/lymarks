@@ -73,11 +73,18 @@ jobs:
       # en debug (toutes les ABI + VM JIT). Signe avec la cle debug par le
       # template, donc installable en sideload. arm64 couvre les telephones
       # de moins de 8 ans ; armv7 reste pour les tests sur Android 10 ancien.
+      # La cle RevenueCat est la cle publique du SDK (Test Store pendant le
+      # Shipaton, cle Play ensuite). Sans elle l'APK n'a pas d'achats : le
+      # paywall le dit, on avertit sans bloquer.
       - name: APK release par architecture
         env:
           CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          REVENUECAT_API_KEY: ${{ secrets.REVENUECAT_API_KEY }}
         run: |
-          flutter build apk --release --split-per-abi             --dart-define=CLERK_PUBLISHABLE_KEY="$CLERK_PUBLISHABLE_KEY"             --dart-define=LYMARKS_API_URL=https://lymarks-api.lymarks.workers.dev
+          if [ -z "$REVENUECAT_API_KEY" ]; then
+            echo "::warning::REVENUECAT_API_KEY absent des GitHub Secrets : APK sans achats."
+          fi
+          flutter build apk --release --split-per-abi             --dart-define=CLERK_PUBLISHABLE_KEY="$CLERK_PUBLISHABLE_KEY"             --dart-define=REVENUECAT_API_KEY="$REVENUECAT_API_KEY"             --dart-define=LYMARKS_API_URL=https://lymarks-api.lymarks.workers.dev
 
       - name: Taille installee (budget 40 Mo, 08-qualite/02-performance-budget)
         run: ls -la build/app/outputs/flutter-apk/*.apk

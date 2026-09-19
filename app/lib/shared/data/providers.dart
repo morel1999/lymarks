@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lymarks/core/api/api_client.dart';
 import 'package:lymarks/core/api/api_models.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
+import 'package:lymarks/core/billing/billing.dart';
 import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/features/capture/page_rescue.dart';
@@ -48,6 +49,29 @@ final Provider<LymarksRepository> lymarksRepositoryProvider =
 final Provider<PageRescue> pageRescueProvider = Provider<PageRescue>(
   (_) => const PageRescue(),
 );
+
+/// Achats in-app. Sans store (démo, tests, build sans clé) : [NoBilling].
+/// `main()` fournit le SDK RevenueCat en mode réel ; les tests une doublure.
+final Provider<Billing> billingProvider = Provider<Billing>(
+  (_) => const NoBilling(),
+);
+
+/// Forfaits Pro du store. Null sans store ou sans offre : le paywall montre
+/// alors la proposition du Monetization Spec en démo, et l'indisponibilité
+/// en mode réel. Une erreur du store vaut « pas d'offre » : jamais d'écran
+/// rouge pour un achat.
+final FutureProvider<ProOffer?> proOfferProvider = FutureProvider<ProOffer?>((
+  ref,
+) async {
+  final billing = ref.watch(billingProvider);
+  if (!billing.isAvailable) return null;
+  try {
+    return await billing.offer();
+  } on Object catch (e) {
+    debugPrint('[lymarks/billing] offer failed: $e');
+    return null;
+  }
+});
 
 /// Intervalle de rafraîchissement tant qu'un lymark est en `processing`.
 /// Null = pas de sondage (mode démo, tests : aucun timer en suspens).
@@ -468,6 +492,50 @@ class ProfileNotifier extends Notifier<UserProfile> {
   void setPlan(UserPlan plan) {
     _forcedPlan = plan;
     state = _copy(plan: plan, avatar: state.avatar);
+  }
+
+  /// Achète un forfait Pro.
+  ///
+  /// Le store confirme le paiement ; le droit, lui, vient du serveur, prévenu
+  /// par le webhook RevenueCat (Monetization Spec §3). Entre les deux, l'app
+  /// affiche Pro tout de suite et relit `GET /me` jusqu'à ce que le serveur
+  /// ait suivi — sans jamais bloquer l'utilisateur.
+  Future<PurchaseOutcome> purchase(ProPackage package) async {
+    final outcome = await ref.read(billingProvider).purchase(package);
+    if (outcome == PurchaseOutcome.purchased) await _confirmPro();
+    return outcome;
+  }
+
+  /// Relie les achats passés au compte ; vrai si Pro en ressort.
+  Future<bool> restore() async {
+    final pro = await ref.read(billingProvider).restore();
+    if (pro) await _confirmPro();
+    return pro;
+  }
+
+  /// Délais entre deux relectures de `me` après un achat : le webhook met en
+  /// général une à trois secondes à arriver.
+  static const List<Duration> confirmDelays = [
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+    Duration(seconds: 8),
+  ];
+
+  Future<void> _confirmPro() async {
+    setPlan(UserPlan.pro);
+    if (AppConfig.isDemo) return;
+    for (final delay in confirmDelays) {
+      await Future<void>.delayed(delay);
+      ref.invalidate(meProvider);
+      final me = await ref.read(meProvider.future);
+      if (me?.isPro ?? false) {
+        // Le serveur est la référence : plus besoin de forcer.
+        _forcedPlan = null;
+        return;
+      }
+    }
+    debugPrint('[lymarks/billing] server has not confirmed pro yet');
   }
 
   /// Avatar choisi (un emoji) ; null revient aux initiales.

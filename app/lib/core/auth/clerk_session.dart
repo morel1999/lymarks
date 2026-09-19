@@ -30,6 +30,7 @@ class ClerkAuthSession extends ChangeNotifier implements AuthSession {
         .where((s) => s.isNotEmpty)
         .join(' ');
     return AuthUser(
+      id: u.id,
       email: email,
       name: name.isEmpty ? null : name,
       avatarUrl: u.imageUrl,
