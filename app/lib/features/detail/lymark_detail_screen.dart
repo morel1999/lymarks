@@ -462,16 +462,6 @@ class _Tags extends ConsumerWidget {
               context.go(LyRoute.search);
             },
           ),
-        TagChip(
-          'Add tag',
-          icon: LyIcons.plus,
-          accent: LyAccent(
-            fill: context.ly.primarySoft,
-            strong: context.ly.primary,
-            onFill: context.ly.primary,
-          ),
-          onTap: () {},
-        ),
       ],
     );
   }

@@ -54,6 +54,7 @@ ProviderContainer _container({List<Override> overrides = const []}) {
 Future<void> _boot(
   WidgetTester tester, {
   ThemeMode? theme,
+  UserPlan? plan,
   List<Override> overrides = const [],
 }) async {
   await tester.binding.setSurfaceSize(_phone);
@@ -62,6 +63,9 @@ Future<void> _boot(
   final container = _container(overrides: overrides);
   if (theme != null) {
     container.read(themeModeProvider.notifier).state = theme;
+  }
+  if (plan != null) {
+    container.read(profileProvider.notifier).setPlan(plan);
   }
 
   await tester.pumpWidget(
@@ -206,12 +210,11 @@ void main() {
   });
 
   testWidgets('paywall sheet', (tester) async {
-    await _boot(tester);
+    // Le compte de démo est Pro, et « Manage » mène desormais au store, pas
+    // au paywall : on part donc d'un compte Free.
+    await _boot(tester, plan: UserPlan.free);
     await _skipOnboarding(tester);
     await tester.tap(find.bySemanticsLabel('Profile'));
-    await _settle(tester);
-    // Le compte de démo est Pro : on repasse en Free pour voir le paywall.
-    await tester.tap(find.text('Manage'));
     await _settle(tester);
     await tester.tap(find.text('Upgrade'));
     await _settle(tester);
@@ -371,5 +374,31 @@ void main() {
     await tester.tap(find.text('Prompt Engineering'));
     await _settle(tester);
     await _shoot(tester, '21-cluster-lymarks');
+  });
+
+  testWidgets('22 confidentialite : un texte de reference habille', (
+    tester,
+  ) async {
+    await _boot(tester);
+    await _skipOnboarding(tester);
+    await tester.tap(find.bySemanticsLabel('Profile'));
+    await _settle(tester);
+    await tester.tap(find.text('All settings'));
+    await _settle(tester);
+    await tester.tap(find.text('Privacy policy'));
+    await _settle(tester);
+    await _shoot(tester, '22-privacy');
+  });
+
+  testWidgets('23 la carte d identite de l app', (tester) async {
+    await _boot(tester);
+    await _skipOnboarding(tester);
+    await tester.tap(find.bySemanticsLabel('Profile'));
+    await _settle(tester);
+    await tester.tap(find.text('All settings'));
+    await _settle(tester);
+    await tester.tap(find.text('About Lymarks'));
+    await _settle(tester);
+    await _shoot(tester, '23-about');
   });
 }

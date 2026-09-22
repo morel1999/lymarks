@@ -51,6 +51,12 @@ class FakeBilling implements Billing {
     restored += 1;
     return restoresPro;
   }
+
+  @override
+  Future<Uri?> managementUrl() async => management;
+
+  /// Adresse de gestion rendue par le store, quand il y en a une.
+  Uri? management;
 }
 
 void main() {

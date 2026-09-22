@@ -113,6 +113,18 @@ class RevenueCatBilling implements Billing {
     }
   }
 
+  @override
+  Future<Uri?> managementUrl() async {
+    if (!_configured) return null;
+    try {
+      final raw = (await Purchases.getCustomerInfo()).managementURL;
+      return raw == null ? null : Uri.tryParse(raw);
+    } on PlatformException catch (e) {
+      _trace('managementUrl: ${PurchasesErrorHelper.getErrorCode(e)}');
+      return null;
+    }
+  }
+
   static bool _hasPro(CustomerInfo info) =>
       info.entitlements.active.containsKey(proEntitlement);
 

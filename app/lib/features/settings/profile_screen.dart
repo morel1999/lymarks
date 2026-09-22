@@ -7,6 +7,7 @@ import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
+import 'package:lymarks/core/utils/open_link.dart';
 import 'package:lymarks/core/utils/relative_time.dart';
 import 'package:lymarks/features/home/home_screen.dart';
 import 'package:lymarks/shared/data/providers.dart';
@@ -71,13 +72,6 @@ class ProfileScreen extends ConsumerWidget {
                       onTap: () => context.push(LyRoute.library),
                     ),
                     SettingsTile(
-                      icon: LyIcons.tag,
-                      accent: ly.lime,
-                      title: 'Tags',
-                      subtitle: 'Generated from what you save',
-                      onTap: () {},
-                    ),
-                    SettingsTile(
                       icon: LyIcons.digest,
                       accent: ly.blue,
                       title: 'Daily Digest',
@@ -91,18 +85,13 @@ class ProfileScreen extends ConsumerWidget {
                 SettingsGroup(
                   children: [
                     SettingsTile(
-                      icon: LyIcons.security,
-                      accent: ly.steel,
-                      title: 'Security',
-                      subtitle: 'Sign-in methods and sessions',
-                      onTap: () {},
-                    ),
-                    SettingsTile(
                       icon: LyIcons.billing,
                       accent: ly.yellow,
                       title: 'Billing & subscription',
                       subtitle: profile.isPro ? 'Pro · annual' : 'Free plan',
-                      onTap: () {},
+                      onTap: () => unawaited(
+                        openBilling(context, ref, isPro: profile.isPro),
+                      ),
                     ),
                     SettingsTile(
                       icon: LyIcons.settings,
@@ -381,21 +370,10 @@ class _PlanBanner extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: LySpace.s),
-          // Bascule du plan : présente uniquement pour éprouver le paywall
-          // tant que RevenueCat n'est pas branché.
           FilledButton(
-            onPressed: () {
-              if (profile.isPro) {
-                ref.read(profileProvider.notifier).setPlan(UserPlan.free);
-              } else {
-                unawaited(
-                  PaywallSheet.show(
-                    context,
-                    trigger: PaywallTrigger.settings,
-                  ),
-                );
-              }
-            },
+            onPressed: () => unawaited(
+              openBilling(context, ref, isPro: profile.isPro),
+            ),
             style: FilledButton.styleFrom(
               backgroundColor: ly.card,
               foregroundColor: accent.onFill,
@@ -409,4 +387,33 @@ class _PlanBanner extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Ouvre la bonne surface de facturation selon le plan.
+///
+/// Free : le paywall. Pro : la page du store, seul endroit où un abonnement
+/// se change ou se résilie — l'app affiche, elle ne décide pas
+/// (Monetization Spec §3). RevenueCat fournit l'adresse ; sans store — mode
+/// démo, build sans clé, abonnement souscrit ailleurs — on le dit plutôt que
+/// d'ouvrir une page vide.
+Future<void> openBilling(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool isPro,
+}) async {
+  if (!isPro) {
+    await PaywallSheet.show(context, trigger: PaywallTrigger.settings);
+    return;
+  }
+
+  final url = await ref.read(billingProvider).managementUrl();
+  if (!context.mounted) return;
+  if (url == null) {
+    LyLink.toast(
+      context,
+      'Manage your subscription where you bought it.',
+    );
+    return;
+  }
+  await LyLink.open(context, url);
 }

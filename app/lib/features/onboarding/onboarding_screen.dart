@@ -570,7 +570,8 @@ class _FindSlide extends StatelessWidget {
     return _Slide(
       active: active,
       title: 'Find it when\nyou need it.',
-      body: 'Summaries, categories, and a search\nthat understands what you '
+      body:
+          'Summaries, categories, and a search\nthat understands what you '
           'meant.',
       illustration: (context, enter) {
         final ly = context.ly;

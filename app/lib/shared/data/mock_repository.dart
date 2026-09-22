@@ -190,6 +190,16 @@ class MockLymarksRepository implements LymarksRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> export() async {
+    calls.add('export');
+    return {
+      'exportedAt': _clock().toUtc().toIso8601String(),
+      'lymarkCount': _items.length,
+      'lymarks': [for (final l in _items) lymarkToJson(l)],
+    };
+  }
+
+  @override
   Future<void> deleteAccount() async {
     calls.add('deleteAccount');
     _items.clear();

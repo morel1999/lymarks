@@ -10,6 +10,8 @@ import 'package:lymarks/features/home/home_screen.dart';
 import 'package:lymarks/features/home/library_screen.dart';
 import 'package:lymarks/features/onboarding/onboarding_screen.dart';
 import 'package:lymarks/features/search/search_screen.dart';
+import 'package:lymarks/features/settings/legal_content.dart';
+import 'package:lymarks/features/settings/legal_screen.dart';
 import 'package:lymarks/features/settings/profile_screen.dart';
 import 'package:lymarks/features/settings/settings_screen.dart';
 import 'package:lymarks/shared/widgets/app_bottom_nav.dart';
@@ -24,6 +26,8 @@ abstract final class LyRoute {
   static const String library = '/library';
   static const String settings = '/settings';
   static const String profile = '/profile';
+  static const String privacy = '/privacy';
+  static const String terms = '/terms';
 
   static String lymark(String id) => '/lymark/$id';
   static String category(String id) => '/category/$id';
@@ -124,6 +128,14 @@ GoRouter buildRouter({required AuthSession auth}) {
       GoRoute(
         path: LyRoute.profile,
         builder: (_, _) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: LyRoute.privacy,
+        builder: (_, _) => LegalScreen(page: LegalTexts.privacy),
+      ),
+      GoRoute(
+        path: LyRoute.terms,
+        builder: (_, _) => LegalScreen(page: LegalTexts.terms),
       ),
     ],
   );

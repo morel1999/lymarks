@@ -28,6 +28,9 @@ abstract class LymarksRepository {
   Future<List<Lymark>> similar(String id);
   Future<MeInfo?> me();
   Future<void> deleteAccount();
+
+  /// Tout ce que le compte contient, en JSON (Privacy Spec §5).
+  Future<Map<String, dynamic>> export();
 }
 
 /// Mode réel : tout passe par l'API, rien n'est calculé localement.
@@ -84,4 +87,7 @@ class ApiLymarksRepository implements LymarksRepository {
 
   @override
   Future<void> deleteAccount() => _api.deleteAccount();
+
+  @override
+  Future<Map<String, dynamic>> export() => _api.export();
 }

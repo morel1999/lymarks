@@ -34,6 +34,28 @@ Lymark lymarkFromJson(Map<String, dynamic> j) {
   );
 }
 
+/// Un lymark tel qu'il part dans l'export (RGPD art. 20).
+///
+/// Ce que l'utilisateur a mis là ou que l'IA a produit pour lui : le lien, ce
+/// qu'on en a compris, sa note. Pas l'embedding, illisible et sans valeur
+/// hors de notre index.
+Map<String, dynamic> lymarkToJson(Lymark l) => {
+  'id': l.id,
+  'url': l.url,
+  'domain': l.domain,
+  'title': l.title,
+  'savedAt': l.savedAt.toUtc().toIso8601String(),
+  'source': l.source.name,
+  'status': l.status.name,
+  'summary': l.bullets,
+  'keywords': l.keywords,
+  if (l.note != null) 'note': l.note,
+  if (l.categoryId != null) 'category': l.categoryId,
+  if (l.lastOpenedAt != null)
+    'lastOpenedAt': l.lastOpenedAt!.toUtc().toIso8601String(),
+  'archived': l.archived,
+};
+
 /// Résultat d'une capture : le lymark (nouveau ou existant) et s'il s'agissait
 /// d'un doublon (PRD §3).
 @immutable

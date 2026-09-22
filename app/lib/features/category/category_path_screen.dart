@@ -59,11 +59,6 @@ class CategoryPathScreen extends ConsumerWidget {
               title: category.name,
               subtitle: '${category.count} Lymarks',
               onBack: () => context.pop(),
-              trailing: LyCircleButton(
-                icon: LyIcons.more,
-                tooltip: 'Category options',
-                onTap: () {},
-              ),
             ),
           ),
           if (live && lymarks.isNotEmpty)

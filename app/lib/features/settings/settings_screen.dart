@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,11 +8,14 @@ import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
+import 'package:lymarks/core/utils/open_link.dart';
 import 'package:lymarks/features/home/home_screen.dart';
+import 'package:lymarks/features/settings/about_sheet.dart';
+import 'package:lymarks/features/settings/export_data.dart';
+import 'package:lymarks/features/settings/profile_screen.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
-import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 import 'package:lymarks/shared/widgets/profile_avatar.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 import 'package:lymarks/shared/widgets/settings_tile.dart';
@@ -79,20 +81,6 @@ class SettingsScreen extends ConsumerWidget {
                       },
                       onTap: () => _AppearanceSheet.show(context, ref),
                     ),
-                    SettingsTile(
-                      icon: LyIcons.notifications,
-                      accent: ly.blue,
-                      title: 'Notifications',
-                      subtitle: 'Only the Daily Digest. Never marketing.',
-                      onTap: () {},
-                    ),
-                    SettingsTile(
-                      icon: LyIcons.language,
-                      accent: ly.yellow,
-                      title: 'Language',
-                      subtitle: 'English',
-                      onTap: () {},
-                    ),
                   ],
                 ),
 
@@ -104,7 +92,7 @@ class SettingsScreen extends ConsumerWidget {
                       accent: ly.blue,
                       title: 'Export my data',
                       subtitle: 'Full JSON export of your lymarks and notes',
-                      onTap: () {},
+                      onTap: () => unawaited(exportMyData(context, ref)),
                     ),
                     SettingsTile(
                       icon: LyIcons.delete,
@@ -124,27 +112,31 @@ class SettingsScreen extends ConsumerWidget {
                       icon: LyIcons.privacy,
                       accent: ly.lime,
                       title: 'Privacy policy',
-                      subtitle: 'How we protect your data',
-                      onTap: () {},
+                      subtitle: 'What we keep, and what we never do',
+                      onTap: () => context.push(LyRoute.privacy),
                     ),
                     SettingsTile(
                       icon: LyIcons.note,
                       accent: ly.steel,
                       title: 'Terms of service',
-                      onTap: () {},
+                      subtitle: 'The deal, in plain words',
+                      onTap: () => context.push(LyRoute.terms),
                     ),
                     SettingsTile(
                       icon: LyIcons.about,
                       accent: ly.yellow,
                       title: 'About Lymarks',
-                      subtitle: 'Version 1.0.0',
-                      onTap: () {},
+                      subtitle: 'Version ${AboutSheet.version}',
+                      onTap: () => unawaited(AboutSheet.show(context)),
                     ),
                     SettingsTile(
                       icon: LyIcons.help,
                       accent: ly.blue,
                       title: 'Help & feedback',
-                      onTap: () {},
+                      subtitle: 'Report a problem, or ask for something',
+                      onTap: () => unawaited(
+                        LyLink.open(context, AboutSheet.issuesUrl),
+                      ),
                     ),
                   ],
                 ),
@@ -283,9 +275,8 @@ class _PlanCard extends ConsumerWidget {
     return LyCard(
       color: accent.fill,
       borderColor: accent.fill,
-      onTap: () => PaywallSheet.show(
-        context,
-        trigger: PaywallTrigger.settings,
+      onTap: () => unawaited(
+        openBilling(context, ref, isPro: profile.isPro),
       ),
       child: Row(
         children: [
@@ -321,6 +312,9 @@ class _PlanCard extends ConsumerWidget {
               ],
             ),
           ),
+          // Sans cet écart, l'étiquette vient toucher le sous-titre dès qu'il
+          // passe à la ligne.
+          const SizedBox(width: LySpace.m),
           Text(
             profile.isPro ? 'Manage' : 'Upgrade',
             style: context.texts.labelMedium?.copyWith(

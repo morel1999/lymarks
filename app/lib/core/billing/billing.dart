@@ -25,6 +25,13 @@ abstract class Billing {
 
   /// Relie les achats passés au compte. Vrai si `pro` est actif ensuite.
   Future<bool> restore();
+
+  /// Page de gestion de l'abonnement, chez le store qui l'encaisse.
+  ///
+  /// Résilier ne se fait pas dans l'app : c'est Google Play ou l'App Store
+  /// qui détient l'abonnement, et RevenueCat en donne l'adresse. Null quand
+  /// l'utilisateur n'a rien à gérer — pas d'abonnement, ou pas de store.
+  Future<Uri?> managementUrl();
 }
 
 /// Aucun store : mode démo, tests, build sans clé.
@@ -49,6 +56,9 @@ class NoBilling implements Billing {
 
   @override
   Future<bool> restore() async => false;
+
+  @override
+  Future<Uri?> managementUrl() async => null;
 }
 
 enum ProPeriod { monthly, annual }

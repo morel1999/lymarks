@@ -34,7 +34,8 @@ enum MascotPose {
   sleeping('mascot-sleeping.png'),
 
   /// Salut : la première rencontre, à la connexion.
-  waving('mascot-waving.png');
+  waving('mascot-waving.png')
+  ;
 
   const MascotPose(this._file);
 
