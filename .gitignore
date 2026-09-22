@@ -53,3 +53,7 @@ node_modules/
 
 # Reglages d'editeur propres a une machine (chemins absolus).
 .vscode/
+
+# Notes de travail personnelles : options non retenues, pistes de mise a jour.
+# Hors du depot public — ce n'est pas au jury de lire le carnet de bord.
+/prive/

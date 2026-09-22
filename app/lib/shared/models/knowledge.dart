@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 
 /// Une catégorie de connaissance (« AI », « Design », « Development »).
 ///
-/// Le regroupement automatique n'est pas encore spécifié — le wireframe
-/// (§03 « Point à formaliser ») l'assume. Le modèle est donc volontairement
-/// plat côté app : la catégorie porte son nom, son compte et ses clusters.
+/// Modèle plat : la catégorie porte son nom et son compte, et le Category
+/// Path mène directement aux lymarks. Le niveau intermédiaire de clusters
+/// qu'esquissait le wireframe 03 supposait un regroupement automatique
+/// jamais spécifié ; il a été retiré plutôt qu'improvisé.
 @immutable
 class KnowledgeCategory {
   const KnowledgeCategory({
@@ -14,7 +15,6 @@ class KnowledgeCategory {
     required this.count,
     required this.iconKey,
     required this.accent,
-    this.clusters = const [],
   });
 
   final String id;
@@ -31,46 +31,17 @@ class KnowledgeCategory {
 
   /// Clé d'icône Lucide, résolue par `LyIcons.byKey`.
   final String iconKey;
-  final List<KnowledgeCluster> clusters;
 
-  /// Même catégorie avec un autre compte ou d'autres clusters : sert à
-  /// instancier une entrée de la taxonomie d'après la bibliothèque.
-  KnowledgeCategory copyWith({
-    int? count,
-    List<KnowledgeCluster>? clusters,
-  }) => KnowledgeCategory(
+  /// Même catégorie avec un autre compte : sert à instancier une entrée de
+  /// la taxonomie d'après la bibliothèque.
+  KnowledgeCategory copyWith({int? count}) => KnowledgeCategory(
     id: id,
     name: name,
     tagline: tagline,
     count: count ?? this.count,
     iconKey: iconKey,
     accent: accent,
-    clusters: clusters ?? this.clusters,
   );
-}
-
-/// Un nœud du Category Path : un sous-ensemble cohérent d'une catégorie.
-@immutable
-class KnowledgeCluster {
-  const KnowledgeCluster({
-    required this.id,
-    required this.categoryId,
-    required this.name,
-    required this.description,
-    required this.count,
-    required this.iconKey,
-    required this.accent,
-  });
-
-  final String id;
-  final String categoryId;
-
-  /// Emplacement dans la palette, voir [KnowledgeCategory.accent].
-  final int accent;
-  final String name;
-  final String description;
-  final int count;
-  final String iconKey;
 }
 
 /// Plan de l'utilisateur. La source de vérité reste le serveur : le client

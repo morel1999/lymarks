@@ -7,36 +7,28 @@ import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/features/home/home_screen.dart';
 import 'package:lymarks/shared/data/providers.dart';
-import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
-import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
-import 'package:lymarks/shared/widgets/lymark_actions.dart';
 import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// 03 — Category Path.
 ///
 /// Une catégorie n'est pas une liste : c'est un chemin dans une partie de sa
 /// mémoire (wireframe 03 §Objectif). Le chemin est vertical, légèrement
-/// sinueux, avec peu de nœuds — une métaphore visuelle, pas un graphe.
+/// sinueux, avec des nœuds alternés — une métaphore visuelle, pas un graphe.
 ///
-/// Les clusters ne sont pas encore calculés par le serveur : en mode réel la
-/// page liste directement les lymarks rangés dans la catégorie, du plus
-/// récent au plus ancien. Le chemin reste celui du jeu de démonstration.
+/// **Les nœuds sont les lymarks eux-mêmes.** Le wireframe imaginait un niveau
+/// intermédiaire de clusters thématiques ; il supposait un regroupement
+/// automatique que ni le PRD ni le Knowledge Vault Spec n'ont jamais défini
+/// (wireframe 03 §Point à formaliser). Plutôt que d'inventer cette règle dans
+/// l'urgence, le chemin mène droit au contenu : il fonctionne sur les vraies
+/// données, en démo comme en réel, et la fiche est à un tap au lieu de deux.
+/// Les clusters pourront revenir comme niveau supplémentaire le jour où leur
+/// calcul sera spécifié.
 class CategoryPathScreen extends ConsumerWidget {
   const CategoryPathScreen({required this.categoryId, super.key});
 
   final String categoryId;
-
-  /// En réel il n'y a pas de chemin à construire : le lymark atterrit ici
-  /// dès que l'IA l'a rangé.
-  static String _emptyMessage(
-    KnowledgeCategory category, {
-    required bool live,
-  }) => live
-      ? 'Save something about ${category.name} and it will land here.'
-      : 'Save something related to this category '
-            'to start building this path.';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,10 +37,7 @@ class CategoryPathScreen extends ConsumerWidget {
       return const Scaffold(body: Center(child: Text('Unknown category')));
     }
 
-    final live = ref.watch(categoriesModeProvider) == CategoriesMode.live;
-    final lymarks = live
-        ? ref.watch(categoryLymarksProvider(categoryId))
-        : const <Lymark>[];
+    final lymarks = ref.watch(categoryLymarksProvider(categoryId));
     final accent = context.ly.accentAt(category.accent);
 
     return Scaffold(
@@ -57,25 +46,15 @@ class CategoryPathScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: LyScreenHeader(
               title: category.name,
-              subtitle: '${category.count} Lymarks',
+              // Ce que le chemin montre vraiment, jamais un compte annonce
+              // ailleurs : les deux ne peuvent plus diverger.
+              subtitle: lymarks.length == 1
+                  ? '1 Lymark'
+                  : '${lymarks.length} Lymarks',
               onBack: () => context.pop(),
             ),
           ),
-          if (live && lymarks.isNotEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                LySpace.screen,
-                LySpace.s,
-                LySpace.screen,
-                LySpace.xxl,
-              ),
-              sliver: SliverList.separated(
-                itemCount: lymarks.length,
-                separatorBuilder: (_, _) => const SizedBox(height: LySpace.m),
-                itemBuilder: (context, i) => _CategoryCard(lymark: lymarks[i]),
-              ),
-            )
-          else if (live || category.clusters.isEmpty)
+          if (lymarks.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
@@ -83,23 +62,23 @@ class CategoryPathScreen extends ConsumerWidget {
                 accent: accent,
                 pose: MascotPose.empty,
                 title: 'Nothing here yet.',
-                message: _emptyMessage(category, live: live),
+                message:
+                    'Save something about ${category.name} '
+                    'and it will land here.',
               ),
             )
           else
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 LySpace.screen,
-                LySpace.s,
+                LySpace.l,
                 LySpace.screen,
                 LySpace.xxl,
               ),
               sliver: SliverToBoxAdapter(
                 child: _KnowledgePath(
-                  clusters: category.clusters,
-                  onOpen: (cluster) => context.push(
-                    LyRoute.cluster(category.id, cluster.id),
-                  ),
+                  lymarks: lymarks,
+                  onOpen: (lymark) => context.push(LyRoute.lymark(lymark.id)),
                 ),
               ),
             ),
@@ -109,34 +88,12 @@ class CategoryPathScreen extends ConsumerWidget {
   }
 }
 
-/// Une carte de la liste plate (mode réel), câblée comme celles de la
-/// bibliothèque : ouverture, menu, relance, tag vers la recherche.
-class _CategoryCard extends ConsumerWidget {
-  const _CategoryCard({required this.lymark});
-
-  final Lymark lymark;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return BookmarkCard(
-      lymark,
-      onTap: () => context.push(LyRoute.lymark(lymark.id)),
-      onMenu: () => LymarkActions.showMenu(context, ref, lymark),
-      onRetry: () => ref.read(lymarksProvider.notifier).retry(lymark.id),
-      onTagTap: (tag) {
-        ref.read(searchQueryProvider.notifier).state = tag;
-        context.go(LyRoute.search);
-      },
-    );
-  }
-}
-
 /// Le chemin lui-même : des nœuds alternés, reliés par une courbe.
 class _KnowledgePath extends StatelessWidget {
-  const _KnowledgePath({required this.clusters, required this.onOpen});
+  const _KnowledgePath({required this.lymarks, required this.onOpen});
 
-  final List<KnowledgeCluster> clusters;
-  final void Function(KnowledgeCluster cluster) onOpen;
+  final List<Lymark> lymarks;
+  final void Function(Lymark lymark) onOpen;
 
   /// Hauteur fixe d'un nœud : la géométrie de la courbe en dépend.
   static const double nodeHeight = 148;
@@ -148,15 +105,16 @@ class _KnowledgePath extends StatelessWidget {
   Widget build(BuildContext context) {
     final ly = context.ly;
 
+    LyAccent accentOf(Lymark l) => ly.accentOr(l.accentSlot, l.accentKey);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final total =
-            clusters.length * nodeHeight + (clusters.length - 1) * gap;
+        final total = lymarks.length * nodeHeight + (lymarks.length - 1) * gap;
 
         // Centre du point de chaque nœud, alterné gauche / droite.
         final dots = <Offset>[
-          for (var i = 0; i < clusters.length; i++)
+          for (var i = 0; i < lymarks.length; i++)
             Offset(
               i.isEven ? dotRadius + 2 : width - dotRadius - 2,
               i * (nodeHeight + gap) + nodeHeight * 0.42,
@@ -171,30 +129,28 @@ class _KnowledgePath extends StatelessWidget {
                 child: CustomPaint(
                   painter: _PathPainter(
                     dots: dots,
-                    color: ly.steel.fill,
+                    color: ly.cardBorder,
                     strokeWidth: 3,
                   ),
                 ),
               ),
-              for (var i = 0; i < clusters.length; i++)
+              for (var i = 0; i < lymarks.length; i++)
                 Positioned(
                   top: i * (nodeHeight + gap),
                   left: i.isEven ? indent : 0,
                   right: i.isEven ? 0 : indent,
                   height: nodeHeight,
-                  child: _ClusterNode(
-                    cluster: clusters[i],
-                    accent: ly.accentAt(clusters[i].accent),
-                    onTap: () => onOpen(clusters[i]),
+                  child: _LymarkNode(
+                    lymark: lymarks[i],
+                    accent: accentOf(lymarks[i]),
+                    onTap: () => onOpen(lymarks[i]),
                   ),
                 ),
-              for (var i = 0; i < clusters.length; i++)
+              for (var i = 0; i < lymarks.length; i++)
                 Positioned(
                   left: dots[i].dx - dotRadius,
                   top: dots[i].dy - dotRadius,
-                  child: _PathDot(
-                    color: ly.accentAt(clusters[i].accent).strong,
-                  ),
+                  child: _PathDot(color: accentOf(lymarks[i]).strong),
                 ),
             ],
           ),
@@ -252,23 +208,23 @@ class _PathDot extends StatelessWidget {
     return Container(
       width: _KnowledgePath.dotRadius * 2,
       height: _KnowledgePath.dotRadius * 2,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: context.ly.surface, width: 3),
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
 
-class _ClusterNode extends StatelessWidget {
-  const _ClusterNode({
-    required this.cluster,
+/// Un nœud du chemin : le titre, sa source, et la flèche pour entrer.
+///
+/// Volontairement dépouillé. Les puces, les mots-clés et la note vivent sur
+/// la fiche ; ici on ne donne que de quoi reconnaître ce qu'on avait gardé.
+class _LymarkNode extends StatelessWidget {
+  const _LymarkNode({
+    required this.lymark,
     required this.accent,
     required this.onTap,
   });
 
-  final KnowledgeCluster cluster;
+  final Lymark lymark;
   final LyAccent accent;
   final VoidCallback onTap;
 
@@ -298,34 +254,20 @@ class _ClusterNode extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      LyIcons.topic(cluster.iconKey),
+                      LyIcons.forDomain(lymark.domain),
                       size: 20,
                       color: accent.strong,
                     ),
                   ),
                   const SizedBox(width: LySpace.m),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          cluster.name,
-                          style: context.texts.titleLarge?.copyWith(
-                            color: accent.onFill,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          cluster.description,
-                          style: context.texts.bodySmall?.copyWith(
-                            color: accent.onFill.withValues(alpha: 0.72),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    child: Text(
+                      lymark.title,
+                      style: context.texts.titleLarge?.copyWith(
+                        color: accent.onFill,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -334,7 +276,7 @@ class _ClusterNode extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '${cluster.count} Lymarks',
+                    lymark.domain,
                     style: context.texts.labelSmall?.copyWith(
                       color: accent.onFill.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w600,
@@ -348,11 +290,7 @@ class _ClusterNode extends StatelessWidget {
                       color: ly.card,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      LyIcons.enter,
-                      size: 16,
-                      color: ly.textPrimary,
-                    ),
+                    child: Icon(LyIcons.enter, size: 16, color: ly.textPrimary),
                   ),
                 ],
               ),

@@ -650,15 +650,6 @@ final Provider<List<Lymark>> Function(String) categoryLymarksProvider =
             ..sort((a, b) => b.savedAt.compareTo(a.savedAt)),
     );
 
-/// Lymarks d'un cluster donné (démo : les clusters ne sont pas calculés).
-final Provider<List<Lymark>> Function(String) clusterLymarksProvider =
-    Provider.family<List<Lymark>, String>(
-      (ref, clusterId) => ref
-          .watch(lymarksProvider)
-          .where((l) => l.clusterId == clusterId)
-          .toList(),
-    );
-
 /// Entrées du Daily Digest résolues en lymarks.
 final digestProvider = Provider<List<({Lymark lymark, String reason})>>((ref) {
   final all = ref.watch(lymarksProvider);

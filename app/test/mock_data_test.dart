@@ -3,11 +3,10 @@ import 'package:lymarks/shared/data/mock_data.dart';
 
 /// Cohérence du jeu de démonstration.
 ///
-/// Les `count` des catégories et des clusters sont écrits à la main : rien
-/// dans le code ne les recalcule, puisque le mode démo sert la liste telle
-/// qu'elle est curée. Un compte décoratif finit à l'écran — l'en-tête d'un
-/// chemin annonçait sept lymarks au-dessus d'un état vide. Ces tests rendent
-/// la dérive impossible à committer.
+/// Les `count` des catégories sont écrits à la main : rien ne les recalcule,
+/// le mode démo servant la liste telle qu'elle est curée. Un compte décoratif
+/// finit à l'écran — la Home annonçait sept lymarks pour une catégorie qui
+/// n'en contenait qu'un. Ces tests rendent la dérive impossible à committer.
 void main() {
   group('Jeu de démonstration', () {
     test('le compte annoncé par une catégorie est son compte réel', () {
@@ -19,36 +18,18 @@ void main() {
       }
     });
 
-    test('le compte annoncé par un cluster est son compte réel', () {
+    test('aucune catégorie ne mène à un chemin vide', () {
       for (final category in MockData.categories) {
-        for (final cluster in category.clusters) {
-          final real = MockData.lymarks
-              .where((l) => !l.archived && l.clusterId == cluster.id)
-              .length;
-          expect(cluster.count, real, reason: cluster.id);
-        }
+        expect(category.count, greaterThan(0), reason: category.id);
       }
     });
 
-    test('chaque catégorie trace un chemin, sans nœud vide', () {
-      for (final category in MockData.categories) {
-        expect(category.clusters, isNotEmpty, reason: category.id);
-        for (final cluster in category.clusters) {
-          expect(cluster.count, greaterThan(0), reason: cluster.id);
-        }
-      }
-    });
-
-    test('un lymark ne se range que dans un cluster de sa catégorie', () {
-      final owner = {
-        for (final c in MockData.categories)
-          for (final cluster in c.clusters) cluster.id: c.id,
-      };
+    test('un lymark ne se range que dans une catégorie de la démo', () {
+      final known = MockData.categories.map((c) => c.id).toSet();
 
       for (final lymark in MockData.lymarks) {
-        if (lymark.clusterId case final id?) {
-          expect(owner, contains(id), reason: lymark.id);
-          expect(owner[id], lymark.categoryId, reason: lymark.id);
+        if (lymark.categoryId case final id?) {
+          expect(known, contains(id), reason: lymark.id);
         }
       }
     });

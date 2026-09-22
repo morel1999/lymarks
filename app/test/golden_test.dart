@@ -15,6 +15,7 @@ import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/widgets/category_card.dart';
 import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Rendus de référence des sept écrans.
@@ -340,40 +341,31 @@ void main() {
     await _shoot(tester, '19-detail-failed');
   });
 
-  testWidgets('20 cluster sans lymark : la mascotte constate le vide', (
+  testWidgets('20 categorie vide : la mascotte constate le vide', (
     tester,
   ) async {
-    // Le chemin d'une catégorie vient du jeu curé, son contenu des lymarks :
-    // un cluster peut donc être annoncé sans rien contenir encore. C'est là
-    // que la pose `empty` vit, depuis que toutes les catégories sont fournies.
+    // Le chemin d'une categorie montre ses lymarks : une categorie qu'on
+    // n'a pas encore alimentee tombe sur l'etat vide. C'est la que vit la
+    // pose `empty`.
     await _boot(
       tester,
       overrides: [
         lymarksRepositoryProvider.overrideWithValue(
           MockLymarksRepository(
             seed: MockData.lymarks
-                .where((l) => l.clusterId != 'ai-prompt')
+                .where((l) => l.categoryId != 'business')
                 .toList(),
           ),
         ),
       ],
     );
     await _skipOnboarding(tester);
-    await tester.tap(find.text('Explore your AI knowledge'));
+    final tile = find.widgetWithText(CategoryTile, 'Business');
+    await tester.ensureVisible(tile);
     await _settle(tester);
-    await tester.tap(find.text('Prompt Engineering'));
+    await tester.tap(tile);
     await _settle(tester);
-    await _shoot(tester, '20-cluster-empty');
-  });
-
-  testWidgets('21 cluster habite : les liens du chemin', (tester) async {
-    await _boot(tester);
-    await _skipOnboarding(tester);
-    await tester.tap(find.text('Explore your AI knowledge'));
-    await _settle(tester);
-    await tester.tap(find.text('Prompt Engineering'));
-    await _settle(tester);
-    await _shoot(tester, '21-cluster-lymarks');
+    await _shoot(tester, '20-category-empty');
   });
 
   testWidgets('22 confidentialite : un texte de reference habille', (

@@ -18,8 +18,6 @@ abstract final class MockData {
       title: 'Building AI Agents',
       savedAt: _ago(const Duration(days: 2)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-agents',
       bullets: const [
         'AI agents combine reasoning, tools and memory to act autonomously.',
         'Tool calling allows agents to interact with external systems.',
@@ -39,8 +37,6 @@ abstract final class MockData {
       title: 'Next.js 15 Performance Guide',
       savedAt: _ago(const Duration(days: 3)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-performance',
       bullets: const [
         'Partial prerendering improves performance with dynamic content.',
         'Optimize images, fonts and scripts for Core Web Vitals.',
@@ -57,8 +53,6 @@ abstract final class MockData {
       title: 'Design Systems that Scale',
       savedAt: _ago(const Duration(days: 5)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-systems',
       bullets: const [
         'Tokens keep visual decisions in one place instead of in components.',
         'Document intent, not just usage, so the system survives its authors.',
@@ -76,8 +70,6 @@ abstract final class MockData {
       title: 'React Server Components',
       savedAt: _ago(const Duration(days: 7)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-react',
       bullets: const [
         'Server Components render on the server and reduce client JS.',
         'They can access backend resources directly.',
@@ -92,8 +84,6 @@ abstract final class MockData {
       title: 'Designing Scalable React Apps',
       savedAt: _ago(const Duration(days: 14)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-react',
       bullets: const [
         'Component architecture affects scalability and maintainability.',
         'Feature-based folder structure works well for large apps.',
@@ -108,8 +98,6 @@ abstract final class MockData {
       title: 'A Deep Dive into React Architecture',
       savedAt: _ago(const Duration(days: 21)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-react',
       bullets: const [
         'Understand the trade-offs between different patterns.',
         'Choose the right approach for your team and product.',
@@ -124,8 +112,6 @@ abstract final class MockData {
       title: 'Component Composition in React',
       savedAt: _ago(const Duration(days: 32)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-react',
       bullets: const [
         'Compose components to build flexible UIs.',
         'Control data flow with props and composition.',
@@ -140,8 +126,6 @@ abstract final class MockData {
       title: 'MCP for AI Agents',
       savedAt: _ago(const Duration(days: 9)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-agents',
       bullets: const [
         'MCP gives agents a single protocol to reach tools and data.',
         'Servers expose resources; clients decide what the model may use.',
@@ -156,8 +140,6 @@ abstract final class MockData {
       title: 'Agent Memory Patterns',
       savedAt: _ago(const Duration(days: 16)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-agents',
       bullets: const [
         'Short-term memory is context; long-term memory is retrieval.',
         'Summarize aggressively to keep the working set small.',
@@ -173,8 +155,6 @@ abstract final class MockData {
       title: 'Retrieval Augmented Generation explained',
       savedAt: _ago(const Duration(days: 24)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-rag',
       bullets: const [
         'RAG grounds a model in documents it did not memorize.',
         'Chunking strategy affects recall more than the model does.',
@@ -189,8 +169,6 @@ abstract final class MockData {
       title: 'pgvector and HNSW indexes',
       savedAt: _ago(const Duration(days: 28)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-vector',
       bullets: const [
         'HNSW trades memory for a large speed gain on cosine search.',
         'Build the index early: rebuilding it later locks the table.',
@@ -208,8 +186,6 @@ abstract final class MockData {
       savedAt: _ago(const Duration(seconds: 20)),
       status: LymarkStatus.processing,
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-agents',
     ),
     // État `partial` : page inaccessible au scraping, métadonnées seules.
     Lymark(
@@ -220,8 +196,6 @@ abstract final class MockData {
       savedAt: _ago(const Duration(days: 4)),
       status: LymarkStatus.partial,
       categoryId: 'business',
-      clusterId: 'biz-strategy',
-      accentSlot: 3,
       bullets: const [
         'Summary limited to the page metadata: the article is paywalled.',
       ],
@@ -237,7 +211,6 @@ abstract final class MockData {
       source: LymarkSource.x,
       status: LymarkStatus.failed,
       categoryId: 'ai',
-      accentSlot: 0,
     ),
     // ---------------------------------------------------------------------
     // Le reste de la bibliotheque de demonstration.
@@ -254,8 +227,6 @@ abstract final class MockData {
       title: 'Evaluating agent trajectories',
       savedAt: _ago(const Duration(days: 9)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-agents',
       bullets: const [
         'Judging the final answer hides where the agent went wrong.',
         'Step-level traces make failures reproducible.',
@@ -269,8 +240,6 @@ abstract final class MockData {
       title: 'Chunking strategies that actually work',
       savedAt: _ago(const Duration(days: 16)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-rag',
       bullets: const [
         'Fixed-size chunks break arguments in half.',
         'Splitting on structure keeps a passage answerable.',
@@ -284,8 +253,6 @@ abstract final class MockData {
       title: 'Hybrid search beats pure vectors',
       savedAt: _ago(const Duration(days: 40)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-rag',
       bullets: const [
         'Keyword matching still wins on names, codes and acronyms.',
         'Reciprocal rank fusion merges both rankings cheaply.',
@@ -300,8 +267,6 @@ abstract final class MockData {
       title: 'HNSW explained without the math',
       savedAt: _ago(const Duration(days: 23)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-vector',
       bullets: const [
         'A navigable graph trades a little recall for a lot of speed.',
         'One dial decides between latency and accuracy.',
@@ -315,8 +280,6 @@ abstract final class MockData {
       title: 'Choosing a vector store in 2026',
       savedAt: _ago(const Duration(days: 68)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-vector',
       bullets: const [
         'Most teams never outgrow Postgres with pgvector.',
         'Filtering before the scan matters more than raw throughput.',
@@ -330,8 +293,6 @@ abstract final class MockData {
       title: 'What embeddings really encode',
       savedAt: _ago(const Duration(days: 9)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-embeddings',
       bullets: const [
         'Distance encodes usage, not meaning as humans define it.',
         'Two opposite words can sit close if they share contexts.',
@@ -345,8 +306,6 @@ abstract final class MockData {
       title: 'Matryoshka embeddings, shorter and sharper',
       savedAt: _ago(const Duration(days: 29)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-embeddings',
       bullets: const [
         'One model serves several dimensions by truncation.',
         'Storage drops without retraining anything.',
@@ -360,8 +319,6 @@ abstract final class MockData {
       title: 'Benchmarking embedding models on your own data',
       savedAt: _ago(const Duration(days: 95)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-embeddings',
       bullets: const [
         'Public leaderboards rarely match a private corpus.',
         'A hundred labelled pairs already separate the candidates.',
@@ -375,8 +332,6 @@ abstract final class MockData {
       title: 'Structured output without the fight',
       savedAt: _ago(const Duration(days: 5)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-prompt',
       bullets: const [
         'A schema beats three paragraphs of formatting instructions.',
         'Validate and reprompt rather than parse defensively.',
@@ -390,8 +345,6 @@ abstract final class MockData {
       title: 'Few-shot examples that earn their tokens',
       savedAt: _ago(const Duration(days: 23)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-prompt',
       bullets: const [
         'Three well-chosen examples outperform ten average ones.',
         'Examples should cover the edges, not the obvious case.',
@@ -405,8 +358,6 @@ abstract final class MockData {
       title: 'Prompt caching: what to put where',
       savedAt: _ago(const Duration(days: 75)),
       categoryId: 'ai',
-      accentSlot: 0,
-      clusterId: 'ai-prompt',
       bullets: const [
         'Stable content goes first, the variable part last.',
         'A cache hit changes the economics of long system prompts.',
@@ -420,8 +371,6 @@ abstract final class MockData {
       title: 'Design tokens, three layers deep',
       savedAt: _ago(const Duration(days: 16)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-systems',
       bullets: const [
         'Primitive, semantic and component layers each have one job.',
         'Themes only ever touch the semantic layer.',
@@ -435,8 +384,6 @@ abstract final class MockData {
       title: 'Naming components so people find them',
       savedAt: _ago(const Duration(days: 45)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-systems',
       bullets: const [
         'Name by intent, not by appearance.',
         'A name that describes a colour ages in one redesign.',
@@ -450,8 +397,6 @@ abstract final class MockData {
       title: 'Documentation is part of the component',
       savedAt: _ago(const Duration(days: 110)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-systems',
       bullets: const [
         'An undocumented variant will be rebuilt somewhere else.',
         'Usage rules belong next to the code, not in a wiki.',
@@ -465,8 +410,6 @@ abstract final class MockData {
       title: 'Easing curves and what they say',
       savedAt: _ago(const Duration(days: 9)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-motion',
       bullets: const [
         'Linear motion reads as mechanical on anything physical.',
         'Entrances decelerate, exits accelerate.',
@@ -480,8 +423,6 @@ abstract final class MockData {
       title: 'A motion budget for product UI',
       savedAt: _ago(const Duration(days: 34)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-motion',
       bullets: const [
         'Under 200ms feels instant, over 500ms feels slow.',
         'Animate one thing per transition, not four.',
@@ -495,8 +436,6 @@ abstract final class MockData {
       title: 'Respecting reduced motion by default',
       savedAt: _ago(const Duration(days: 130)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-motion',
       bullets: const [
         'Reduced motion means replaced, not removed.',
         'A cross-fade still communicates the change of state.',
@@ -510,8 +449,6 @@ abstract final class MockData {
       title: 'A type scale that survives translation',
       savedAt: _ago(const Duration(days: 23)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-type',
       bullets: const [
         'German and Finnish add a third to most labels.',
         'A scale with too many steps collapses under translation.',
@@ -525,8 +462,6 @@ abstract final class MockData {
       title: 'Variable fonts in production',
       savedAt: _ago(const Duration(days: 62)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-type',
       bullets: const [
         'One file replaces six weights and loads faster.',
         'Subsetting matters more than the format.',
@@ -540,8 +475,6 @@ abstract final class MockData {
       title: 'Line length, measure and reading comfort',
       savedAt: _ago(const Duration(days: 160)),
       categoryId: 'design',
-      accentSlot: 1,
-      clusterId: 'design-type',
       bullets: const [
         'Sixty to seventy-five characters per line stays comfortable.',
         'Line height should grow with measure, not with size alone.',
@@ -555,8 +488,6 @@ abstract final class MockData {
       title: 'Suspense boundaries as a layout decision',
       savedAt: _ago(const Duration(days: 29)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-react',
       bullets: const [
         'A boundary defines what may appear late, and where.',
         'Placing them by layout region avoids cascading spinners.',
@@ -570,8 +501,6 @@ abstract final class MockData {
       title: 'INP, the metric that replaced FID',
       savedAt: _ago(const Duration(days: 16)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-performance',
       bullets: const [
         'INP measures every interaction, not just the first.',
         'Long tasks on the main thread are the usual culprit.',
@@ -585,8 +514,6 @@ abstract final class MockData {
       title: 'Image budgets on mobile networks',
       savedAt: _ago(const Duration(days: 100)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-performance',
       bullets: const [
         'Images are still the largest share of most pages.',
         'Serving the right size beats any compression trick.',
@@ -600,8 +527,6 @@ abstract final class MockData {
       title: 'Modular monolith before microservices',
       savedAt: _ago(const Duration(days: 12)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-architecture',
       bullets: const [
         'Module boundaries are cheap to move, network ones are not.',
         'Split a service when a team owns it, not when a file grows.',
@@ -616,8 +541,6 @@ abstract final class MockData {
       title: 'Edge runtimes and their limits',
       savedAt: _ago(const Duration(days: 50)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-architecture',
       bullets: const [
         'No filesystem, no long-lived connections, short budgets.',
         'Latency wins evaporate if the database stays far away.',
@@ -631,8 +554,6 @@ abstract final class MockData {
       title: 'Typed contracts between client and server',
       savedAt: _ago(const Duration(days: 140)),
       categoryId: 'development',
-      accentSlot: 2,
-      clusterId: 'dev-architecture',
       bullets: const [
         'A shared schema removes a whole class of integration bugs.',
         'Generate the client, never hand-write the types twice.',
@@ -646,8 +567,6 @@ abstract final class MockData {
       title: 'Anchoring and the middle tier',
       savedAt: _ago(const Duration(days: 6)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-pricing',
       bullets: const [
         'The top tier exists to make the middle one reasonable.',
         'Three tiers decide faster than five.',
@@ -661,8 +580,6 @@ abstract final class MockData {
       title: 'Usage-based pricing without bill shock',
       savedAt: _ago(const Duration(days: 27)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-pricing',
       bullets: const [
         'Caps and alerts matter more than the rate itself.',
         'Unpredictable bills cost more churn than they earn.',
@@ -676,8 +593,6 @@ abstract final class MockData {
       title: 'When freemium stops paying',
       savedAt: _ago(const Duration(days: 72)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-pricing',
       bullets: const [
         'A free tier is a marketing budget with a server bill.',
         'It works when the free user brings the paying one.',
@@ -691,8 +606,6 @@ abstract final class MockData {
       title: 'Find the narrow wedge first',
       savedAt: _ago(const Duration(days: 19)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-strategy',
       bullets: const [
         'A small market you dominate beats a large one you sample.',
         'The wedge is a beachhead, not the final scope.',
@@ -706,8 +619,6 @@ abstract final class MockData {
       title: 'Moats that are not features',
       savedAt: _ago(const Duration(days: 105)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-strategy',
       bullets: const [
         'Any feature can be copied in a quarter.',
         'Data, distribution and switching costs compound instead.',
@@ -721,8 +632,6 @@ abstract final class MockData {
       title: 'Growth loops beat funnels',
       savedAt: _ago(const Duration(days: 11)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-growth',
       bullets: const [
         'A funnel ends, a loop reinvests its own output.',
         'Name the input, the action and what it produces.',
@@ -736,8 +645,6 @@ abstract final class MockData {
       title: 'Retention is the only growth metric',
       savedAt: _ago(const Duration(days: 38)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-growth',
       bullets: const [
         'Acquisition without retention is a leaking bucket.',
         'A flattening curve matters more than its height.',
@@ -751,8 +658,6 @@ abstract final class MockData {
       title: 'Activation happens in the first session',
       savedAt: _ago(const Duration(days: 155)),
       categoryId: 'business',
-      accentSlot: 3,
-      clusterId: 'biz-growth',
       bullets: const [
         'Most users decide before they finish the first screen.',
         'Time to first value is the number to move.',
@@ -766,8 +671,6 @@ abstract final class MockData {
       title: 'Interviews that avoid leading questions',
       savedAt: _ago(const Duration(days: 21)),
       categoryId: 'product',
-      accentSlot: 4,
-      clusterId: 'prod-discovery',
       bullets: const [
         'Ask about last time, not about next time.',
         'Past behaviour is evidence, intent is a guess.',
@@ -781,8 +684,6 @@ abstract final class MockData {
       title: 'Jobs to be done, applied honestly',
       savedAt: _ago(const Duration(days: 58)),
       categoryId: 'product',
-      accentSlot: 4,
-      clusterId: 'prod-discovery',
       bullets: const [
         'The job is the progress someone is trying to make.',
         'Competitors include the spreadsheet and doing nothing.',
@@ -796,8 +697,6 @@ abstract final class MockData {
       title: 'Separating signal from loud users',
       savedAt: _ago(const Duration(days: 175)),
       categoryId: 'product',
-      accentSlot: 4,
-      clusterId: 'prod-discovery',
       bullets: const [
         'The loudest request rarely represents the median user.',
         'Weight feedback by the behaviour behind it.',
@@ -811,8 +710,6 @@ abstract final class MockData {
       title: 'Positioning is a decision, not a tagline',
       savedAt: _ago(const Duration(days: 14)),
       categoryId: 'product',
-      accentSlot: 4,
-      clusterId: 'prod-craft',
       bullets: const [
         'Positioning says who it is not for, out loud.',
         'The category you claim sets the comparison.',
@@ -826,8 +723,6 @@ abstract final class MockData {
       title: 'Naming a product people can repeat',
       savedAt: _ago(const Duration(days: 82)),
       categoryId: 'product',
-      accentSlot: 4,
-      clusterId: 'prod-craft',
       bullets: const [
         'A name that survives a noisy room survives everything.',
         'Spelling it once on the phone is the real test.',
@@ -841,8 +736,6 @@ abstract final class MockData {
       title: 'A changelog users actually read',
       savedAt: _ago(const Duration(days: 210)),
       categoryId: 'product',
-      accentSlot: 4,
-      clusterId: 'prod-craft',
       bullets: const [
         'Lead with what changed for the reader, not the version.',
         'Screenshots do more than bullet points.',
@@ -865,53 +758,6 @@ abstract final class MockData {
       count: 18,
       iconKey: 'ai',
       accent: 0,
-      clusters: [
-        KnowledgeCluster(
-          id: 'ai-agents',
-          categoryId: 'ai',
-          name: 'AI Agents',
-          description: 'Explore everything about AI agents and frameworks',
-          count: 5,
-          iconKey: 'agents',
-          accent: 0,
-        ),
-        KnowledgeCluster(
-          id: 'ai-rag',
-          categoryId: 'ai',
-          name: 'RAG',
-          description: 'Retrieval Augmented Generation concepts',
-          count: 3,
-          iconKey: 'rag',
-          accent: 2,
-        ),
-        KnowledgeCluster(
-          id: 'ai-vector',
-          categoryId: 'ai',
-          name: 'Vector Databases',
-          description: 'Vector storage and similarity search',
-          count: 3,
-          iconKey: 'vector',
-          accent: 1,
-        ),
-        KnowledgeCluster(
-          id: 'ai-embeddings',
-          categoryId: 'ai',
-          name: 'Embeddings',
-          description: 'Text embeddings and representation models',
-          count: 3,
-          iconKey: 'embeddings',
-          accent: 3,
-        ),
-        KnowledgeCluster(
-          id: 'ai-prompt',
-          categoryId: 'ai',
-          name: 'Prompt Engineering',
-          description: 'Techniques and best practices',
-          count: 3,
-          iconKey: 'prompt',
-          accent: 4,
-        ),
-      ],
     ),
     KnowledgeCategory(
       id: 'design',
@@ -920,35 +766,6 @@ abstract final class MockData {
       count: 10,
       iconKey: 'design',
       accent: 1,
-      clusters: [
-        KnowledgeCluster(
-          id: 'design-systems',
-          categoryId: 'design',
-          name: 'Design Systems',
-          description: 'Tokens, components and documentation',
-          count: 4,
-          iconKey: 'design',
-          accent: 1,
-        ),
-        KnowledgeCluster(
-          id: 'design-motion',
-          categoryId: 'design',
-          name: 'Motion',
-          description: 'Transitions and micro-interactions',
-          count: 3,
-          iconKey: 'design',
-          accent: 3,
-        ),
-        KnowledgeCluster(
-          id: 'design-type',
-          categoryId: 'design',
-          name: 'Typography',
-          description: 'Scale, measure and type on screen',
-          count: 3,
-          iconKey: 'article',
-          accent: 4,
-        ),
-      ],
     ),
     KnowledgeCategory(
       id: 'development',
@@ -957,35 +774,6 @@ abstract final class MockData {
       count: 11,
       iconKey: 'development',
       accent: 2,
-      clusters: [
-        KnowledgeCluster(
-          id: 'dev-react',
-          categoryId: 'development',
-          name: 'React',
-          description: 'Component architecture and patterns',
-          count: 5,
-          iconKey: 'development',
-          accent: 2,
-        ),
-        KnowledgeCluster(
-          id: 'dev-performance',
-          categoryId: 'development',
-          name: 'Performance',
-          description: 'Core Web Vitals and rendering budgets',
-          count: 3,
-          iconKey: 'development',
-          accent: 0,
-        ),
-        KnowledgeCluster(
-          id: 'dev-architecture',
-          categoryId: 'development',
-          name: 'Architecture',
-          description: 'Boundaries, runtimes and contracts',
-          count: 3,
-          iconKey: 'web',
-          accent: 4,
-        ),
-      ],
     ),
     KnowledgeCategory(
       id: 'business',
@@ -994,35 +782,6 @@ abstract final class MockData {
       count: 9,
       iconKey: 'business',
       accent: 3,
-      clusters: [
-        KnowledgeCluster(
-          id: 'biz-pricing',
-          categoryId: 'business',
-          name: 'Pricing',
-          description: 'Tiers, usage and what people will pay',
-          count: 3,
-          iconKey: 'business',
-          accent: 3,
-        ),
-        KnowledgeCluster(
-          id: 'biz-strategy',
-          categoryId: 'business',
-          name: 'Strategy',
-          description: 'Wedges, moats and where to compete',
-          count: 3,
-          iconKey: 'business',
-          accent: 0,
-        ),
-        KnowledgeCluster(
-          id: 'biz-growth',
-          categoryId: 'business',
-          name: 'Growth',
-          description: 'Loops, retention and activation',
-          count: 3,
-          iconKey: 'people',
-          accent: 2,
-        ),
-      ],
     ),
     KnowledgeCategory(
       id: 'product',
@@ -1031,26 +790,6 @@ abstract final class MockData {
       count: 6,
       iconKey: 'product',
       accent: 4,
-      clusters: [
-        KnowledgeCluster(
-          id: 'prod-discovery',
-          categoryId: 'product',
-          name: 'Discovery',
-          description: 'Interviews, jobs and reading the signal',
-          count: 3,
-          iconKey: 'people',
-          accent: 4,
-        ),
-        KnowledgeCluster(
-          id: 'prod-craft',
-          categoryId: 'product',
-          name: 'Positioning',
-          description: 'Naming, framing and telling the story',
-          count: 3,
-          iconKey: 'product',
-          accent: 1,
-        ),
-      ],
     ),
   ];
 

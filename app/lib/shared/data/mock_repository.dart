@@ -155,7 +155,7 @@ class MockLymarksRepository implements LymarksRepository {
   }
 
   /// Approximation locale du top-3 par cosinus (Knowledge Vault §3) :
-  /// recouvrement de mots-clés, bonus si même cluster.
+  /// recouvrement de mots-clés, bonus si même catégorie.
   @override
   Future<List<Lymark>> similar(String id) async {
     final source = _items.where((l) => l.id == id).firstOrNull;
@@ -167,7 +167,9 @@ class MockLymarksRepository implements LymarksRepository {
       var score = l.keywords
           .where((k) => keys.contains(k.toLowerCase()))
           .length;
-      if (l.clusterId != null && l.clusterId == source.clusterId) score += 2;
+      if (l.categoryId != null && l.categoryId == source.categoryId) {
+        score += 2;
+      }
       if (score > 0) scored.add((l, score));
     }
     scored.sort((a, b) => b.$2.compareTo(a.$2));

@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/features/auth/sign_in_screen.dart';
 import 'package:lymarks/features/category/category_path_screen.dart';
-import 'package:lymarks/features/category/cluster_screen.dart';
 import 'package:lymarks/features/detail/lymark_detail_screen.dart';
 import 'package:lymarks/features/digest/digest_screen.dart';
 import 'package:lymarks/features/home/home_screen.dart';
@@ -31,8 +30,6 @@ abstract final class LyRoute {
 
   static String lymark(String id) => '/lymark/$id';
   static String category(String id) => '/category/$id';
-  static String cluster(String categoryId, String clusterId) =>
-      '/category/$categoryId/cluster/$clusterId';
 }
 
 /// Navigation de l'application.
@@ -111,15 +108,6 @@ GoRouter buildRouter({required AuthSession auth}) {
         path: '/category/:id',
         builder: (_, state) =>
             CategoryPathScreen(categoryId: state.pathParameters['id']!),
-        routes: [
-          GoRoute(
-            path: 'cluster/:clusterId',
-            builder: (_, state) => ClusterScreen(
-              categoryId: state.pathParameters['id']!,
-              clusterId: state.pathParameters['clusterId']!,
-            ),
-          ),
-        ],
       ),
       GoRoute(
         path: LyRoute.settings,

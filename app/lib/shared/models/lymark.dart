@@ -38,7 +38,6 @@ class Lymark {
     this.keywords = const [],
     this.note,
     this.categoryId,
-    this.clusterId,
     this.accentSlot,
     this.lastOpenedAt,
     this.archived = false,
@@ -68,7 +67,6 @@ class Lymark {
   final DateTime savedAt;
   final DateTime? lastOpenedAt;
   final String? categoryId;
-  final String? clusterId;
 
   /// Emplacement de couleur hérité de la catégorie (voir le champ `accent`
   /// de `KnowledgeCategory`). Nul tant que le lymark n'est rattaché à aucune
@@ -114,7 +112,6 @@ class Lymark {
       keywords: keywords ?? this.keywords,
       note: note ?? this.note,
       categoryId: categoryId,
-      clusterId: clusterId,
       accentSlot: accentSlot,
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       archived: archived ?? this.archived,

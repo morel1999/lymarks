@@ -96,7 +96,6 @@ void main() {
       expect(cards.map((k) => k.id), ['science', 'sport']);
       expect(cards.first.count, 3);
       expect(cards.last.count, 1);
-      expect(cards.every((k) => k.clusters.isEmpty), isTrue);
     });
 
     test('un lymark archivé ne compte pas', () {
@@ -237,7 +236,7 @@ void main() {
 
       expect(identical(cards, MockData.categories), isTrue);
       expect(cards.first.id, 'ai');
-      expect(cards.first.clusters, isNotEmpty);
+      expect(cards.first.count, greaterThan(0));
       // Une catégorie absente de la démo reste ouvrable.
       expect(c.read(categoryByIdProvider('science'))?.count, 0);
     });
