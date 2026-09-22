@@ -10,6 +10,7 @@ import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Les lymarks d'un cluster (wireframe 03 §Interaction).
 class ClusterScreen extends ConsumerWidget {
@@ -50,6 +51,7 @@ class ClusterScreen extends ConsumerWidget {
               child: EmptyState(
                 icon: LyIcons.topic(cluster.iconKey),
                 accent: context.ly.accentFor(cluster.id),
+                pose: MascotPose.empty,
                 title: 'Nothing here yet.',
                 message:
                     'Save something related to '

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// État vide.
 ///
@@ -13,6 +14,7 @@ class EmptyState extends StatelessWidget {
     required this.message,
     this.accent,
     this.action,
+    this.pose,
     super.key,
   });
 
@@ -21,6 +23,11 @@ class EmptyState extends StatelessWidget {
   final String message;
   final LyAccent? accent;
   final Widget? action;
+
+  /// Quand une pose est fournie, la mascotte prend la place de la pastille
+  /// d'icône. Réservé aux écrans qui ont la place de l'accueillir : dans une
+  /// carte ou un bandeau, l'icône reste la bonne réponse.
+  final MascotPose? pose;
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +43,18 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(color: a.fill, shape: BoxShape.circle),
-              child: Icon(icon, size: 30, color: a.onFill),
-            ),
+            if (pose case final MascotPose p)
+              MascotFigure(pose: p)
+            else
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: a.fill,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 30, color: a.onFill),
+              ),
             const SizedBox(height: LySpace.xl),
             Text(
               title,

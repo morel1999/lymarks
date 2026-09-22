@@ -15,7 +15,9 @@ abstract final class LyIcons {
   static const IconData home = LucideIcons.house;
   static const IconData offline = LucideIcons.cloudOff;
   static const IconData search = LucideIcons.search;
-  static const IconData digest = LucideIcons.sparkles;
+  // Le Digest est un rendez-vous quotidien, pas une promesse d'IA : les
+  // étincelles appartiennent à la catégorie AI, qui les portait déjà.
+  static const IconData digest = LucideIcons.sunrise;
 
   // Chrome et actions.
   static const IconData settings = LucideIcons.settings;

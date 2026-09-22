@@ -9,11 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lymarks/features/onboarding/mascot.dart';
+import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/main.dart';
+import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Rendus de référence des sept écrans.
 ///
@@ -49,11 +51,15 @@ ProviderContainer _container({List<Override> overrides = const []}) {
   return container;
 }
 
-Future<void> _boot(WidgetTester tester, {ThemeMode? theme}) async {
+Future<void> _boot(
+  WidgetTester tester, {
+  ThemeMode? theme,
+  List<Override> overrides = const [],
+}) async {
   await tester.binding.setSurfaceSize(_phone);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
-  final container = _container();
+  final container = _container(overrides: overrides);
   if (theme != null) {
     container.read(themeModeProvider.notifier).state = theme;
   }
@@ -77,9 +83,11 @@ Future<void> _boot(WidgetTester tester, {ThemeMode? theme}) async {
 /// dans lequel le widget puise ensuite sans attendre.
 Future<void> _precacheImages(WidgetTester tester) async {
   final context = tester.element(find.byType(LymarksApp));
-  await tester.runAsync(
-    () => precacheImage(const AssetImage(Mascot.asset), context),
-  );
+  await tester.runAsync(() async {
+    for (final pose in MascotPose.values) {
+      await precacheImage(AssetImage(pose.asset), context);
+    }
+  });
 }
 
 Future<void> _shoot(WidgetTester tester, String name) async {
@@ -267,5 +275,101 @@ void main() {
     await tester.enterText(find.byType(EditableText), 'react component ideas');
     await _settle(tester);
     await _shoot(tester, '15-search-free-upsell');
+  });
+
+  // Les poses de la mascotte.
+  //
+  // Les captures ci-dessus ne traversent aucun des six points où la mascotte
+  // remplace une icône : sans ces rendus, un asset manquant ou une pose
+  // inversée passerait sans bruit.
+
+  testWidgets('16 connexion : la mascotte salue', (tester) async {
+    await _boot(
+      tester,
+      overrides: [
+        authSessionProvider.overrideWithValue(DemoAuthSession(signedIn: false)),
+      ],
+    );
+    // Session fermée : le Skip de l'onboarding sort vers la connexion.
+    await _skipOnboarding(tester);
+    await _shoot(tester, '16-sign-in');
+  });
+
+  testWidgets('17 digest vide : la mascotte dort', (tester) async {
+    await _boot(
+      tester,
+      overrides: [
+        lymarksRepositoryProvider.overrideWithValue(
+          MockLymarksRepository(seed: const []),
+        ),
+      ],
+    );
+    await _skipOnboarding(tester);
+    await tester.tap(find.text('Digest'));
+    await _settle(tester);
+    await _shoot(tester, '17-digest-empty');
+  });
+
+  testWidgets('18 recherche vaine : la mascotte cherche', (tester) async {
+    await _boot(tester);
+    await _skipOnboarding(tester);
+    await tester.tap(find.text('Search'));
+    await _settle(tester);
+    // Le compte de démo est Pro : rien ne vient masquer le zéro résultat.
+    await tester.enterText(find.byType(EditableText), 'quantum gardening');
+    await _settle(tester);
+    await _shoot(tester, '18-search-no-results');
+  });
+
+  testWidgets('19 lecture en echec : la mascotte hausse les epaules', (
+    tester,
+  ) async {
+    await _boot(tester);
+    await _skipOnboarding(tester);
+    // Le lymark en échec est le plus ancien du jeu de démo et la Home n'en
+    // liste que six : la recherche est le chemin le plus court.
+    await tester.tap(find.text('Search'));
+    await _settle(tester);
+    await tester.enterText(find.byType(EditableText), 'retrieval');
+    await _settle(tester);
+    await tester.tap(find.text('Thread on retrieval evaluation').first);
+    await _settle(tester);
+    await _shoot(tester, '19-detail-failed');
+  });
+
+  testWidgets('20 cluster sans lymark : la mascotte constate le vide', (
+    tester,
+  ) async {
+    // Le chemin d'une catégorie vient du jeu curé, son contenu des lymarks :
+    // un cluster peut donc être annoncé sans rien contenir encore. C'est là
+    // que la pose `empty` vit, depuis que toutes les catégories sont fournies.
+    await _boot(
+      tester,
+      overrides: [
+        lymarksRepositoryProvider.overrideWithValue(
+          MockLymarksRepository(
+            seed: MockData.lymarks
+                .where((l) => l.clusterId != 'ai-prompt')
+                .toList(),
+          ),
+        ),
+      ],
+    );
+    await _skipOnboarding(tester);
+    await tester.tap(find.text('Explore your AI knowledge'));
+    await _settle(tester);
+    await tester.tap(find.text('Prompt Engineering'));
+    await _settle(tester);
+    await _shoot(tester, '20-cluster-empty');
+  });
+
+  testWidgets('21 cluster habite : les liens du chemin', (tester) async {
+    await _boot(tester);
+    await _skipOnboarding(tester);
+    await tester.tap(find.text('Explore your AI knowledge'));
+    await _settle(tester);
+    await tester.tap(find.text('Prompt Engineering'));
+    await _settle(tester);
+    await _shoot(tester, '21-cluster-lymarks');
   });
 }

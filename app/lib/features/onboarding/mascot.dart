@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Lymarks, la mascotte de l'app.
 ///
@@ -21,7 +22,7 @@ class Mascot extends StatelessWidget {
     super.key,
   });
 
-  static const String asset = 'assets/brand/mascot.png';
+  static String get asset => MascotPose.idle.asset;
 
   /// Hauteur du rendu, glow exclu.
   final double height;

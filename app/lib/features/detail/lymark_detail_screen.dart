@@ -12,6 +12,7 @@ import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 import 'package:lymarks/shared/widgets/preview_image.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
 import 'package:lymarks/shared/widgets/shimmer.dart';
@@ -523,7 +524,14 @@ class _FailedBlock extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(LyIcons.warning, size: 20, color: ly.pink.onFill),
+              // Un échec de lecture est un échec de Lymarks, pas de
+              // l'utilisateur : la mascotte hausse les épaules, elle ne
+              // brandit pas un panneau d'avertissement.
+              const MascotFigure(
+                pose: MascotPose.puzzled,
+                height: 88,
+                glow: false,
+              ),
               const SizedBox(width: LySpace.m),
               Expanded(
                 child: Text(

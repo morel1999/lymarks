@@ -12,6 +12,7 @@ import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 import 'package:lymarks/shared/widgets/search_field.dart';
 
@@ -353,6 +354,9 @@ class _NoResults extends StatelessWidget {
       padding: const EdgeInsets.only(top: LySpace.xxl),
       child: EmptyState(
         icon: LyIcons.search,
+        // Recherche vaine : la mascotte cherche encore. Un refus du serveur,
+        // lui, est une panne — pas le moment de faire le mignon.
+        pose: error == null ? MascotPose.searching : null,
         title: error == null ? 'Nothing surfaced yet.' : 'Search unavailable.',
         message:
             error ??

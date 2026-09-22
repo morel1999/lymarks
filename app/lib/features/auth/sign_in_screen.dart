@@ -5,6 +5,7 @@ import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Connexion (F5) : Google et e-mail via Clerk.
 ///
@@ -37,7 +38,12 @@ class SignInScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Lymarks', style: context.texts.titleLarge),
-                  const SizedBox(height: LySpace.l),
+                  const SizedBox(height: LySpace.m),
+                  // Première rencontre : elle salue, elle ne vend rien.
+                  const Center(
+                    child: MascotFigure(pose: MascotPose.waving, height: 132),
+                  ),
+                  const SizedBox(height: LySpace.m),
                   Text(
                     'Sign in to sync\nyour memory.',
                     style: context.texts.displayLarge,

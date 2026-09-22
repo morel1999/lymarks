@@ -11,6 +11,7 @@ import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/widgets/digest_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 
 /// 06 — Daily Digest.
@@ -95,6 +96,7 @@ class DigestScreen extends ConsumerWidget {
               hasScrollBody: false,
               child: EmptyState(
                 icon: LyIcons.digest,
+                pose: MascotPose.sleeping,
                 title: 'Nothing to revisit yet.',
                 message:
                     "Keep saving things. We'll bring something back "

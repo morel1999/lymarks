@@ -12,6 +12,7 @@ import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// 03 — Category Path.
 ///
@@ -85,6 +86,7 @@ class CategoryPathScreen extends ConsumerWidget {
               child: EmptyState(
                 icon: LyIcons.topic(category.iconKey),
                 accent: accent,
+                pose: MascotPose.empty,
                 title: 'Nothing here yet.',
                 message: _emptyMessage(category, live: live),
               ),
