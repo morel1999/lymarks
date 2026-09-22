@@ -55,7 +55,7 @@ class ProfileAvatar extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [ly.lift(ly.lavender, 0.35), ly.lift(ly.blue, 0.45)],
+          colors: [ly.lift(ly.steel, 0.35), ly.lift(ly.blue, 0.45)],
         ),
         border: Border.all(color: ly.card, width: 2),
       ),
@@ -68,7 +68,7 @@ class ProfileAvatar extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 height: 1,
                 letterSpacing: -0.2,
-                color: ly.lavender.onFill,
+                color: ly.steel.onFill,
               ),
             )
           : Text(
@@ -183,13 +183,13 @@ class _AvatarPickerSheet extends StatelessWidget {
                       height: 36,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: ly.lavender.fill,
+                        color: ly.steel.fill,
                         shape: BoxShape.circle,
                       ),
                       child: Text(
                         profile.initials,
                         style: context.texts.labelMedium?.copyWith(
-                          color: ly.lavender.onFill,
+                          color: ly.steel.onFill,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

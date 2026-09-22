@@ -70,7 +70,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     SettingsTile(
                       icon: LyIcons.appearance,
-                      accent: ly.lavender,
+                      accent: ly.steel,
                       title: 'Appearance',
                       subtitle: switch (themeMode) {
                         ThemeMode.light => 'Light',
@@ -129,7 +129,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     SettingsTile(
                       icon: LyIcons.note,
-                      accent: ly.lavender,
+                      accent: ly.steel,
                       title: 'Terms of service',
                       onTap: () {},
                     ),

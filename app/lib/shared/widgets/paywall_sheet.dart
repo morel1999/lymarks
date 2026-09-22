@@ -111,19 +111,21 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                   horizontal: LySpace.m,
                   vertical: LySpace.xs + 2,
                 ),
+                // Chrome : l'offre payante est la seule pastille metallique
+                // de l'ecran, elle doit se distinguer d'un accent de couleur.
                 decoration: BoxDecoration(
-                  color: ly.primarySoft,
+                  gradient: ly.chromeGradient,
                   borderRadius: LyRadius.pillR,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LyIcons.sparkle, size: 14, color: ly.primary),
+                    Icon(LyIcons.sparkle, size: 14, color: ly.gradientTop),
                     const SizedBox(width: LySpace.s),
                     Text(
                       'Lymarks Pro',
                       style: context.texts.labelSmall?.copyWith(
-                        color: ly.primary,
+                        color: ly.gradientTop,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

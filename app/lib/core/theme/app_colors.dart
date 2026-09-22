@@ -33,14 +33,20 @@ class LyAccent {
 
 /// Tokens de couleur Lymarks.
 ///
-/// Toutes les valeurs `light` sont **échantillonnées sur les maquettes de
-/// référence**, pas inventées :
-///   * base, navigation, primaire -> `Ecran/Accueil de curation des
-///     connaissances IA.png` ;
-///   * accents saturés (`strong`) -> `Ecran/Parcours IA pastel sur mobile.png`.
+/// **Identité : bleu nuit en dégradé, chrome en touche** (décidée le 22/09,
+/// en remplacement du violet d'origine). Le primaire est un bleu profond ;
+/// les grandes surfaces d'appel (bouton de capture, en-tête du paywall,
+/// hero du détail) portent le dégradé [primaryGradient] plutôt qu'un aplat ;
+/// le chrome ([chrome], [chromeSoft], [chromeDeep], [chromeGradient]) sert de
+/// filet métallique — bordures d'exception, badge Pro, séparateurs — jamais
+/// de fond plein : « un peu de chrome », pas une carrosserie.
 ///
-/// Les valeurs `dark` en sont dérivées (fonds profonds teintés, accents
-/// éclaircis) car aucune maquette sombre n'existe à ce jour.
+/// Les accents pastel des catégories (lime, blue, steel, yellow, pink) sont
+/// repris des maquettes `Ecran/Parcours IA pastel sur mobile.png` ; seule la
+/// famille violette a été remplacée par [steel], l'acier du même thème.
+///
+/// Les valeurs `dark` sont dérivées de `light` (fonds profonds teintés de
+/// bleu, accents éclaircis) : le sombre est natif dès la V1.0.
 ///
 /// Voir `02-ux/02-design-system.md`.
 @immutable
@@ -53,6 +59,11 @@ class LyPalette extends ThemeExtension<LyPalette> {
     required this.primary,
     required this.onPrimary,
     required this.primarySoft,
+    required this.gradientTop,
+    required this.gradientBottom,
+    required this.chrome,
+    required this.chromeSoft,
+    required this.chromeDeep,
     required this.textPrimary,
     required this.textSecondary,
     required this.textTertiary,
@@ -66,42 +77,47 @@ class LyPalette extends ThemeExtension<LyPalette> {
     required this.skeleton,
     required this.skeletonHighlight,
     required this.lime,
-    required this.lavender,
+    required this.steel,
     required this.blue,
     required this.yellow,
     required this.pink,
   });
 
-  /// Palette claire : l'écran Home est la source de vérité.
+  /// Palette claire : blancs refroidis au bleu, primaire bleu nuit.
   static const LyPalette light = LyPalette(
-    surface: Color(0xFFFAFAFD),
+    surface: Color(0xFFF6F8FC),
     card: Color(0xFFFFFFFF),
-    cardBorder: Color(0xFFEDEDF2),
-    navSurface: Color(0xFFEEEBFD),
-    primary: Color(0xFF4A35E8),
+    cardBorder: Color(0xFFE3E9F2),
+    navSurface: Color(0xFFE9EFF9),
+    primary: Color(0xFF1A3E72),
     onPrimary: Color(0xFFFFFFFF),
-    primarySoft: Color(0xFFEDE9FE),
-    textPrimary: Color(0xFF0A0A0A),
-    textSecondary: Color(0xFF6B7280),
-    textTertiary: Color(0xFF9CA3AF),
-    chipFill: Color(0xFFF4F4F5),
-    chipText: Color(0xFF3F3F46),
-    badgeInk: Color(0xFF171717),
+    primarySoft: Color(0xFFE4ECF9),
+    gradientTop: Color(0xFF0D1F3C),
+    gradientBottom: Color(0xFF23508F),
+    chrome: Color(0xFF94A3B8),
+    chromeSoft: Color(0xFFE8EDF4),
+    chromeDeep: Color(0xFF56637A),
+    textPrimary: Color(0xFF0A101C),
+    textSecondary: Color(0xFF5B6678),
+    textTertiary: Color(0xFF8E98A9),
+    chipFill: Color(0xFFF1F4FA),
+    chipText: Color(0xFF394355),
+    badgeInk: Color(0xFF111826),
     onBadgeInk: Color(0xFFFFFFFF),
-    success: Color(0xFF10B981),
-    warning: Color(0xFFF59E0B),
-    danger: Color(0xFFEF4444),
-    skeleton: Color(0xFFF1F1F5),
-    skeletonHighlight: Color(0xFFFAFAFC),
+    success: Color(0xFF0E9E76),
+    warning: Color(0xFFE39A0B),
+    danger: Color(0xFFE04A4A),
+    skeleton: Color(0xFFEDF1F8),
+    skeletonHighlight: Color(0xFFF9FBFE),
     lime: LyAccent(
       fill: Color(0xFFEDF9CC),
       strong: Color(0xFFC3E91C),
       onFill: Color(0xFF2F3D06),
     ),
-    lavender: LyAccent(
-      fill: Color(0xFFEDE8FC),
-      strong: Color(0xFF8C58D6),
-      onFill: Color(0xFF2B1B4D),
+    steel: LyAccent(
+      fill: Color(0xFFE5E9F0),
+      strong: Color(0xFF64748B),
+      onFill: Color(0xFF1E293B),
     ),
     blue: LyAccent(
       fill: Color(0xFFDAF3FD),
@@ -121,35 +137,41 @@ class LyPalette extends ThemeExtension<LyPalette> {
   );
 
   /// Palette sombre, dérivée de [light] (Design System : dark natif V1.0).
+  /// Les noirs sont teintés de bleu nuit, jamais neutres.
   static const LyPalette dark = LyPalette(
-    surface: Color(0xFF0C0C11),
-    card: Color(0xFF16161E),
-    cardBorder: Color(0xFF24242F),
-    navSurface: Color(0xFF1D1935),
-    primary: Color(0xFFA694FF),
-    onPrimary: Color(0xFF130B33),
-    primarySoft: Color(0xFF241D46),
-    textPrimary: Color(0xFFF4F4F6),
-    textSecondary: Color(0xFF9CA3AF),
-    textTertiary: Color(0xFF6B7280),
-    chipFill: Color(0xFF23232D),
-    chipText: Color(0xFFD4D4D8),
-    badgeInk: Color(0xFFF4F4F6),
-    onBadgeInk: Color(0xFF16161E),
-    success: Color(0xFF34D399),
-    warning: Color(0xFFFBBF24),
-    danger: Color(0xFFF87171),
-    skeleton: Color(0xFF1E1E28),
-    skeletonHighlight: Color(0xFF2A2A36),
+    surface: Color(0xFF060A12),
+    card: Color(0xFF0E1520),
+    cardBorder: Color(0xFF1C2634),
+    navSurface: Color(0xFF0F1A2E),
+    primary: Color(0xFF7FA9E8),
+    onPrimary: Color(0xFF06152A),
+    primarySoft: Color(0xFF132339),
+    gradientTop: Color(0xFF08142A),
+    gradientBottom: Color(0xFF1B4275),
+    chrome: Color(0xFF8593A8),
+    chromeSoft: Color(0xFFD6DEEA),
+    chromeDeep: Color(0xFF414D60),
+    textPrimary: Color(0xFFEDF1F8),
+    textSecondary: Color(0xFF94A1B4),
+    textTertiary: Color(0xFF657183),
+    chipFill: Color(0xFF19212E),
+    chipText: Color(0xFFCAD3E0),
+    badgeInk: Color(0xFFEDF1F8),
+    onBadgeInk: Color(0xFF0E1520),
+    success: Color(0xFF2CC79C),
+    warning: Color(0xFFF0B429),
+    danger: Color(0xFFF0716E),
+    skeleton: Color(0xFF131B27),
+    skeletonHighlight: Color(0xFF1D2634),
     lime: LyAccent(
       fill: Color(0xFF232E0B),
       strong: Color(0xFFC3E91C),
       onFill: Color(0xFFE4F9B9),
     ),
-    lavender: LyAccent(
-      fill: Color(0xFF241B3D),
-      strong: Color(0xFFB18BEA),
-      onFill: Color(0xFFDCD2FA),
+    steel: LyAccent(
+      fill: Color(0xFF1A212E),
+      strong: Color(0xFF94A3B8),
+      onFill: Color(0xFFDDE3EC),
     ),
     blue: LyAccent(
       fill: Color(0xFF0E2C38),
@@ -177,6 +199,32 @@ class LyPalette extends ThemeExtension<LyPalette> {
   final Color onPrimary;
   final Color primarySoft;
 
+  /// Deux bornes du dégradé d'identité, du plus nocturne au plus ouvert.
+  final Color gradientTop;
+  final Color gradientBottom;
+
+  /// Métal : [chrome] est la teinte médiane, [chromeSoft] le reflet,
+  /// [chromeDeep] l'ombre. Une touche, pas un fond.
+  final Color chrome;
+  final Color chromeSoft;
+  final Color chromeDeep;
+
+  /// Dégradé d'identité, en diagonale (les surfaces d'appel).
+  LinearGradient get primaryGradient => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [gradientTop, gradientBottom],
+  );
+
+  /// Filet métallique : reflet, métal, ombre, reflet. Pour des bordures et
+  /// des séparateurs fins, jamais pour remplir une surface.
+  LinearGradient get chromeGradient => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [chromeSoft, chrome, chromeDeep, chromeSoft],
+    stops: const [0, 0.35, 0.7, 1],
+  );
+
   final Color textPrimary;
   final Color textSecondary;
   final Color textTertiary;
@@ -196,13 +244,15 @@ class LyPalette extends ThemeExtension<LyPalette> {
   final Color skeletonHighlight;
 
   final LyAccent lime;
-  final LyAccent lavender;
+
+  /// L'acier du thème : remplace la famille violette d'origine.
+  final LyAccent steel;
   final LyAccent blue;
   final LyAccent yellow;
   final LyAccent pink;
 
   /// Les cinq familles, dans leur ordre d'apparition sur la Home.
-  List<LyAccent> get accents => [lime, blue, lavender, yellow, pink];
+  List<LyAccent> get accents => [lime, blue, steel, yellow, pink];
 
   /// Variante plus lumineuse d'un fond d'accent, valable en clair comme en
   /// sombre. On renforce la teinte au lieu d'y mélanger du blanc : sur fond
@@ -239,6 +289,11 @@ class LyPalette extends ThemeExtension<LyPalette> {
     Color? primary,
     Color? onPrimary,
     Color? primarySoft,
+    Color? gradientTop,
+    Color? gradientBottom,
+    Color? chrome,
+    Color? chromeSoft,
+    Color? chromeDeep,
     Color? textPrimary,
     Color? textSecondary,
     Color? textTertiary,
@@ -252,7 +307,7 @@ class LyPalette extends ThemeExtension<LyPalette> {
     Color? skeleton,
     Color? skeletonHighlight,
     LyAccent? lime,
-    LyAccent? lavender,
+    LyAccent? steel,
     LyAccent? blue,
     LyAccent? yellow,
     LyAccent? pink,
@@ -265,6 +320,11 @@ class LyPalette extends ThemeExtension<LyPalette> {
       primary: primary ?? this.primary,
       onPrimary: onPrimary ?? this.onPrimary,
       primarySoft: primarySoft ?? this.primarySoft,
+      gradientTop: gradientTop ?? this.gradientTop,
+      gradientBottom: gradientBottom ?? this.gradientBottom,
+      chrome: chrome ?? this.chrome,
+      chromeSoft: chromeSoft ?? this.chromeSoft,
+      chromeDeep: chromeDeep ?? this.chromeDeep,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textTertiary: textTertiary ?? this.textTertiary,
@@ -278,7 +338,7 @@ class LyPalette extends ThemeExtension<LyPalette> {
       skeleton: skeleton ?? this.skeleton,
       skeletonHighlight: skeletonHighlight ?? this.skeletonHighlight,
       lime: lime ?? this.lime,
-      lavender: lavender ?? this.lavender,
+      steel: steel ?? this.steel,
       blue: blue ?? this.blue,
       yellow: yellow ?? this.yellow,
       pink: pink ?? this.pink,
@@ -296,6 +356,11 @@ class LyPalette extends ThemeExtension<LyPalette> {
       primary: Color.lerp(primary, other.primary, t)!,
       onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
       primarySoft: Color.lerp(primarySoft, other.primarySoft, t)!,
+      gradientTop: Color.lerp(gradientTop, other.gradientTop, t)!,
+      gradientBottom: Color.lerp(gradientBottom, other.gradientBottom, t)!,
+      chrome: Color.lerp(chrome, other.chrome, t)!,
+      chromeSoft: Color.lerp(chromeSoft, other.chromeSoft, t)!,
+      chromeDeep: Color.lerp(chromeDeep, other.chromeDeep, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
       textTertiary: Color.lerp(textTertiary, other.textTertiary, t)!,
@@ -313,7 +378,7 @@ class LyPalette extends ThemeExtension<LyPalette> {
         t,
       )!,
       lime: LyAccent.lerp(lime, other.lime, t),
-      lavender: LyAccent.lerp(lavender, other.lavender, t),
+      steel: LyAccent.lerp(steel, other.steel, t),
       blue: LyAccent.lerp(blue, other.blue, t),
       yellow: LyAccent.lerp(yellow, other.yellow, t),
       pink: LyAccent.lerp(pink, other.pink, t),

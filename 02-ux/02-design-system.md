@@ -1,20 +1,40 @@
 # Design System — Lymarks
 
-> **But :** règles UI, tokens et composants Flutter. · **Statut :** vivant · **Màj :** 2026-08-07
+> **But :** règles UI, tokens et composants Flutter. · **Statut :** vivant · **Màj :** 2026-09-22
 
 Base : **Material 3** (Flutter), personnalisé par les tokens ci-dessous. Dark mode natif dès la V1.0 (suit le système).
 
 ## Tokens
 
-### Couleurs (⚠️ palette proposée, à valider)
+### Couleurs — bleu nuit et chrome
+
+Identité arrêtée le **22/09/2026**, en remplacement du violet d'origine. La
+source de vérité est `app/lib/core/theme/app_colors.dart` (`LyPalette`) ; le
+tableau ci-dessous en est le reflet, pas l'inverse.
+
 | Token | Light | Dark | Usage |
 |---|---|---|---|
-| `primary` | #4F46E5 (indigo) | #818CF8 | Actions, liens actifs |
-| `surface` | #FAFAFA | #121212 | Fonds |
-| `surfaceCard` | #FFFFFF | #1E1E1E | Cartes lymark |
-| `accent` | #F59E0B (ambre) | #FBBF24 | Digest, re-surfaçage |
-| `success` / `error` | #10B981 / #EF4444 | idem | États pipeline |
-| `textPrimary` / `textSecondary` | #111827 / #6B7280 | #F3F4F6 / #9CA3AF | Textes |
+| `primary` | #1A3E72 | #7FA9E8 | Actions, liens actifs, puces de résumé |
+| `onPrimary` / `primarySoft` | #FFFFFF / #E4ECF9 | #06152A / #132339 | Texte sur primaire, fonds doux |
+| `gradientTop` → `gradientBottom` | #0D1F3C → #23508F | #08142A → #1B4275 | `primaryGradient`, diagonale |
+| `chrome` / `chromeSoft` / `chromeDeep` | #94A3B8 / #E8EDF4 / #56637A | #8593A8 / #D6DEEA / #414D60 | `chromeGradient` |
+| `surface` / `card` / `cardBorder` | #F6F8FC / #FFFFFF / #E3E9F2 | #060A12 / #0E1520 / #1C2634 | Fonds |
+| `navSurface` | #E9EFF9 | #0F1A2E | Barre de navigation |
+| `success` / `warning` / `danger` | #0E9E76 / #E39A0B / #E04A4A | #2CC79C / #F0B429 / #F0716E | États pipeline |
+| `textPrimary` / `textSecondary` | #0A101C / #5B6678 | #EDF1F8 / #94A1B4 | Textes |
+
+**Où le dégradé a le droit d'être** : seulement sur les surfaces qui portent
+l'identité — en-tête du profil aujourd'hui. Une carte de contenu ne prend
+jamais le dégradé : elle appartient à sa catégorie, donc à son accent.
+
+**Dose de chrome** : filets, bordures d'exception et **pastilles Pro**
+(paywall, en-tête du profil). Jamais un fond plein, jamais un texte. Le métal
+signale ce qui est payant ; l'utiliser ailleurs viderait le signal.
+
+**Accents de catégorie** (5 familles, `fill` / `strong` / `onFill`, tirées au
+sort de façon déterministe par `accentFor`) : `lime`, `blue` (cyan pâle),
+`steel`, `yellow`, `pink`. `steel` (#E5E9F0 / #64748B) remplace la famille
+`lavender` violette — c'est l'acier du thème.
 
 ### Espacement & rayons
 Grille 4 pt : `xs 4 · s 8 · m 12 · l 16 · xl 24 · xxl 32`. Rayons : cartes 16, bottom sheets 24 (haut), boutons 12. Marges d'écran : 16.

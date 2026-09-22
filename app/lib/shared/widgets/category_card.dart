@@ -182,7 +182,7 @@ class CategoriesEmptyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ly = context.ly;
-    final accent = ly.lavender;
+    final accent = ly.steel;
 
     return LyCard(
       child: Row(

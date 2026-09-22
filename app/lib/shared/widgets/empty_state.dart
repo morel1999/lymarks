@@ -25,7 +25,7 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ly = context.ly;
-    final a = accent ?? ly.lavender;
+    final a = accent ?? ly.steel;
 
     return Center(
       child: Padding(

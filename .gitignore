@@ -44,3 +44,9 @@ Thumbs.db
 .claude/skills/
 .neon
 node_modules/
+
+# Jeux d'icones exportes par un generateur externe : seules les sources
+# retenues comptent, dans app/branding/ (voir pubspec flutter_launcher_icons).
+/icon_mobile/
+/android/
+/apple-devices/

@@ -65,7 +65,7 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     SettingsTile(
                       icon: LyIcons.bookmark,
-                      accent: ly.lavender,
+                      accent: ly.steel,
                       title: 'All Lymarks',
                       subtitle: 'Browse everything you saved',
                       onTap: () => context.push(LyRoute.library),
@@ -92,7 +92,7 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     SettingsTile(
                       icon: LyIcons.security,
-                      accent: ly.lavender,
+                      accent: ly.steel,
                       title: 'Security',
                       subtitle: 'Sign-in methods and sessions',
                       onTap: () {},
@@ -134,11 +134,9 @@ class _IdentityCard extends ConsumerWidget {
       padding: const EdgeInsets.all(LySpace.xl),
       decoration: BoxDecoration(
         borderRadius: LyRadius.heroR,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [ly.lavender.fill, ly.lift(ly.blue, 0.16)],
-        ),
+        // Seule surface de l'app a porter le degrade d'identite en plein :
+        // c'est la carte qui dit « toi » (Design System, bleu nuit).
+        gradient: ly.primaryGradient,
       ),
       child: Row(
         children: [
@@ -154,14 +152,14 @@ class _IdentityCard extends ConsumerWidget {
                 Text(
                   profile.name,
                   style: context.texts.titleLarge?.copyWith(
-                    color: ly.lavender.onFill,
+                    color: ly.chromeSoft,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   profile.email,
                   style: context.texts.bodySmall?.copyWith(
-                    color: ly.lavender.onFill.withValues(alpha: 0.7),
+                    color: ly.chromeSoft.withValues(alpha: 0.72),
                   ),
                 ),
                 const SizedBox(height: LySpace.m),
@@ -170,19 +168,20 @@ class _IdentityCard extends ConsumerWidget {
                     horizontal: LySpace.m,
                     vertical: LySpace.xs + 2,
                   ),
+                  // Pastille chrome : la touche metallique du theme.
                   decoration: BoxDecoration(
-                    color: ly.card,
+                    gradient: ly.chromeGradient,
                     borderRadius: LyRadius.pillR,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LyIcons.sparkle, size: 13, color: ly.primary),
+                      Icon(LyIcons.sparkle, size: 13, color: ly.gradientTop),
                       const SizedBox(width: LySpace.s),
                       Text(
                         profile.isPro ? 'Pro plan' : 'Free plan',
                         style: context.texts.labelSmall?.copyWith(
-                          color: ly.primary,
+                          color: ly.gradientTop,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

@@ -157,7 +157,7 @@ class _PromiseSlide extends StatelessWidget {
                   icon: LyIcons.link,
                 ),
                 _FloatingShape(
-                  accent: ly.lavender,
+                  accent: ly.steel,
                   size: 120,
                   left: 118,
                   top: 0,
@@ -219,7 +219,7 @@ class _MechanismSlide extends StatelessWidget {
           ),
           _Connector(color: ly.cardBorder),
           _Step(
-            accent: ly.lavender,
+            accent: ly.steel,
             icon: LyIcons.sparkle,
             title: 'Lymarks reads it',
             caption: 'Summary and keywords, in the background.',

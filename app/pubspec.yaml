@@ -28,6 +28,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
   very_good_analysis: ^10.2.0
 
 flutter:
@@ -44,3 +45,22 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-700.ttf
           weight: 700
+
+# Icone de lanceur : generee depuis `branding/` par
+# `dart run flutter_launcher_icons` (a relancer apres tout changement de
+# `branding/icon*.png`). Le resultat est commite dans android/app/src/main/res
+# pour que la CI n'ait rien a generer.
+#
+# `icon.png`            : 1024, plein cadre, fond degrade bleu nuit du theme —
+#                          sert aussi d'icone 1024 pour les stores et Devpost.
+# `icon_foreground.png` : 1024, transparent, mascotte en plein cadre — le
+#                          generateur applique lui-meme la marge de 16 % qui
+#                          la ramene dans la zone sure du masque adaptatif.
+# `mascot.png`          : la mascotte seule, detouree — source de retouche.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: branding/icon.png
+  adaptive_icon_background: "#0D1F3C"
+  adaptive_icon_foreground: branding/icon_foreground.png
+  remove_alpha_ios: true

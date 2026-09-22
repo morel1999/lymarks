@@ -174,7 +174,7 @@ class _KnowledgePath extends StatelessWidget {
                 child: CustomPaint(
                   painter: _PathPainter(
                     dots: dots,
-                    color: ly.lavender.fill,
+                    color: ly.steel.fill,
                     strokeWidth: 3,
                   ),
                 ),
