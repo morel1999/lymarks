@@ -47,6 +47,8 @@ ProviderContainer _container({List<Override> overrides = const []}) {
   final container = ProviderContainer(
     overrides: [
       clockProvider.overrideWithValue(() => _fixedNow),
+      // L'ouverture de l'app n'a pas a etre traversee par chaque test.
+      splashDurationProvider.overrideWithValue(Duration.zero),
       ...overrides,
     ],
   );

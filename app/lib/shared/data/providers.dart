@@ -87,6 +87,15 @@ final Provider<Duration?> searchDebounceProvider = Provider<Duration?>(
   (_) => AppConfig.isLive ? const Duration(milliseconds: 350) : null,
 );
 
+/// Durée de l'ouverture de l'app (écran de lancement Flutter).
+///
+/// Une ouverture se traverse : au-delà d'une seconde elle devient un péage.
+/// Les tests la ramènent à zéro — sinon chacun paierait l'animation avant
+/// d'atteindre l'écran qu'il vient vérifier.
+final Provider<Duration> splashDurationProvider = Provider<Duration>(
+  (_) => const Duration(milliseconds: 900),
+);
+
 /// État de synchronisation de la bibliothèque, pour l'écran d'accueil.
 enum LibrarySync { idle, loading, offline }
 

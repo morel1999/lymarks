@@ -20,56 +20,81 @@ class SignInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ly = context.ly;
-
+    // Deux compositions, parce que les deux panneaux n'ont pas le même
+    // appétit. Le SDK Clerk amène ses propres champs et doit défiler : le
+    // bloc d'accueil se fait compact au-dessus. Le mode démo n'a qu'un
+    // bouton : l'accueil prend alors toute la place et se centre, au lieu de
+    // laisser un trou entre un titre colle en haut et un bouton colle en bas.
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                LySpace.xl,
-                LySpace.l,
-                LySpace.xl,
-                LySpace.m,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: AppConfig.isLive
+            ? const Column(
                 children: [
-                  Text('Lymarks', style: context.texts.titleLarge),
-                  const SizedBox(height: LySpace.m),
-                  // Première rencontre : elle salue, elle ne vend rien.
-                  const Center(
-                    child: MascotFigure(pose: MascotPose.waving, height: 132),
-                  ),
-                  const SizedBox(height: LySpace.m),
-                  Text(
-                    'Sign in to sync\nyour memory.',
-                    style: context.texts.displayLarge,
-                  ),
-                  const SizedBox(height: LySpace.s),
-                  Text(
-                    'Your lymarks follow you on every device.',
-                    style: context.texts.bodyLarge?.copyWith(
-                      color: ly.textSecondary,
-                    ),
+                  _Welcome(compact: true),
+                  Expanded(child: _ClerkPanel()),
+                ],
+              )
+            : Column(
+                children: [
+                  const Expanded(child: Center(child: _Welcome())),
+                  _DemoPanel(
+                    onContinue: () {
+                      final auth = ref.read(authSessionProvider);
+                      if (auth is DemoAuthSession) auth.signIn();
+                    },
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: AppConfig.isLive
-                  ? const _ClerkPanel()
-                  : _DemoPanel(
-                      onContinue: () {
-                        final auth = ref.read(authSessionProvider);
-                        if (auth is DemoAuthSession) auth.signIn();
-                      },
-                    ),
-            ),
-          ],
-        ),
+      ),
+    );
+  }
+}
+
+/// L'accueil : la mascotte, la promesse, et rien d'autre.
+///
+/// Tout est centré. La version précédente alignait les textes à gauche et
+/// posait la mascotte dans un `Center` au milieu de cette colonne : elle
+/// flottait seule pendant que le reste collait au bord.
+class _Welcome extends StatelessWidget {
+  const _Welcome({this.compact = false});
+
+  /// Au-dessus du panneau Clerk, qui a besoin de la hauteur restante.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        LySpace.xl,
+        compact ? LySpace.l : 0,
+        LySpace.xl,
+        compact ? LySpace.m : 0,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Première rencontre : elle salue, elle ne vend rien.
+          MascotFigure(
+            pose: MascotPose.waving,
+            height: compact ? 108 : 148,
+          ),
+          SizedBox(height: compact ? LySpace.m : LySpace.xl),
+          Text(
+            'Sign in to sync\nyour memory.',
+            style: compact
+                ? context.texts.displaySmall
+                : context.texts.displayLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: LySpace.s),
+          Text(
+            'Your lymarks follow you on every device.',
+            style: context.texts.bodyLarge?.copyWith(color: ly.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -117,13 +142,21 @@ class _DemoPanel extends StatelessWidget {
     final ly = context.ly;
 
     return Padding(
-      padding: const EdgeInsets.all(LySpace.xl),
+      padding: const EdgeInsets.fromLTRB(
+        LySpace.xl,
+        0,
+        LySpace.xl,
+        LySpace.xl,
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Spacer(),
-          FilledButton(
-            onPressed: onContinue,
-            child: const Text('Continue in demo mode'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onContinue,
+              child: const Text('Continue in demo mode'),
+            ),
           ),
           const SizedBox(height: LySpace.m),
           Text(

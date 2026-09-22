@@ -33,7 +33,14 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(420, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(const ProviderScope(child: LymarksApp()));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            splashDurationProvider.overrideWithValue(Duration.zero),
+          ],
+          child: const LymarksApp(),
+        ),
+      );
       await settle(tester);
 
       expect(
@@ -49,7 +56,14 @@ void main() {
     });
 
     testWidgets('les trois onglets sont accessibles', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: LymarksApp()));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            splashDurationProvider.overrideWithValue(Duration.zero),
+          ],
+          child: const LymarksApp(),
+        ),
+      );
       await settle(tester);
       await tester.tap(find.text('Skip'));
       await settle(tester);

@@ -13,10 +13,12 @@ import 'package:lymarks/features/settings/legal_content.dart';
 import 'package:lymarks/features/settings/legal_screen.dart';
 import 'package:lymarks/features/settings/profile_screen.dart';
 import 'package:lymarks/features/settings/settings_screen.dart';
+import 'package:lymarks/features/splash/splash_screen.dart';
 import 'package:lymarks/shared/widgets/app_bottom_nav.dart';
 
 /// Chemins nommés, pour éviter les chaînes littérales dans les écrans.
 abstract final class LyRoute {
+  static const String splash = '/';
   static const String onboarding = '/onboarding';
   static const String signIn = '/sign-in';
   static const String home = '/home';
@@ -48,16 +50,23 @@ abstract final class LyRoute {
 /// redirection à chaque connexion ou déconnexion.
 GoRouter buildRouter({required AuthSession auth}) {
   return GoRouter(
-    initialLocation: LyRoute.onboarding,
+    initialLocation: LyRoute.splash,
     refreshListenable: auth,
     redirect: (_, state) {
       final path = state.matchedLocation;
-      final public = path == LyRoute.onboarding || path == LyRoute.signIn;
+      final public =
+          path == LyRoute.splash ||
+          path == LyRoute.onboarding ||
+          path == LyRoute.signIn;
       if (!auth.isSignedIn && !public) return LyRoute.signIn;
       if (auth.isSignedIn && path == LyRoute.signIn) return LyRoute.home;
       return null;
     },
     routes: [
+      GoRoute(
+        path: LyRoute.splash,
+        builder: (_, _) => const SplashScreen(),
+      ),
       GoRoute(
         path: LyRoute.onboarding,
         builder: (_, _) => const OnboardingScreen(),

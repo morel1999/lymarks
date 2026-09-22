@@ -54,6 +54,7 @@ ProviderContainer _container({
 }) {
   final container = ProviderContainer(
     overrides: [
+      splashDurationProvider.overrideWithValue(Duration.zero),
       authSessionProvider.overrideWithValue(DemoAuthSession()),
       categoriesModeProvider.overrideWithValue(mode),
       lymarksRepositoryProvider.overrideWithValue(

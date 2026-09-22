@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Android 11 et anterieurs : le systeme ne peint que ce fond, la mascotte
+     est donc posee a la main. Sur 12+, values-v31 prend le relais et c'est
+     l'icone du lanceur que le systeme centre lui-meme. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/ly_navy" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@drawable/splash_mascot" />
+    </item>
 </layer-list>
