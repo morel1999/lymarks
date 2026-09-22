@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 
@@ -44,11 +42,18 @@ enum MascotPose {
   String get asset => 'assets/brand/$_file';
 }
 
-/// La mascotte, posée dans un écran et animée d'un flottement lent.
+/// La mascotte, posée dans un écran.
 ///
-/// Elle entretient son propre ticker : contrairement à l'onboarding, où une
-/// seule horloge anime toute la page, un état vide n'affiche qu'un sujet.
-class MascotFigure extends StatefulWidget {
+/// **Immobile.** Elle apparaît là où l'utilisateur vient de buter — une liste
+/// vide, une page illisible, une recherche sans résultat — et un personnage
+/// qui flotte pendant qu'on lit un message d'échec attire l'œil au lieu de
+/// l'accompagner. Seul l'onboarding l'anime, parce que c'est le seul endroit
+/// où elle est le sujet : `features/onboarding/mascot.dart` a son propre
+/// widget, mené par l'horloge unique de la page.
+///
+/// Sans ticker, un rendu de référence capture toujours la même image ; avec,
+/// il figeait la frame atteinte après huit `pump`.
+class MascotFigure extends StatelessWidget {
   const MascotFigure({
     required this.pose,
     this.height = 150,
@@ -63,62 +68,32 @@ class MascotFigure extends StatefulWidget {
   final bool glow;
 
   @override
-  State<MascotFigure> createState() => _MascotFigureState();
-}
-
-class _MascotFigureState extends State<MascotFigure>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _wave = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 5),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _wave.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final ly = context.ly;
 
-    return AnimatedBuilder(
-      animation: _wave,
-      builder: (context, child) {
-        final t = _wave.value * 2 * math.pi;
-        return SizedBox(
-          height: widget.height,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (widget.glow)
-                Transform.scale(
-                  scale: 1 + math.sin(t + math.pi) * 0.05,
-                  child: SizedBox.square(
-                    dimension: widget.height * 0.9,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            ly.primary.withValues(alpha: 0.22),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
+    return SizedBox(
+      height: height,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (glow)
+            SizedBox.square(
+              dimension: height * 0.9,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      ly.primary.withValues(alpha: 0.22),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
-              Transform.translate(
-                offset: Offset(0, math.sin(t) * 5),
-                child: child,
               ),
-            ],
-          ),
-        );
-      },
-      child: Image.asset(widget.pose.asset, height: widget.height),
+            ),
+          Image.asset(pose.asset, height: height),
+        ],
+      ),
     );
   }
 }
