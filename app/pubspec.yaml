@@ -26,13 +26,18 @@ dependencies:
   url_launcher: ^6.3.2
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.4
   very_good_analysis: ^10.2.0
 
 flutter:
   uses-material-design: true
+
+  assets:
+    # La mascotte, detouree et retintee. Seule image embarquee : tout le
+    # decor de l'onboarding est dessine avec les composants du design system.
+    - assets/brand/mascot.png
 
   fonts:
     - family: Inter

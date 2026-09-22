@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lymarks/features/onboarding/mascot.dart';
 import 'package:lymarks/main.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/data/providers.dart';
@@ -63,7 +64,22 @@ Future<void> _boot(WidgetTester tester, {ThemeMode? theme}) async {
       child: const LymarksApp(),
     ),
   );
+  await _precacheImages(tester);
   await _settle(tester);
+}
+
+/// Décode les images embarquées avant la capture.
+///
+/// `Image.asset` lit le bundle de façon asynchrone : dans un test de widget,
+/// l'horloge est simulée et le décodage n'aboutit jamais entre deux `pump`.
+/// La mascotte de l'onboarding sortait donc blanche du rendu. `runAsync`
+/// rend la main au vrai event loop le temps de remplir le cache d'images,
+/// dans lequel le widget puise ensuite sans attendre.
+Future<void> _precacheImages(WidgetTester tester) async {
+  final context = tester.element(find.byType(LymarksApp));
+  await tester.runAsync(
+    () => precacheImage(const AssetImage(Mascot.asset), context),
+  );
 }
 
 Future<void> _shoot(WidgetTester tester, String name) async {

@@ -37,7 +37,7 @@ void main() {
       await settle(tester);
 
       expect(
-        find.text('Turn forgotten links\ninto active memory.'),
+        find.text('Capture what\nyou discover.'),
         findsOneWidget,
       );
 
