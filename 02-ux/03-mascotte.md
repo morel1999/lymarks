@@ -18,7 +18,11 @@ ordre d'efficacité :
 2. **Répéter mot pour mot le bloc PERSONNAGE ci-dessous**, sans le reformuler.
 3. **Garder la même caméra et la même lumière** (bloc TECHNIQUE).
 
-### Bloc PERSONNAGE (à coller tel quel, en tête de chaque prompt)
+### Bloc PERSONNAGE
+
+Il est **déjà inclus** dans chaque prompt de la section 2 — inutile de le
+recoller. Il figure ici pour référence, et pour le jour où tu voudras une pose
+qui n'est pas dans la liste.
 
 ```
 A small round chibi creature named Lymarks. Single spherical body, no neck,
@@ -26,12 +30,15 @@ glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
 left to violet-purple on the upper right. Three small rounded bumps form a tuft
 on top of the head. Two very large round eyes with white sclera, big dark navy
 irises with a lighter blue ring, one small white specular highlight in the upper
-left of each pupil. Thin short dark arched eyebrows. Small open smiling mouth,
-dark inside, tiny pink tongue. Soft pink blush ovals on both cheeks. Two very
-small rounded arm stubs on the sides, no fingers. Two short rounded stubby legs,
-no feet detail. Pixar-style character, soft matte-glossy finish, subtle
-subsurface scattering.
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
 ```
+
+La **bouche n'est pas décrite ici** : c'est la pose qui la fixe, parce que
+c'est elle qui porte l'émotion. Une mascotte qui sourit pendant un échec
+sonnerait faux.
 
 > **Garde le violet d'origine, ne demande pas de bleu.** L'app affiche la
 > mascotte en bleu, mais cette teinte est obtenue par une rotation de −35° que
@@ -39,7 +46,9 @@ subsurface scattering.
 > retombent exactement sur la même couleur finale. Demander du bleu au
 > générateur produirait un bleu différent à chaque fois.
 
-### Bloc TECHNIQUE (à coller à la fin de chaque prompt)
+### Bloc TECHNIQUE
+
+Également déjà inclus dans chaque prompt de la section 2.
 
 ```
 Full body, centered, straight-on eye-level camera, character fills about 80% of
@@ -56,31 +65,230 @@ Demande un fond vert uni : je le découpe proprement, et c'est sans ambiguïté.
 
 ## 2. Les poses, et l'écran que chacune sert
 
-Prompt complet = **PERSONNAGE** + **POSE** + **TECHNIQUE**.
+Chaque bloc ci-dessous est un **prompt complet** : copie-le entier, d'un seul tenant. Le personnage et le cadrage y sont déjà, tu n'as rien à assembler. Joins en plus `app/branding/mascot.png` comme image de référence si ton outil le permet.
 
-### Priorité 1 — des états qui existent déjà dans l'app
+Les quatre premières servent des écrans qui existent déjà dans l'app ; les quatre suivantes préparent ceux à venir.
 
-| Fichier attendu | Écran | Bloc POSE à insérer |
-|---|---|---|
-| `mascot-puzzled.png` | Carte en échec, « Couldn't process this link. » | `Pose: head tilted to one side, one arm stub raised in a small shrug, eyebrows asymmetrical (one up, one down), mouth a small wavy line, eyes looking slightly up and sideways. Puzzled but not sad.` |
-| `mascot-offline.png` | Bandeau « Offline — showing your last synced lymarks. » | `Pose: sitting down, eyes half closed and calm, holding one end of a small unplugged cable in an arm stub, the other end loose. Patient, waiting, not distressed.` |
-| `mascot-empty.png` | « Nothing here yet. » (catégorie, cluster) | `Pose: standing, both arm stubs open wide in a welcoming gesture, wide bright eyes, big open smile, leaning very slightly forward. Inviting, encouraging.` |
-| `mascot-searching.png` | « Nothing surfaced yet. » (recherche) | `Pose: leaning forward, one arm stub raised flat above the eyes like a visor, eyes wide and looking to the side, mouth small and focused. Actively scanning for something.` |
+### 1. Perplexe → `mascot-puzzled.png`
 
-### Priorité 2 — pour les écrans à venir
+**Où :** Carte en échec — « Couldn't process this link. »  
+**Pourquoi cette pose :** Le lien n'a pas pu être lu. Elle ne gronde pas : c'est Lymarks qui a échoué, pas l'utilisateur.
 
-| Fichier attendu | Écran | Bloc POSE à insérer |
-|---|---|---|
-| `mascot-reading.png` | Carte `processing`, en attente du résumé | `Pose: looking down at a small blank floating card held in front of it with both arm stubs, eyes lowered and focused, mouth closed in a small concentrated line.` |
-| `mascot-sleeping.png` | Digest vide, « Nothing to revisit yet. » | `Pose: curled up asleep, eyes closed as two calm downward arcs, mouth a tiny closed smile, body slightly squashed and relaxed.` |
-| `mascot-celebrating.png` | Pro débloqué, première capture réussie | `Pose: both arm stubs thrown up in the air, mouth wide open in a joyful laugh, eyes as happy closed upward arcs, body stretched slightly upward mid-jump.` |
-| `mascot-waving.png` | Connexion, « Sign in to sync your memory. » | `Pose: standing, one arm stub raised and open in a friendly wave, head tilted slightly toward the raised arm, warm smile, eyes looking straight at the viewer.` |
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Head tilted to one side, one arm stub raised in a small shrug, the other
+hanging down. Eyebrows asymmetrical, one raised and one lowered. Mouth closed in
+a small wavy line. Eyes looking slightly up and to the side. Puzzled and
+apologetic, never sad or scolding.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 2. Hors-ligne → `mascot-offline.png`
+
+**Où :** Bandeau « Offline — showing your last synced lymarks. »  
+**Pourquoi cette pose :** Le réseau est coupé mais rien n'est perdu : la pose doit rassurer, pas alarmer.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Sitting down on the ground, body relaxed. Eyes half closed and calm. One arm
+stub holds one end of a small unplugged cable, the loose end resting on the
+floor. Mouth a small closed smile. Patient and waiting, not distressed.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 3. Accueil d'une liste vide → `mascot-empty.png`
+
+**Où :** « Nothing here yet. » (catégorie, cluster)  
+**Pourquoi cette pose :** Rien à montrer encore : la pose invite à enregistrer un premier lien.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Standing, both arm stubs opened wide in a welcoming gesture. Wide bright eyes
+looking straight at the viewer. Big open smile showing a tiny pink tongue. Body
+leaning very slightly forward. Inviting and encouraging.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 4. Recherche sans résultat → `mascot-searching.png`
+
+**Où :** « Nothing surfaced yet. » (recherche)  
+**Pourquoi cette pose :** La requête n'a rien donné : elle cherche encore, elle ne renonce pas.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Leaning forward, one arm stub raised flat above the eyes like a visor, the
+other resting on the side of the body. Eyes wide open and looking off to the
+side. Mouth small and closed in concentration. Actively scanning for something.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 5. En train de lire → `mascot-reading.png`
+
+**Où :** Carte `processing`, en attente du résumé  
+**Pourquoi cette pose :** Le pipeline travaille. Remplace le squelette animé quand l'attente dépasse quelques secondes.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Looking down at a small blank floating card held in front of the body with
+both arm stubs. Eyes lowered and focused on the card. Eyebrows slightly drawn
+together. Mouth closed in a small concentrated line. Absorbed in reading.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 6. Endormie → `mascot-sleeping.png`
+
+**Où :** Digest vide — « Nothing to revisit yet. »  
+**Pourquoi cette pose :** Rien à faire remonter aujourd'hui : l'app se tait, la mascotte aussi.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Curled up asleep on the ground, body slightly squashed and relaxed, arm stubs
+tucked in. Eyes closed as two calm downward arcs. Mouth a tiny closed smile. One
+small sleep bubble floating near the head. Peaceful.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 7. Célébration → `mascot-celebrating.png`
+
+**Où :** Pro débloqué, première capture réussie  
+**Pourquoi cette pose :** Le seul moment où elle fête quelque chose — à garder rare pour qu'il garde sa valeur.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Both arm stubs thrown up in the air, body stretched slightly upward in
+mid-jump, legs tucked up. Mouth wide open in a joyful laugh showing the pink
+tongue. Eyes as happy closed upward arcs. Cheeks strongly blushed. Delighted.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
+
+### 8. Salut d'accueil → `mascot-waving.png`
+
+**Où :** Connexion — « Sign in to sync your memory. »  
+**Pourquoi cette pose :** Première rencontre après l'onboarding : elle accueille, elle ne vend rien.
+
+```
+A small round chibi creature named Lymarks. Single spherical body, no neck,
+glossy soft 3D render. Body has a smooth gradient from cyan-blue on the lower
+left to violet-purple on the upper right. Three small rounded bumps form a tuft
+on top of the head. Two very large round eyes with white sclera, big dark navy
+irises with a lighter blue ring, one small white specular highlight in the upper
+left of each pupil. Thin short dark arched eyebrows. Soft pink blush ovals on
+both cheeks. Two very small rounded arm stubs on the sides, no fingers. Two
+short rounded stubby legs, no feet detail. Pixar-style character, soft
+matte-glossy finish, subtle subsurface scattering.
+
+Pose: Standing, one arm stub raised and open in a friendly wave, the other resting
+on the side of the body. Head tilted slightly toward the raised arm. Warm open
+smile. Eyes looking straight at the viewer.
+
+Full body, centered, straight-on eye-level camera, character fills about 80% of
+the frame height. Soft studio key light from the upper left, gentle rim light,
+no cast shadow on the background. Flat solid chroma green background (#00FF00),
+perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
+1024x1024. No text, no logo, no watermark, no border, no checkerboard pattern.
+```
 
 ### Ce qui n'a **pas** besoin d'un rendu
 
-La pose « la mascotte dépasse derrière une carte » (deuxième écran de
-l'onboarding) s'obtient en posant le rendu de face **derrière** la carte dans
-la composition. Inutile de la générer.
+La pose « la mascotte dépasse derrière une carte » (deuxième écran de l'onboarding) s'obtient en posant le rendu de face **derrière** la carte dans la composition. Inutile de la générer.
 
 ## 3. Ce que je fais des fichiers
 
