@@ -4,6 +4,8 @@
 
 > **Périmètre V1.0 = Android seul** (ADR-007). iOS en V1.1.
 
+> **Réorientation du 19/09/2026 — la soumission aux stores est abandonnée pour cette échéance.** Le sprint vise la catégorie **Next Gen** du Shipaton (vidéo de démonstration + dépôt open source, sans compte développeur), dont le troisième critère sur quatre est l'usage réfléchi de RevenueCat. Les jalons « soumission Play » et le buffer de review ci-dessous sont donc caducs ; ce qui les remplace : dépôt public, README, LICENSE, vidéo de deux minutes et page Devpost avant le 30/09. Le reste du document décrit toujours le chemin store, qui redeviendra d'actualité pour une vraie sortie.
+
 ## Sprint Shipaton 2026 (V1.0)
 | Étape | Jours | Contenu | Critère de sortie |
 |---|---|---|---|

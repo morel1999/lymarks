@@ -4,6 +4,8 @@
 
 > **V1.0 = Google Play seul** (ADR-007).
 
+> **Réorientation du 19/09/2026 — la soumission aux stores est abandonnée pour cette échéance.** Le sprint vise la catégorie **Next Gen** du Shipaton (vidéo de démonstration + dépôt open source, sans compte développeur), dont le troisième critère sur quatre est l'usage réfléchi de RevenueCat. Les jalons « soumission Play » et le buffer de review ci-dessous sont donc caducs ; ce qui les remplace : dépôt public, README, LICENSE, vidéo de deux minutes et page Devpost avant le 30/09. Le reste du document décrit toujours le chemin store, qui redeviendra d'actualité pour une vraie sortie.
+
 ## Jalons (sprint 14 jours — cf. Roadmap)
 - **J1–J2** infra · **J3–J6** app+share · **J7–J10** IA+recherche · **J11** 🔒 **gel des features** · **J11–J13** paywall, polish, checklist E2E, assets stores · **J14** soumission Google Play.
 - Entre soumission et le **30/09/2026** : buffer review (48 h à plusieurs jours) + 1 cycle de rejet absorbable (Risk R1).
