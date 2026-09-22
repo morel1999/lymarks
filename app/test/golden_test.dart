@@ -15,6 +15,8 @@ import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/category_card.dart';
 import 'package:lymarks/shared/widgets/mascot.dart';
 
@@ -392,5 +394,40 @@ void main() {
     await tester.tap(find.text('About Lymarks'));
     await _settle(tester);
     await _shoot(tester, '23-about');
+  });
+
+  testWidgets('24 fiche : un titre a rallonge reste lisible', (tester) async {
+    // Certains sites servent une legende entiere comme titre. Coince dans la
+    // colonne a droite de la vignette, il tombait en deux mots par ligne et
+    // chassait tout le reste sous la ligne de flottaison.
+    final bavard = Lymark(
+      id: 'lm-long',
+      url: 'https://instagram.com/p/xyz',
+      domain: 'instagram.com',
+      title:
+          'Nicolas sur Instagram : « Commente INSPI pour recevoir les 4 '
+          'sites directement en DM. Quand tu n as plus d inspiration, ton '
+          'premier reflexe est surement d ouvrir Pinterest, et le probleme '
+          'c est qu on finit vite par voir les memes references »',
+      savedAt: DateTime.now().subtract(const Duration(days: 2)),
+      bullets: const [
+        'Quatre sites pour sortir de la boucle Pinterest.',
+        'Le probleme des references vues partout.',
+      ],
+      keywords: const ['Design', 'Inspiration'],
+    );
+
+    await _boot(
+      tester,
+      overrides: [
+        lymarksRepositoryProvider.overrideWithValue(
+          MockLymarksRepository(seed: [bavard]),
+        ),
+      ],
+    );
+    await _skipOnboarding(tester);
+    await tester.tap(find.byType(BookmarkCard).first);
+    await _settle(tester);
+    await _shoot(tester, '24-detail-long-title');
   });
 }

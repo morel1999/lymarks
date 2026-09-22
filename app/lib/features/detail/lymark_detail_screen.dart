@@ -173,48 +173,63 @@ class _SourceHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ly = context.ly;
 
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SourceAvatar(
-          domain: lymark.domain,
-          accent: accent,
-          size: 64,
-        ),
-        const SizedBox(width: LySpace.l),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Le domaine, jamais l'URL entière (wireframe 04 §Source).
-              Text(
-                lymark.domain,
-                style: context.texts.labelMedium?.copyWith(
-                  color: ly.textSecondary,
-                ),
-              ),
-              const SizedBox(height: LySpace.xs),
-              Text(lymark.title, style: context.texts.displaySmall),
-              const SizedBox(height: LySpace.s),
-              Row(
+        // La provenance tient sur une ligne : vignette, domaine, date.
+        Row(
+          children: [
+            SourceAvatar(domain: lymark.domain, accent: accent, size: 64),
+            const SizedBox(width: LySpace.l),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: ly.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: LySpace.s),
+                  // Le domaine, jamais l'URL entière (wireframe 04 §Source).
                   Text(
-                    LyTime.savedAgo(lymark.savedAt),
-                    style: context.texts.labelSmall,
+                    lymark.domain,
+                    style: context.texts.labelMedium?.copyWith(
+                      color: ly.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: LySpace.s),
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: ly.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: LySpace.s),
+                      Text(
+                        LyTime.savedAgo(lymark.savedAt),
+                        style: context.texts.labelSmall,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
+        const SizedBox(height: LySpace.l),
+        // Le titre prend toute la largeur.
+        //
+        // Coincé dans la colonne à droite de la vignette, il tombait en
+        // deux mots par ligne : illisible dès qu'un site sert une légende
+        // entière comme titre (constaté sur un post Instagram). Et il est
+        // borné — un titre est une étiquette, pas le contenu : le résumé
+        // est juste en dessous, la page entière à un tap.
+        Text(
+          lymark.title,
+          style: context.texts.displaySmall,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
