@@ -8,6 +8,7 @@ import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/lymark.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Surfaces secondaires d'un lymark : menu ⋯, édition de la note,
 /// confirmation de suppression.
@@ -15,6 +16,35 @@ import 'package:lymarks/shared/models/lymark.dart';
 /// Aucune action simple n'ouvre une page entière (UX Bible règle 9) et toute
 /// suppression reste réversible 5 secondes (règle 7).
 abstract final class LymarkActions {
+  /// Ouvre la page d'origine.
+  ///
+  /// Navigateur en surcouche d'abord (Custom Tabs sur Android,
+  /// SFSafariViewController sur iOS) : l'utilisateur revient à Lymarks d'un
+  /// geste, sans passer par le sélecteur d'applications. Un appareil sans
+  /// navigateur compatible retombe sur l'ouverture externe, et un lien
+  /// qu'aucun des deux ne sait ouvrir le dit — jamais un bouton muet
+  /// (PRD §3 : aucun échec silencieux).
+  static Future<void> openOriginal(BuildContext context, Lymark lymark) async {
+    final uri = Uri.tryParse(lymark.url);
+    if (uri == null || !uri.hasScheme) {
+      _toast(context, "This link can't be opened.");
+      return;
+    }
+
+    for (final mode in const [
+      LaunchMode.inAppBrowserView,
+      LaunchMode.externalApplication,
+    ]) {
+      try {
+        if (await launchUrl(uri, mode: mode)) return;
+      } on PlatformException catch (e) {
+        debugPrint('[lymarks/open] ${mode.name}: ${e.code}');
+      }
+    }
+    if (!context.mounted) return;
+    _toast(context, "Couldn't open this link.");
+  }
+
   /// Menu ⋯ d'une carte ou d'une fiche.
   static Future<void> showMenu(
     BuildContext context,
@@ -54,7 +84,12 @@ abstract final class LymarkActions {
             _MenuTile(
               icon: LyIcons.openExternal,
               label: 'Open original',
-              onTap: () => Navigator.of(sheetContext).pop(),
+              onTap: () {
+                // La feuille se ferme d'abord : le navigateur revient sur la
+                // fiche, pas sur un menu reste ouvert dessous.
+                Navigator.of(sheetContext).pop();
+                unawaited(openOriginal(context, lymark));
+              },
             ),
             _MenuTile(
               icon: LyIcons.copy,

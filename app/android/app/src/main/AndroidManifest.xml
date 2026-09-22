@@ -86,5 +86,18 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
+        <!-- « Open original » : depuis Android 11, une app ne voit les autres
+             que si elle les declare. Sans ces deux intentions, url_launcher
+             ne trouve aucun navigateur et le bouton reste sans effet. Les
+             deux schemes sont declares : le pipeline accepte 80 et 443. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
     </queries>
 </manifest>
