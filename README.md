@@ -158,3 +158,14 @@ Not done, and not pretended otherwise: automatic clustering — the category pat
 on a curated set, and the server does not compute clusters yet; the Daily Digest has
 its schema and its screen but no scheduled job; push notifications have no token
 plumbing. iOS is untouched, for want of a Mac.
+
+---
+
+## License
+
+[MIT](LICENSE) — © 2026 Morel Herval. Take it, fork it, ship something with it.
+
+Third-party assets keep their own terms: the [Inter](https://rsms.me/inter/) typeface
+is under the SIL Open Font License 1.1, and the [Lucide](https://lucide.dev) icons
+under ISC. The app lists every package licence under Settings → About Lymarks →
+Open-source licenses.
