@@ -314,17 +314,24 @@ Il fait quatre choses, dans cet ordre :
    la pose à celui de la référence (188°) et comprime ce qui passe en dessous —
    sans couper net, pour que le dégradé garde son modelé. Le rose des joues,
    au-dessus du plancher, n'est pas touché.
-4. **Recadrage et mise à l'échelle** sur 560 px de haut, la hauteur d'affichage
+4. **Normalisation de la saturation** à 80 %. Ajoutée le 23/09 elle aussi : la
+   teinte pouvait être alignée au degré près, les poses s'étalaient de 51 à
+   91 % d'intensité de couleur, et l'œil lisait « ce n'est pas la même
+   mascotte » — c'est l'intensité qu'il compare, pas l'angle. La correction
+   est multiplicative, donc le modelé du dégradé est conservé, et le blanc
+   des yeux n'est pas touché. Elle s'applique aussi à `mascot.png` : sa
+   teinte fait foi et reste intacte, son intensité rejoint le groupe.
+5. **Recadrage et mise à l'échelle** sur 560 px de haut, la hauteur d'affichage
    réelle (120 à 180 dp sur un écran 3x), puis encodage PNG. Une pose pèse
    260 à 360 Ko.
 
 Ne retouche rien toi-même : si une pose part d'un fichier traité autrement, sa
 couleur ne tombera pas sur celle des autres.
 
-**Vérification** : après un passage, les six poses doivent tenir dans une
-poignée de degrés de teinte les unes des autres. Au 23/09 elles sont entre 220°
-et 222,5°, pour une saturation de 76 à 85 % — sauf `mascot.png`, à 63 %, qui
-n'est jamais passée par ce pipeline puisqu'elle en est la référence.
+**Vérification** : après un passage, l'outil imprime pour chaque pose sa teinte
+d'origine, la rotation appliquée, le bout froid avant/après et la saturation
+avant/après. Les six poses doivent en ressortir à 80 % de saturation, avec un
+bout froid au-dessus de 180° et une teinte médiane entre 218° et 226°.
 
 ## 4. Règles d'emploi dans l'app
 

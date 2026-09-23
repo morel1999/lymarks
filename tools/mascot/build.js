@@ -29,6 +29,14 @@ const REFERENCE = path.join(OUT, "mascot.png");
 const TARGET_HEIGHT = 560;
 /** Marge autour du sujet, en part de sa hauteur. */
 const MARGIN = 0.02;
+/**
+ * Saturation moyenne visee par toutes les poses, reference comprise.
+ *
+ * 0,80 est le centre du groupe tel qu'il sortait du generateur une fois la
+ * teinte alignee. Viser plus bas delaverait les poses les plus vives ;
+ * viser plus haut pousserait le rose des joues vers le fluo.
+ */
+const SATURATION = 0.8;
 
 // ---------------------------------------------------------------- couleurs
 
@@ -140,6 +148,59 @@ function liftCoolTail(px, floor, keep = 0.3) {
     px[i + 1] = g;
     px[i + 2] = b;
   }
+}
+
+/**
+ * Saturation moyenne du corps, sur les pixels qui portent une couleur.
+ *
+ * Yeux blancs et contours sombres exclus : ils n'ont pas de couleur à
+ * defendre et tireraient la moyenne vers le bas de la meme facon dans
+ * toutes les poses, ce qui la rendrait aveugle a ce qu'on mesure.
+ */
+function meanSaturation({ w, h, px }) {
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i < w * h * 4; i += 4) {
+    if (px[i + 3] < 250) continue;
+    const [, sat, lum] = rgbToHsl(px[i], px[i + 1], px[i + 2]);
+    if (sat < 0.05 || lum > 0.92 || lum < 0.12) continue;
+    sum += sat;
+    n += 1;
+  }
+  return n === 0 ? 0 : sum / n;
+}
+
+/**
+ * Amene la saturation moyenne du sujet sur [target].
+ *
+ * Le generateur ne rend pas deux poses avec la meme intensite de couleur :
+ * mesurees le 23/09, les neuf poses s'etalaient de 51 a 85 %. La teinte
+ * pouvait bien etre alignee au degre pres, l'oeil lisait quand meme « ce
+ * n'est pas la meme mascotte » — c'est l'intensite qu'il compare, pas
+ * l'angle.
+ *
+ * Multiplicatif et non additif : le modele du degrade est conserve, les
+ * zones les plus saturees restent les plus saturees. Le blanc des yeux, de
+ * saturation nulle, n'est pas touche — zero multiplie reste zero.
+ *
+ * Idempotent : la correction vise une moyenne, donc une image deja au
+ * niveau recoit un facteur de 1. On peut relancer l'outil sans deriver.
+ */
+function normaliseSaturation(img, target) {
+  const current = meanSaturation(img);
+  if (current === 0) return 1;
+  const factor = target / current;
+  const { px } = img;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] === 0) continue;
+    const [hue, sat, lum] = rgbToHsl(px[i], px[i + 1], px[i + 2]);
+    if (sat === 0) continue;
+    const [r, g, b] = hslToRgb(hue, Math.min(1, sat * factor), lum);
+    px[i] = r;
+    px[i + 1] = g;
+    px[i + 2] = b;
+  }
+  return factor;
 }
 
 /** Tourne la teinte de chaque pixel opaque de [delta] tours. */
@@ -336,6 +397,8 @@ for (const file of files) {
   rotateHue(cut.px, delta);
   const before = huePercentile(cut, 0.02);
   liftCoolTail(cut.px, floor);
+  const sat = meanSaturation(cut);
+  normaliseSaturation(cut, SATURATION);
 
   const out = fit(cut, bounds(cut), TARGET_HEIGHT);
   const dest = path.join(OUT, file);
@@ -344,6 +407,28 @@ for (const file of files) {
     `${file} : ${(hue * 360).toFixed(1)}° → rotation ${(delta * 360).toFixed(1)}°` +
       `, bout froid ${(before * 360).toFixed(0)}° → ` +
       `${(huePercentile(cut, 0.02) * 360).toFixed(0)}°` +
+      `, saturation ${(sat * 100).toFixed(0)}% → ` +
+      `${(meanSaturation(cut) * 100).toFixed(0)}%` +
       `, ${out.w}x${out.h}, ${Math.round(fs.statSync(dest).size / 1024)} Ko`,
   );
+}
+
+// La reference elle-meme n'est jamais passee par ce pipeline : c'est le
+// rendu d'origine, celui qui sert aussi a l'icone de lanceur. Sa teinte fait
+// foi et n'est pas touchee — mais son intensite de couleur, elle, doit
+// rejoindre le groupe, sans quoi la seule pose que l'onboarding affiche
+// paraitrait delavee a cote de toutes les autres.
+{
+  const img = decode(fs.readFileSync(REFERENCE));
+  const sat = meanSaturation(img);
+  const factor = normaliseSaturation(img, SATURATION);
+  if (Math.abs(factor - 1) > 0.01) {
+    fs.writeFileSync(REFERENCE, encode(img));
+    console.log(
+      `mascot.png (reference) : saturation ${(sat * 100).toFixed(0)}% → ` +
+        `${(meanSaturation(img) * 100).toFixed(0)}%, teinte inchangee`,
+    );
+  } else {
+    console.log("mascot.png (reference) : deja au niveau, inchangee");
+  }
 }

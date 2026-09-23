@@ -143,7 +143,7 @@ void main() {
 
   testWidgets('01b onboarding mechanism', (tester) async {
     await _boot(tester);
-    await tester.tap(find.text('Get started'));
+    await tester.tap(find.text('Next'));
     await _settle(tester);
     await _shoot(tester, '02-onboarding-mechanism');
   });

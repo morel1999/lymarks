@@ -157,7 +157,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         children: [
           FilledButton(
             onPressed: _next,
-            child: Text(_index == 0 ? 'Get started' : 'Start saving'),
+            // « Next » puis « Get started » : le premier bouton fait
+            // tourner une page, le second entre dans l'app. Nommer les deux
+            // par une promesse — « Get started », « Start saving » —
+            // laissait croire que le premier ouvrait déjà l'app.
+            child: Text(_index == 0 ? 'Next' : 'Get started'),
           ),
           const SizedBox(height: LySpace.xl),
           Row(
