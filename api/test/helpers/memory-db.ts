@@ -140,9 +140,7 @@ export class MemoryDb implements Db {
     countLocked: async (userId: string) =>
       [...this.bookmarks_.values()].filter((b) => b.userId === userId && b.locked).length,
     unlockAll: async (userId: string) => {
-      const freed = [...this.bookmarks_.values()].filter(
-        (b) => b.userId === userId && b.locked,
-      );
+      const freed = [...this.bookmarks_.values()].filter((b) => b.userId === userId && b.locked);
       for (const b of freed) {
         b.locked = false;
         b.updatedAt = this.stamp();
@@ -207,9 +205,8 @@ export class MemoryDb implements Db {
       return true;
     },
     countActive: async (userId: string) =>
-      [...this.bookmarks_.values()].filter(
-        (b) => b.userId === userId && !b.archived && !b.locked,
-      ).length,
+      [...this.bookmarks_.values()].filter((b) => b.userId === userId && !b.archived && !b.locked)
+        .length,
     countCreatedSince: async (userId: string, since: Date) =>
       [...this.bookmarks_.values()].filter((b) => b.userId === userId && b.createdAt >= since)
         .length,

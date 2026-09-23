@@ -146,7 +146,15 @@ export function createNeonDb(databaseUrl: string): Db {
           `INSERT INTO bookmarks (user_id, url, url_hash, source, title, note, locked)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
            RETURNING ${BOOKMARK_COLUMNS}`,
-          [userId, data.url, data.urlHash, data.source, data.title, data.note, data.locked ?? false],
+          [
+            userId,
+            data.url,
+            data.urlHash,
+            data.source,
+            data.title,
+            data.note,
+            data.locked ?? false,
+          ],
         );
         return toBookmark(rows[0]!);
       },
