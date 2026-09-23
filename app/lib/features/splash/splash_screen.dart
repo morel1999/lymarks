@@ -13,9 +13,9 @@ import 'package:lymarks/shared/widgets/mascot.dart';
 /// Elle prolonge l'écran de lancement du système plutôt que de le remplacer :
 /// même bleu nuit (`ly_navy`, celui de l'icône adaptative), même mascotte au
 /// même endroit — celle qui salue, comme à la connexion : c'est la même
-/// première rencontre. Le passage du natif à Flutter ne doit pas se voir,
-/// d'où une mascotte qui entre à 0,88 et non à zéro : elle est déjà là,
-/// elle se pose.
+/// première rencontre. Elle entre à 0,55 et grandit : une arrivée franche,
+/// choisie contre la continuité parfaite avec l'écran système, qui la
+/// montre déjà à pleine taille.
 ///
 /// Puis elle s'efface : une ouverture d'app se traverse, elle ne se regarde
 /// pas. La durée vient d'un provider, que les tests ramènent à zéro — sans
@@ -83,7 +83,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               Opacity(
                 opacity: _mascot.value,
                 child: Transform.scale(
-                  scale: 0.88 + _mascot.value * 0.12,
+                  scale: 0.55 + _mascot.value * 0.45,
                   child: child,
                 ),
               ),
