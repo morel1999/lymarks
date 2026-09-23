@@ -29,6 +29,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/) · versions sémanti
 - Périmètre V1.0 réduit à Android ; iOS reporté en V1.1 (ADR-007) — 2026-09-17.
 
 ### Fixed
+- **Sans réseau, l'app restait bloquée sur l'écran de lancement** (constaté sur device en mode avion). `Auth.initialize()` du SDK Clerk **attend** une première récupération de jeton de session, `sessionTokenPolling` valant vrai par défaut ; hors-ligne la requête part dans le mécanisme de réessai du SDK — huit tentatives à délai exponentiel — et `create` ne rend jamais la main. Or c'est le seul `await` avant `runApp` : Flutter ne dessinait pas une frame. Sondage coupé (le jeton est battu à la demande) et réessais ramenés de huit à trois — 2026-09-23.
 - Les boutons de l'onboarding annonçaient « Get started » puis « Start saving » : deux promesses, alors que le premier ne fait que tourner une page. C'est « Next » puis « Get started » — 2026-09-23.
 - L'ouverture clignotait en blanc : une fois l'écran de lancement du système retiré, `NormalTheme` tenait la fenêtre jusqu'à la première frame Flutter avec le fond du thème — blanc en clair. Les quatre variantes passent au bleu nuit — 2026-09-23.
 - « Open original » ouvrait le navigateur externe au lieu d'une surcouche : depuis Android 11 une app ne voit les autres que si elle les déclare, et `url_launcher` concluait qu'aucun onglet n'existait. `<queries>` déclare le service Custom Tabs — 2026-09-23.

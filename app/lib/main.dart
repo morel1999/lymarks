@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:app_links/app_links.dart';
+import 'package:clerk_auth/clerk_auth.dart' as sdk;
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -58,6 +59,27 @@ Future<void> main() async {
       // Pas de `deepLinkStream` : le retour est traité par
       // ClerkAuthSession.handleDeepLink (transfert connexion ↔ inscription).
       defaultLaunchMode: LaunchMode.inAppBrowserView,
+      // Sans réseau, l'app restait bloquée sur l'écran de lancement
+      // (constaté sur device le 23/09, en mode avion). La cause est ici :
+      // `Auth.initialize()` **attend** une première récupération de jeton
+      // de session quand `sessionTokenPolling` est vrai, ce qui est sa
+      // valeur par défaut. Hors-ligne cette requête part dans le mécanisme
+      // de réessai du SDK — huit tentatives à délai exponentiel — et
+      // `create` ne rend jamais la main. Or c'est le seul `await` avant
+      // `runApp` : Flutter ne dessinait pas une seule frame, et l'écran
+      // restait sur le fond de fenêtre natif.
+      //
+      // Le sondage n'est pas nécessaire : `ClerkAuthSession.token()` bat
+      // un jeton à la demande, au moment où l'API en réclame un.
+      sessionTokenPolling: false,
+      // Et on borne les réessais. Huit tentatives, c'est une minute passée
+      // à retenter un DNS qui a répondu « aucune adresse » du premier coup.
+      // Trois suffisent à absorber un creux de réseau ; au-delà, c'est à
+      // l'app de dire qu'elle est hors-ligne, pas au SDK d'insister.
+      retryOptions: const sdk.RetryOptions(
+        maxAttempts: 3,
+        maxDelay: Duration(seconds: 2),
+      ),
     ),
   );
   final session = ClerkAuthSession(clerk);
