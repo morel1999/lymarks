@@ -89,11 +89,13 @@ final Provider<Duration?> searchDebounceProvider = Provider<Duration?>(
 
 /// Durée de l'ouverture de l'app (écran de lancement Flutter).
 ///
-/// Une ouverture se traverse : au-delà d'une seconde elle devient un péage.
-/// Les tests la ramènent à zéro — sinon chacun paierait l'animation avant
-/// d'atteindre l'écran qu'il vient vérifier.
+/// Cinq secondes : la mascotte entre dans la première, puis l'écran tient.
+/// C'est long pour une ouverture, et c'est assumé — celle-ci est la première
+/// rencontre avec la marque, et on veut qu'elle soit vue. Les tests la
+/// ramènent à zéro, sinon chacun paierait l'attente avant d'atteindre
+/// l'écran qu'il vient vérifier.
 final Provider<Duration> splashDurationProvider = Provider<Duration>(
-  (_) => const Duration(milliseconds: 900),
+  (_) => const Duration(seconds: 5),
 );
 
 /// État de synchronisation de la bibliothèque, pour l'écran d'accueil.

@@ -13,7 +13,11 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <!-- Le relais de l ecran de lancement. Par defaut c est le fond du
+             theme, donc BLANC en clair : entre la disparition du splash
+             systeme et la premiere frame Flutter, l ouverture clignotait en
+             blanc. Le bleu nuit prolonge le splash jusqu a la mascotte. -->
+        <item name="android:windowBackground">@color/ly_navy</item>
     </style>
     <!-- Feuille de capture du menu de partage : fenetre translucide, Flutter
          dessine lui-meme le voile et la feuille par-dessus l'app source. -->

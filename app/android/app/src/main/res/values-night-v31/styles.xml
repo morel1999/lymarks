@@ -7,6 +7,10 @@
         <item name="android:windowSplashScreenBackground">@color/ly_navy</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <!-- Le relais de l ecran de lancement. Par defaut c est le fond du
+             theme, donc BLANC en clair : entre la disparition du splash
+             systeme et la premiere frame Flutter, l ouverture clignotait en
+             blanc. Le bleu nuit prolonge le splash jusqu a la mascotte. -->
+        <item name="android:windowBackground">@color/ly_navy</item>
     </style>
 </resources>

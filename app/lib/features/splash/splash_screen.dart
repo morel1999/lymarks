@@ -13,13 +13,15 @@ import 'package:lymarks/shared/widgets/mascot.dart';
 /// Elle prolonge l'écran de lancement du système plutôt que de le remplacer :
 /// même bleu nuit (`ly_navy`, celui de l'icône adaptative), même mascotte au
 /// même endroit — celle qui salue, comme à la connexion : c'est la même
-/// première rencontre. Elle entre à 0,55 et grandit : une arrivée franche,
-/// choisie contre la continuité parfaite avec l'écran système, qui la
-/// montre déjà à pleine taille.
+/// première rencontre. Elle naît d'un point (0,05) et grandit jusqu'à sa
+/// taille : le regard a quelque chose à suivre dès la première frame, au
+/// lieu d'un fond nu le temps qu'elle paraisse.
 ///
-/// Puis elle s'efface : une ouverture d'app se traverse, elle ne se regarde
-/// pas. La durée vient d'un provider, que les tests ramènent à zéro — sans
-/// quoi chaque test paierait l'animation avant d'atteindre son écran.
+/// L'entrée tient dans le premier tiers, le reste est une pause : l'écran
+/// s'annonce vite et se laisse regarder, au lieu de s'étirer mollement sur
+/// toute la durée. La durée vient d'un provider, que les tests ramènent à
+/// zéro — sans quoi chaque test paierait l'attente avant d'atteindre son
+/// écran.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -48,14 +50,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       });
 
   /// La mascotte se pose, puis le nom paraît : deux temps, jamais ensemble.
+  /// Les deux sont finis à un tiers du chemin ; ce qui suit est la pause.
   late final Animation<double> _mascot = CurvedAnimation(
     parent: _enter,
-    curve: const Interval(0, 0.55, curve: Curves.easeOutCubic),
+    curve: const Interval(0, 0.22, curve: Curves.easeOutCubic),
   );
 
   late final Animation<double> _wordmark = CurvedAnimation(
     parent: _enter,
-    curve: const Interval(0.35, 0.8, curve: Curves.easeOut),
+    curve: const Interval(0.14, 0.34, curve: Curves.easeOut),
   );
 
   @override
@@ -83,7 +86,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               Opacity(
                 opacity: _mascot.value,
                 child: Transform.scale(
-                  scale: 0.55 + _mascot.value * 0.45,
+                  scale: 0.05 + _mascot.value * 0.95,
                   child: child,
                 ),
               ),
