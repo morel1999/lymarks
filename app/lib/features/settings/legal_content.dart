@@ -83,9 +83,11 @@ abstract final class LegalTexts {
       LegalSection(
         heading: 'What stays on your phone',
         body:
-            'The queue of links saved while offline, your interface '
-            'preferences, and the display cache. Everything else lives on '
-            'the server, which is what lets your memory follow you between '
+            'A copy of your library — titles, summaries, keywords and your '
+            'notes — so you can read it without a network. Also the queue of '
+            'links saved while offline and your interface preferences. '
+            'Signing out erases the copy. Everything else lives on the '
+            'server, which is what lets your memory follow you between '
             'devices.',
       ),
       LegalSection(

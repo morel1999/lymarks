@@ -13,6 +13,7 @@ import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
 import 'package:lymarks/shared/widgets/mascot.dart';
+import 'package:lymarks/shared/widgets/offline_banner.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 import 'package:lymarks/shared/widgets/search_field.dart';
 
@@ -79,7 +80,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final isPro = ref.watch(profileProvider).isPro;
     final results = ref.watch(searchResultsProvider);
     final semantic = _isSemantic(query);
-    final error = ref.watch(searchStateProvider).error;
+    final search = ref.watch(searchStateProvider);
+    final error = search.error;
+    final offline = search.offline;
 
     return Scaffold(
       body: CustomScrollView(
@@ -114,10 +117,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           if (query.trim().isEmpty)
             SliverToBoxAdapter(child: _InitialState(onPick: _setQuery))
           else ...[
+            // Sans réseau, la recherche ne couvre que la bibliothèque déjà
+            // synchronisée. Le dire évite de conclure qu'un lymark a disparu.
+            if (offline)
+              const SliverPadding(
+                padding: EdgeInsets.only(top: LySpace.l),
+                sliver: SliverToBoxAdapter(
+                  child: OfflineBanner(
+                    message:
+                        'Offline — searching what is already on this '
+                        'device.',
+                  ),
+                ),
+              ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
+              padding: EdgeInsets.fromLTRB(
                 LySpace.screen,
-                LySpace.l,
+                offline ? 0 : LySpace.l,
                 LySpace.screen,
                 LySpace.l,
               ),
@@ -141,7 +157,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ),
-            if (semantic && !isPro)
+            // Hors-ligne, pas d'appel au Pro : le sens se cherche avec un
+            // embedding, que même un compte Pro n'obtiendrait pas ici.
+            if (semantic && !isPro && !offline)
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
                   LySpace.screen,
@@ -159,7 +177,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             if (results.isEmpty)
-              SliverToBoxAdapter(child: _NoResults(error: error))
+              SliverToBoxAdapter(
+                child: _NoResults(error: error, offline: offline),
+              )
             else
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: LySpace.screen),
@@ -342,11 +362,15 @@ class _SemanticUpsell extends StatelessWidget {
 }
 
 class _NoResults extends StatelessWidget {
-  const _NoResults({this.error});
+  const _NoResults({this.error, this.offline = false});
 
   /// Message du serveur quand la recherche a été refusée (plan, réseau) :
   /// un « 0 résultat » muet cacherait la vraie cause.
   final String? error;
+
+  /// Recherche faite sur l'appareil : l'absence de résultat ne prouve rien
+  /// sur la bibliothèque complète, seulement sur ce qui est déjà là.
+  final bool offline;
 
   @override
   Widget build(BuildContext context) {
@@ -358,10 +382,15 @@ class _NoResults extends StatelessWidget {
         // lui, est une panne — pas le moment de faire le mignon.
         pose: error == null ? MascotPose.searching : null,
         title: error == null ? 'Nothing surfaced yet.' : 'Search unavailable.',
-        message:
-            error ??
+        message: switch ((error, offline)) {
+          (final String e, _) => e,
+          (_, true) =>
+            'Nothing matches on this device. Your full library comes '
+                'back with the network.',
+          _ =>
             'Try describing what you remember '
                 'rather than searching exact words.',
+        },
       ),
     );
   }

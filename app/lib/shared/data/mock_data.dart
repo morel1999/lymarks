@@ -8,7 +8,18 @@ import 'package:lymarks/shared/models/lymark.dart';
 /// l'API Hono à l'étape 3 de la roadmap ; aucun écran ne doit dépendre de
 /// cette classe autrement que par les providers.
 abstract final class MockData {
-  static DateTime _ago(Duration d) => DateTime.now().subtract(d);
+  /// Instant de référence du jeu de démo, lu une seule fois.
+  ///
+  /// Pas `DateTime.now()` à chaque ligne : deux lymarks déclarés « il y a
+  /// neuf jours » recevaient alors des instants séparés de quelques
+  /// microsecondes — ou rigoureusement égaux, selon la granularité de
+  /// l'horloge à cet instant-là. Leur ordre changeait donc d'un lancement à
+  /// l'autre, et un rendu de référence échouait au hasard une fois sur deux.
+  /// Ancrées au même instant, deux durées égales donnent la même date, et
+  /// [Lymark.byRecency] départage sur l'identifiant.
+  static final DateTime _now = DateTime.now();
+
+  static DateTime _ago(Duration d) => _now.subtract(d);
 
   static final List<Lymark> lymarks = [
     Lymark(

@@ -342,6 +342,10 @@ void main() {
       // Une carte en attente existe : en ligne, elle déclencherait le sondage.
       await c.read(lymarksProvider.notifier).addCaptures([capture]);
       expect(c.read(librarySyncProvider), LibrarySync.offline);
+      // Le rafraîchissement de démarrage part d'abord par le cache disque :
+      // on le laisse retomber avant de compter, sinon son propre appel
+      // passerait pour un sondage.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
       final sent = requests;
       await Future<void>.delayed(const Duration(milliseconds: 60));
       expect(requests, sent);

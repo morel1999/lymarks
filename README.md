@@ -69,6 +69,12 @@ Everything is optimistic first: every gesture changes the local list immediately
 reconciles with the server afterwards. Deleting is reversible for five seconds, and
 the real purge only leaves once the undo window closes.
 
+Without a network the app still opens and reads. The session is restored from disk,
+the library comes from a local snapshot of the last successful sync, search falls
+back to full text on the device, and new captures wait in a queue until the network
+returns. A banner says what you are looking at, so a stale list never passes for a
+fresh one.
+
 ---
 
 ## RevenueCat
@@ -117,7 +123,9 @@ The page text is read to write the summary and then dropped: we keep the summary
 the article. Your note is never sent to a language model. There is no third-party
 analytics, and no advertising profile. JSON export is available on every plan
 including Free, because portability is a right rather than an upsell, and deleting
-your account removes the vectors and digest history along with the lymarks.
+your account removes the vectors and digest history along with the lymarks. A copy of
+your library is kept on the phone so you can read it without a network; signing out
+erases it.
 
 The full statement is in the app under Settings → Privacy, and its source of truth is
 [`04-securite/03-privacy-spec.md`](04-securite/03-privacy-spec.md).
@@ -152,11 +160,14 @@ Turkish ISP blocking `workers.dev` on the development machine.
 ## Status
 
 Working end to end: capture, the AI pipeline, categories, keyword and semantic search,
-the library, the paywall and purchases, offline handling, account deletion and export.
+the library, the paywall and purchases, reading and searching offline, account
+deletion and export.
 
-Not done, and not pretended otherwise: automatic clustering — the category paths run
-on a curated set, and the server does not compute clusters yet; the Daily Digest has
-its schema and its screen but no scheduled job; push notifications have no token
+Not done, and not pretended otherwise: offline is read-only — a note written without
+a network stays in memory and is not replayed to the server, because that needs a
+write queue and a conflict rule; automatic clustering — the category paths run on a
+curated set, and the server does not compute clusters yet; the Daily Digest has its
+schema and its screen but no scheduled job; push notifications have no token
 plumbing. iOS is untouched, for want of a Mac.
 
 ---

@@ -462,4 +462,46 @@ void main() {
     await _settle(tester);
     await _shoot(tester, '25-home-locked');
   });
+
+  testWidgets('26 sans reseau : la Home montre le dernier passage', (
+    tester,
+  ) async {
+    // L'app ouverte dans le metro. La bibliotheque vient du cache disque,
+    // le bandeau dit pourquoi elle peut etre en retard, et tout le reste
+    // fonctionne : on entre, on lit.
+    await tester.binding.setSurfaceSize(_phone);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    // Sans sondage : il rappellerait le depot, qui repond, et ferait
+    // repasser l'etat en ligne au milieu de la capture. Et sans carte en
+    // traitement : hors-ligne le pipeline ne tourne pas, une carte
+    // squelette y resterait squelette — ce n'est pas ce que cette image
+    // doit montrer.
+    final container = _container(
+      overrides: [
+        processingPollProvider.overrideWithValue(null),
+        lymarksRepositoryProvider.overrideWithValue(
+          MockLymarksRepository(
+            seed: [
+              for (final l in MockData.lymarks)
+                if (l.status == LymarkStatus.ready) l,
+            ],
+          ),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const LymarksApp(),
+      ),
+    );
+    await _precacheImages(tester);
+    await _settle(tester);
+    await _skipOnboarding(tester);
+
+    container.read(librarySyncProvider.notifier).value = LibrarySync.offline;
+    await _settle(tester);
+    await _shoot(tester, '26-home-offline');
+  });
 }

@@ -132,3 +132,53 @@ MeInfo meFromJson(Map<String, dynamic> j) => MeInfo(
   tz: j['tz'] as String? ?? 'UTC',
   avatar: j['avatar'] as String?,
 );
+
+/// Un lymark dans la forme exacte que l'API envoie.
+///
+/// Inverse de [lymarkFromJson], et c'est tout son intérêt : le cache
+/// hors-ligne réécrit ce que le serveur a dit, et le relit avec le même
+/// analyseur que la réponse réseau. Une seule lecture à maintenir, donc un
+/// champ ajouté au serveur traverse le cache sans code supplémentaire.
+///
+/// À ne pas confondre avec [lymarkToJson], qui vise l'export RGPD : celui-ci
+/// est lisible par un humain et volontairement incomplet, celui-là doit
+/// faire l'aller-retour sans rien perdre.
+///
+/// `accentSlot` n'y figure pas : il n'existe que dans le jeu de démo, que le
+/// cache ne touche jamais.
+Map<String, dynamic> lymarkToApiJson(Lymark l) => {
+  'id': l.id,
+  'url': l.url,
+  'domain': l.domain,
+  'title': l.title,
+  'savedAt': l.savedAt.toUtc().toIso8601String(),
+  'source': l.source.name,
+  'status': l.status.name,
+  'bullets': l.bullets,
+  'keywords': l.keywords,
+  'note': l.note,
+  'category': l.categoryId,
+  'lastOpenedAt': l.lastOpenedAt?.toUtc().toIso8601String(),
+  'archived': l.archived,
+  'locked': l.locked,
+  'savedCount': l.savedCount,
+  'failureReason': l.failureReason,
+  'imageUrl': l.imageUrl,
+};
+
+/// `GET /me` dans sa forme d'origine, pour le cache hors-ligne.
+///
+/// Sans lui, une app ouverte sans réseau ne connaîtrait plus le plan du
+/// compte et retomberait sur celui du jeu de démo : un compte Free
+/// s'afficherait Pro.
+Map<String, dynamic> meToJson(MeInfo m) => {
+  'id': m.id,
+  'plan': m.isPro ? 'pro' : 'free',
+  'lymarkCount': m.lymarkCount,
+  'lymarkLimit': m.lymarkLimit,
+  'createdAt': m.createdAt.toUtc().toIso8601String(),
+  'digestOptin': m.digestOptin,
+  'digestHour': m.digestHour,
+  'tz': m.tz,
+  'avatar': m.avatar,
+};

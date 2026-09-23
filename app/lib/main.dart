@@ -18,6 +18,7 @@ import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_theme.dart';
 import 'package:lymarks/features/capture/capture_sync.dart';
 import 'package:lymarks/features/capture/share_app.dart';
+import 'package:lymarks/shared/data/library_cache.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -158,7 +159,14 @@ class _LymarksAppState extends ConsumerState<LymarksApp>
       ..invalidate(lymarksProvider)
       ..invalidate(meProvider)
       ..invalidate(searchStateProvider);
-    if (signedIn) unawaited(ref.read(captureSyncProvider).sync());
+    if (signedIn) {
+      unawaited(ref.read(captureSyncProvider).sync());
+    } else {
+      // Déconnexion : la bibliothèque lisible hors-ligne part avec le
+      // compte. Le prochain utilisateur de ce téléphone ne doit pas la
+      // trouver (Privacy §5).
+      unawaited(ref.read(libraryCacheProvider.future).then((c) => c?.clear()));
+    }
   }
 
   @override

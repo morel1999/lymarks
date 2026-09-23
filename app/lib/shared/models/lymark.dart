@@ -133,6 +133,18 @@ class Lymark {
 
   static const Object _keep = Object();
 
+  /// Du plus récent au plus ancien, l'identifiant départageant les ex æquo.
+  ///
+  /// Le départage n'est pas une coquetterie : `List.sort` n'est pas stable
+  /// en Dart, et deux lymarks enregistrés le même jour changeaient de place
+  /// d'un lancement à l'autre — un rendu de référence s'en est plaint avant
+  /// qu'on comprenne pourquoi. À jeu de données égal, l'ordre affiché est
+  /// désormais le même partout, toujours.
+  static int byRecency(Lymark a, Lymark b) {
+    final byDate = b.savedAt.compareTo(a.savedAt);
+    return byDate != 0 ? byDate : a.id.compareTo(b.id);
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) || (other is Lymark && other.id == id);

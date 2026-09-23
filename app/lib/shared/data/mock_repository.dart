@@ -1,5 +1,6 @@
 import 'package:lymarks/core/api/api_models.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
+import 'package:lymarks/shared/data/local_search.dart';
 import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/models/lymark.dart';
@@ -121,60 +122,19 @@ class MockLymarksRepository implements LymarksRepository {
   @override
   Future<SearchPage> search(String query, {required bool semantic}) async {
     calls.add('search:$query:${semantic ? 'semantic' : 'text'}');
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return const SearchPage(items: [], semantic: false);
-    final terms = q.split(RegExp(r'\s+'));
-
-    final scored = <(Lymark, int)>[];
-    for (final l in _items) {
-      if (l.archived) continue;
-      final haystack = [
-        l.title,
-        l.domain,
-        l.note ?? '',
-        ...l.bullets,
-        ...l.keywords,
-      ].join(' ').toLowerCase();
-
-      var score = 0;
-      for (final t in terms) {
-        if (l.title.toLowerCase().contains(t)) score += 3;
-        if (l.keywords.any((k) => k.toLowerCase().contains(t))) score += 2;
-        if (haystack.contains(t)) score += 1;
-      }
-      if (score > 0) scored.add((l, score));
+    if (query.trim().isEmpty) {
+      return const SearchPage(items: [], semantic: false);
     }
-    scored.sort((a, b) {
-      final byScore = b.$2.compareTo(a.$2);
-      return byScore != 0 ? byScore : b.$1.savedAt.compareTo(a.$1.savedAt);
-    });
+    // Même code que la recherche hors-ligne : la démo ne doit rien montrer
+    // que l'app ne sache reproduire sans réseau.
     return SearchPage(
-      items: scored.map((e) => e.$1).toList(),
+      items: localSearch(_items, query),
       semantic: semantic && isPro,
     );
   }
 
-  /// Approximation locale du top-3 par cosinus (Knowledge Vault §3) :
-  /// recouvrement de mots-clés, bonus si même catégorie.
   @override
-  Future<List<Lymark>> similar(String id) async {
-    final source = _items.where((l) => l.id == id).firstOrNull;
-    if (source == null) return const [];
-    final keys = source.keywords.map((k) => k.toLowerCase()).toSet();
-    final scored = <(Lymark, int)>[];
-    for (final l in _items) {
-      if (l.id == id || l.status != LymarkStatus.ready) continue;
-      var score = l.keywords
-          .where((k) => keys.contains(k.toLowerCase()))
-          .length;
-      if (l.categoryId != null && l.categoryId == source.categoryId) {
-        score += 2;
-      }
-      if (score > 0) scored.add((l, score));
-    }
-    scored.sort((a, b) => b.$2.compareTo(a.$2));
-    return scored.take(3).map((e) => e.$1).toList();
-  }
+  Future<List<Lymark>> similar(String id) async => localSimilar(_items, id);
 
   @override
   Future<MeInfo?> me() async {

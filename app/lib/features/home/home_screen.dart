@@ -15,6 +15,7 @@ import 'package:lymarks/shared/widgets/empty_state.dart';
 import 'package:lymarks/shared/widgets/locked_notice.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
+import 'package:lymarks/shared/widgets/offline_banner.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 import 'package:lymarks/shared/widgets/profile_avatar.dart';
 import 'package:lymarks/shared/widgets/section_header.dart';
@@ -51,7 +52,11 @@ class HomeScreen extends ConsumerWidget {
         slivers: [
           const SliverToBoxAdapter(child: _HomeHeader()),
           if (sync == LibrarySync.offline)
-            const SliverToBoxAdapter(child: _OfflineBanner()),
+            const SliverToBoxAdapter(
+              child: OfflineBanner(
+                message: 'Offline — showing your last synced lymarks.',
+              ),
+            ),
           if (lymarks.isEmpty && sync == LibrarySync.loading)
             const SliverFillRemaining(
               hasScrollBody: false,
@@ -405,53 +410,6 @@ class FreeLimitBanner extends StatelessWidget {
           ),
           Icon(LyIcons.forward, size: 18, color: ly.yellow.onFill),
         ],
-      ),
-    );
-  }
-}
-
-/// Bandeau discret quand la dernière synchronisation a échoué : la liste
-/// affichée est celle du dernier passage réussi (PRD §3, hors-ligne).
-class _OfflineBanner extends StatelessWidget {
-  const _OfflineBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final ly = context.ly;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LySpace.screen,
-        0,
-        LySpace.screen,
-        LySpace.m,
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: LySpace.m,
-          vertical: LySpace.s,
-        ),
-        decoration: BoxDecoration(
-          color: ly.yellow.fill,
-          borderRadius: LyRadius.tileR,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              LyIcons.offline,
-              size: LyIconSize.small,
-              color: ly.yellow.onFill,
-            ),
-            const SizedBox(width: LySpace.s),
-            Expanded(
-              child: Text(
-                'Offline — showing your last synced lymarks.',
-                style: context.texts.bodySmall?.copyWith(
-                  color: ly.yellow.onFill,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

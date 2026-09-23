@@ -9,6 +9,8 @@ import 'package:lymarks/core/billing/billing.dart';
 import 'package:lymarks/core/config/app_config.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/features/capture/page_rescue.dart';
+import 'package:lymarks/shared/data/library_cache.dart';
+import 'package:lymarks/shared/data/local_search.dart';
 import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
@@ -157,8 +159,16 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
       _disposed = true;
       _poll?.cancel();
     });
-    // Différé : un provider ne modifie pas les autres pendant sa construction.
-    unawaited(Future<void>.microtask(refresh));
+    // Différé : un provider ne modifie pas les autres pendant sa
+    // construction. Le cache disque passe en premier — sans réseau c'est
+    // tout ce qu'on aura, et avec réseau il occupe l'écran pendant l'appel
+    // au lieu d'un chargement vide.
+    unawaited(
+      Future<void>.microtask(() async {
+        await _restore();
+        await refresh();
+      }),
+    );
     return _sorted(_repo.initial);
   }
 
@@ -172,6 +182,10 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
   /// Recharge tout depuis le dépôt. Silencieux si déconnecté ou hors-ligne :
   /// la liste locale reste affichée.
   Future<void> refresh() async {
+    // Le provider a pu être jeté avant que la chaîne de démarrage
+    // (restauration du cache, puis réseau) n'arrive ici : déconnexion, fin
+    // de test. Toucher `ref` après coup lève.
+    if (_disposed) return;
     if (!ref.read(authSessionProvider).isSignedIn) return;
     final sync = ref.read(librarySyncProvider.notifier);
     if (state.isEmpty) sync.value = LibrarySync.loading;
@@ -183,6 +197,7 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
       final placeholders = state.where((l) => _pending.contains(l.id));
       state = _sorted([...items, ...placeholders]);
       sync.value = LibrarySync.idle;
+      unawaited(_persist());
       unawaited(_rescueBlocked());
     } on ApiException catch (e) {
       if (_disposed) return;
@@ -343,10 +358,50 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
     }
   }
 
+  // ── Hors-ligne ─────────────────────────────────────────────────────────
+
+  /// Relit la bibliothèque du dernier passage sur le disque.
+  ///
+  /// Ne fait rien dès que l'écran a de quoi s'afficher : jeu de démo, ou
+  /// rafraîchissement déjà revenu. Le cache ne peut qu'ajouter ce qui
+  /// manque, jamais remplacer ce que le serveur vient de dire.
+  Future<void> _restore() async {
+    if (_disposed || state.isNotEmpty) return;
+    final userId = ref.read(authSessionProvider).user?.id;
+    if (userId == null) return;
+    final cache = await ref.read(libraryCacheProvider.future);
+    if (cache == null) return;
+    final cached = await cache.read(userId: userId);
+    // Le réseau a pu répondre pendant la lecture du fichier : il gagne.
+    if (cached == null || _disposed || state.isNotEmpty) return;
+    state = _sorted(cached.lymarks);
+  }
+
+  /// Réécrit le cache avec ce que le serveur vient de confirmer.
+  ///
+  /// Les captures encore en file n'y vont pas : elles sont déjà persistées
+  /// côté file d'envoi, et le cache ne garde que du confirmé.
+  Future<void> _persist() async {
+    if (_disposed) return;
+    final userId = ref.read(authSessionProvider).user?.id;
+    if (userId == null) return;
+    final cache = await ref.read(libraryCacheProvider.future);
+    if (cache == null || _disposed) return;
+    await cache.write(
+      userId: userId,
+      lymarks: [
+        for (final l in state)
+          if (!_pending.contains(l.id)) l,
+      ],
+      me: ref.read(meProvider).valueOrNull,
+      syncedAt: ref.read(clockProvider)(),
+    );
+  }
+
   // ── Interne ────────────────────────────────────────────────────────────
 
   static List<Lymark> _sorted(Iterable<Lymark> items) =>
-      [...items]..sort((a, b) => b.savedAt.compareTo(a.savedAt));
+      [...items]..sort(Lymark.byRecency);
 
   void _upsert(Lymark lymark) {
     if (_disposed) return;
@@ -384,6 +439,8 @@ class LymarksNotifier extends Notifier<List<Lymark>> {
   Future<void> _send(Future<void> Function() call) async {
     try {
       await call();
+      // Le serveur a pris la modification : le cache peut la refléter.
+      unawaited(_persist());
     } on ApiException catch (e) {
       if (_disposed) return;
       debugPrint('[lymarks/library] write failed: $e');
@@ -437,22 +494,41 @@ final Provider<Lymark?> Function(String) lymarkByIdProvider =
 /// Lymarks liés : top-3 par cosinus côté serveur (Knowledge Vault §3), ou
 /// recouvrement de mots-clés dans le mock.
 final FutureProvider<List<Lymark>> Function(String) relatedLymarksProvider =
-    FutureProvider.family<List<Lymark>, String>((ref, id) {
+    FutureProvider.family<List<Lymark>, String>((ref, id) async {
       // Dépend de la liste pour se recalculer quand un lymark devient `ready`.
-      ref.watch(lymarksProvider);
-      return ref.watch(lymarksRepositoryProvider).similar(id);
+      final all = ref.watch(lymarksProvider);
+      // Hors-ligne, le voisinage se calcule sur ce qu'on a : recouvrement de
+      // mots-clés, déjà générés. Demander au serveur coûterait quinze
+      // secondes d'attente pour finir sur la même liste, en moins bien.
+      if (ref.read(librarySyncProvider) == LibrarySync.offline) {
+        return localSimilar(all, id);
+      }
+      try {
+        return await ref.watch(lymarksRepositoryProvider).similar(id);
+      } on ApiException catch (e) {
+        if (!e.isNetwork) rethrow;
+        return localSimilar(all, id);
+      }
     });
 
 // ── Profil ─────────────────────────────────────────────────────────────────
 
 /// Plan et compteurs côté serveur (`GET /me`).
 final FutureProvider<MeInfo?> meProvider = FutureProvider<MeInfo?>((ref) async {
-  if (!ref.watch(authSessionProvider).isSignedIn) return null;
+  final auth = ref.watch(authSessionProvider);
+  if (!auth.isSignedIn) return null;
   try {
     return await ref.watch(lymarksRepositoryProvider).me();
   } on ApiException catch (e) {
     debugPrint('[lymarks/profile] me failed: $e');
-    return null;
+    if (!e.isNetwork) return null;
+    // Hors-ligne, le dernier plan connu vaut mieux que pas de plan : sans
+    // lui le profil retombe sur celui du jeu de démo, et un compte Free
+    // s'afficherait Pro le temps du trajet.
+    final userId = auth.user?.id;
+    if (userId == null) return null;
+    final cache = await ref.read(libraryCacheProvider.future);
+    return (await cache?.read(userId: userId))?.me;
   }
 });
 
@@ -658,7 +734,7 @@ final Provider<List<Lymark>> Function(String) categoryLymarksProvider =
               .watch(lymarksProvider)
               .where((l) => !l.archived && l.categoryId == categoryId)
               .toList()
-            ..sort((a, b) => b.savedAt.compareTo(a.savedAt)),
+            ..sort(Lymark.byRecency),
     );
 
 /// Entrées du Daily Digest résolues en lymarks.
@@ -692,6 +768,7 @@ class SearchState {
     this.results = const [],
     this.loading = false,
     this.semantic = false,
+    this.offline = false,
     this.error,
   });
 
@@ -701,6 +778,11 @@ class SearchState {
 
   /// Mode réellement servi par le dépôt.
   final bool semantic;
+
+  /// Résultats trouvés sur l'appareil, faute de réseau. L'écran le dit :
+  /// une recherche qui ne couvre que la bibliothèque déjà synchronisée ne
+  /// doit pas se faire passer pour la recherche complète.
+  final bool offline;
   final String? error;
 
   SearchState copyWith({
@@ -708,12 +790,14 @@ class SearchState {
     List<Lymark>? results,
     bool? loading,
     bool? semantic,
+    bool? offline,
     String? error,
   }) => SearchState(
     query: query ?? this.query,
     results: results ?? this.results,
     loading: loading ?? this.loading,
     semantic: semantic ?? this.semantic,
+    offline: offline ?? this.offline,
     error: error,
   );
 }
@@ -757,6 +841,12 @@ class SearchNotifier extends Notifier<SearchState> {
       return;
     }
     state = state.copyWith(query: q, loading: true);
+    // Hors-ligne, partir quand même coûterait quinze secondes de timeout
+    // avant de retomber exactement sur la même liste.
+    if (ref.read(librarySyncProvider) == LibrarySync.offline) {
+      state = _onDevice(q);
+      return;
+    }
     final semantic = looksSemantic(q) && ref.read(profileProvider).isPro;
     try {
       final page = await ref
@@ -770,9 +860,23 @@ class SearchNotifier extends Notifier<SearchState> {
       );
     } on ApiException catch (e) {
       if (seq != _seq) return;
+      // Le réseau est tombé entre-temps : plutôt que « recherche
+      // indisponible », ce qu'on peut chercher sans lui.
+      if (e.isNetwork) {
+        state = _onDevice(q);
+        return;
+      }
       state = SearchState(query: q, error: e.message);
     }
   }
+
+  /// Plein texte sur la bibliothèque déjà chargée : titres, notes, puces et
+  /// mots-clés. Le sémantique, lui, demande un embedding — donc le réseau.
+  SearchState _onDevice(String q) => SearchState(
+    query: q,
+    results: localSearch(ref.read(lymarksProvider), q),
+    offline: true,
+  );
 }
 
 final searchStateProvider = NotifierProvider<SearchNotifier, SearchState>(
