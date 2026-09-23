@@ -8,7 +8,6 @@ import type { AuthVariables } from "../middleware/auth.js";
 import { HttpError, notFound, parseBody, parseQuery } from "../middleware/errors.js";
 import {
   activeLimitFor,
-  canCreate,
   CAPTURE_WINDOW_MS,
   CAPTURES_PER_HOUR,
   FREE_LOCKED_LIMIT,
