@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Couleurs de l'app, separees de `colors.xml` que flutter_launcher_icons
+     regenere : une couleur ajoutee la-bas disparait au prochain passage de
+     l'outil.
+
+     `ly_navy` vaut le meme bleu que `adaptive_icon_background` du pubspec et
+     que le fond du splash Flutter. Les trois doivent bouger ensemble :
+     l'ecran de lancement du systeme et la premiere image dessinee par l'app
+     doivent etre indiscernables. -->
+<resources>
+    <color name="ly_navy">#0D1F3C</color>
+</resources>

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+ : l'ecran de lancement est gere par le systeme, qui pose
-     l'icone du lanceur au centre du fond declare ici. Rien a dessiner
-     nous-memes, et la mascotte apparait donc des le premier pixel. -->
+<!-- Android 12+ en mode sombre. Le fond du splash reste le bleu de la
+     marque : l'icone ne change pas avec le theme, l'ecran de lancement non
+     plus. -->
 <resources>
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowSplashScreenBackground">@color/ly_navy</item>
     </style>
-    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
 </resources>

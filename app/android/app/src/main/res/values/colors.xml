@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Bleu nuit de la marque, identique a adaptive_icon_background et au
-         fond du splash Flutter : l'ecran de lancement du systeme et la
-         premiere image dessinee par l'app doivent etre indiscernables. -->
-    <color name="ly_navy">#0D1F3C</color>
+    <color name="ic_launcher_background">#0D1F3C</color>
 </resources>
