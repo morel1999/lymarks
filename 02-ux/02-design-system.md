@@ -40,7 +40,14 @@ sort de façon déterministe par `accentFor`) : `lime`, `blue` (cyan pâle),
 Grille 4 pt : `xs 4 · s 8 · m 12 · l 16 · xl 24 · xxl 32`. Rayons : cartes 16, bottom sheets 24 (haut), boutons 12. Marges d'écran : 16.
 
 ### Typographie
-`Inter` (ou système si poids d'app critique). Échelle : display 28/bold (onboarding), title 20/semibold, body 15/regular, caption 12/medium. Hauteur de ligne 1.4. Les 3 puces de résumé : body, puces `•` couleur `primary`.
+`Inter`, en **version variable** : un fichier (876 Ko) au lieu de quatre statiques (1,3 Mo), portant deux axes.
+
+- `wght` 100→900, continu. Les valeurs employées restent celles de l'échelle ci-dessous, mais une graisse supplémentaire ne coûte plus un fichier.
+- `opsz` 14→32, la **taille optique**, calée sur la taille du texte : les grandes tailles se resserrent et gagnent en contraste, les petites s'ouvrent et s'espacent. Un titre de 34 et une date de 12 ne sont plus le même dessin agrandi ou réduit.
+
+Échelle : display 28/bold (onboarding), title 20/semibold, body 15/regular, caption 12/**regular**. Hauteur de ligne **1,5 pour le corps** (le texte long respire ; c'est l'air entre les lignes qu'on perçoit avant le dessin des lettres), 1,2 à 1,3 pour les titres et les libellés. Les 3 puces de résumé : body, puces `•` couleur `primary`.
+
+La caption est en regular et non en medium : ces lignes — domaine, date, chips — accompagnent, elles ne réclament pas. Le gris secondaire portait déjà le retrait, la graisse le contredisait.
 
 ### Animations
 Standard 120 ms `easeOut` (tap, hover) ; listes 200 ms `easeInOutCubic` ; squelette `processing` : shimmer 1,2 s en boucle. Aucune animation >250 ms.

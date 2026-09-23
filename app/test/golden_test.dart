@@ -116,10 +116,10 @@ Future<void> _skipOnboarding(WidgetTester tester) async {
 /// Sans cela, `flutter test` rend chaque glyphe en pavé plein : les goldens
 /// valideraient la mise en page mais pas la typographie ni les icônes.
 Future<void> _loadFonts() async {
-  final inter = FontLoader('Inter');
-  for (final weight in ['400', '500', '600', '700']) {
-    inter.addFont(rootBundle.load('assets/fonts/Inter-$weight.ttf'));
-  }
+  // Un seul fichier : Inter est variable, les graisses sont un axe et non
+  // des fichiers separes.
+  final inter = FontLoader('Inter')
+    ..addFont(rootBundle.load('assets/fonts/Inter-Variable.ttf'));
   await inter.load();
 
   // Le nom de famille d'une police de paquet est préfixé par Flutter.

@@ -45,16 +45,12 @@ flutter:
     - assets/brand/
 
   fonts:
+    # Police variable : un seul fichier porte toute la famille. Aucune
+    # `weight` ici — les graisses ne sont plus des fichiers mais un axe,
+    # pilote par `fontVariations` dans LyType.
     - family: Inter
       fonts:
-        - asset: assets/fonts/Inter-400.ttf
-          weight: 400
-        - asset: assets/fonts/Inter-500.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-600.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-700.ttf
-          weight: 700
+        - asset: assets/fonts/Inter-Variable.ttf
 
 # Icone de lanceur : generee depuis `branding/` par
 # `dart run flutter_launcher_icons` (a relancer apres tout changement de
