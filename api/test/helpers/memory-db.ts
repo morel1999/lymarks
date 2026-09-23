@@ -104,6 +104,7 @@ export class MemoryDb implements Db {
         source: BookmarkRow["source"];
         title: string | null;
         note: string | null;
+        locked?: boolean;
       },
     ) => {
       if (await this.bookmarks.findByHash(userId, data.urlHash))
@@ -126,6 +127,7 @@ export class MemoryDb implements Db {
         summaryVersion: 1,
         savedCount: 1,
         archived: false,
+        locked: data.locked ?? false,
         createdAt: at,
         updatedAt: at,
         lastOpenedAt: null,
@@ -134,6 +136,18 @@ export class MemoryDb implements Db {
       };
       this.bookmarks_.set(row.id, row);
       return this.strip(row);
+    },
+    countLocked: async (userId: string) =>
+      [...this.bookmarks_.values()].filter((b) => b.userId === userId && b.locked).length,
+    unlockAll: async (userId: string) => {
+      const freed = [...this.bookmarks_.values()].filter(
+        (b) => b.userId === userId && b.locked,
+      );
+      for (const b of freed) {
+        b.locked = false;
+        b.updatedAt = this.stamp();
+      }
+      return freed.map((b) => this.strip(b));
     },
     findByHash: async (userId: string, urlHash: string) => {
       const row = [...this.bookmarks_.values()].find(
@@ -193,7 +207,9 @@ export class MemoryDb implements Db {
       return true;
     },
     countActive: async (userId: string) =>
-      [...this.bookmarks_.values()].filter((b) => b.userId === userId && !b.archived).length,
+      [...this.bookmarks_.values()].filter(
+        (b) => b.userId === userId && !b.archived && !b.locked,
+      ).length,
     countCreatedSince: async (userId: string, since: Date) =>
       [...this.bookmarks_.values()].filter((b) => b.userId === userId && b.createdAt >= since)
         .length,

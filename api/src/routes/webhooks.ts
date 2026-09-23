@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { AppDeps } from "../deps.js";
 import type { SubscriptionEvent } from "../db/types.js";
 import { HttpError, parseBody } from "../middleware/errors.js";
+import { background } from "./background.js";
 
 const eventSchema = z.object({
   event: z.object({
@@ -76,9 +77,37 @@ export function webhookRoutes(deps: AppDeps): Hono {
       ...(payload.event.aliases ?? []),
     ].filter((v): v is string => Boolean(v));
     let outcome: "applied" | "ignored" | "unknown_user" = "unknown_user";
+    let matched: string | null = null;
     for (const clerkId of candidates) {
       outcome = await deps.db.subscriptions.applyEvent(clerkId, event);
-      if (outcome !== "unknown_user") break;
+      if (outcome !== "unknown_user") {
+        matched = clerkId;
+        break;
+      }
+    }
+
+    // Passage en Pro : les lymarks gardes au-dela de la limite Free
+    // redeviennent accessibles, et c'est seulement maintenant qu'ils
+    // traversent le pipeline — on ne paie les modeles que pour des liens
+    // que quelqu'un peut enfin lire.
+    let unlocked = 0;
+    if (outcome === "applied" && event.entitlement === "pro" && matched) {
+      const user = await deps.db.users.findByClerkId(matched);
+      if (user) {
+        const freed = await deps.db.bookmarks.unlockAll(user.id);
+        unlocked = freed.length;
+        for (const b of freed) {
+          background(
+            deps.runPipeline({
+              id: b.id,
+              url: b.url,
+              urlHash: b.urlHash,
+              title: b.title,
+            }),
+            () => c.executionCtx,
+          );
+        }
+      }
     }
     deps.log({
       event: "revenuecat_webhook",
@@ -86,6 +115,7 @@ export function webhookRoutes(deps: AppDeps): Hono {
       environment: payload.event.environment ?? null,
       outcome,
       entitlement: event.entitlement,
+      unlocked,
     });
     // Toujours 200 : RevenueCat rejoue sinon un événement qu'on ne saura pas mieux traiter.
     return c.json({ ok: true, outcome });

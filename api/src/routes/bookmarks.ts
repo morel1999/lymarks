@@ -11,11 +11,15 @@ import {
   canCreate,
   CAPTURE_WINDOW_MS,
   CAPTURES_PER_HOUR,
+  FREE_LOCKED_LIMIT,
+  lockedStorageFull,
+  shouldLock,
 } from "../services/plan.js";
 import { STALL_AFTER_MS, isStalled } from "../services/pipeline.js";
 import { MAX_IMAGE_URL_CHARS } from "../services/scraper.js";
 import { SIMILAR_MIN_SCORE } from "../services/search.js";
 import { detectSource, normalizeUrl, urlHash } from "../services/url.js";
+import { background } from "./background.js";
 import { toBookmarkDto } from "./serialize.js";
 
 const createSchema = z.object({
@@ -55,20 +59,6 @@ const contentSchema = z.object({
 });
 
 const idSchema = z.uuid();
-
-function background(
-  promise: Promise<unknown>,
-  ctx: () => { waitUntil(p: Promise<unknown>): void },
-): void {
-  const safe = promise.catch((err: unknown) => {
-    console.error(JSON.stringify({ event: "pipeline_crashed", message: (err as Error)?.message }));
-  });
-  try {
-    ctx().waitUntil(safe);
-  } catch {
-    // Hors Workers (tests sans contexte) : la promesse tourne seule.
-  }
-}
 
 export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables }> {
   const app = new Hono<{ Variables: AuthVariables }>();
@@ -111,11 +101,21 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
 
     const plan = await deps.db.subscriptions.getPlan(user.id);
     const active = await deps.db.bookmarks.countActive(user.id);
-    if (!canCreate(plan, active)) {
-      throw new HttpError(403, "limit_reached", "Limite du plan Free atteinte", {
-        limit: activeLimitFor(plan),
-        count: active,
-      });
+    // Au-dela de la limite Free, le lien n'est plus refuse : il est
+    // enregistre et verrouille. Un partage qui echoue en silence fait perdre
+    // des liens a un utilisateur qui continue de defiler ailleurs, sans
+    // savoir que rien n'arrive. Il les verra, floutes, avec le pourquoi.
+    const locked = shouldLock(plan, active);
+    if (locked) {
+      const lockedCount = await deps.db.bookmarks.countLocked(user.id);
+      if (lockedStorageFull(plan, lockedCount)) {
+        throw new HttpError(403, "limit_reached", "Limite du plan Free atteinte", {
+          limit: activeLimitFor(plan),
+          count: active,
+          lockedLimit: FREE_LOCKED_LIMIT,
+          locked: lockedCount,
+        });
+      }
     }
     const since = new Date(deps.now().getTime() - CAPTURE_WINDOW_MS);
     const recent = await deps.db.bookmarks.countCreatedSince(user.id, since);
@@ -129,22 +129,28 @@ export function bookmarksRoutes(deps: AppDeps): Hono<{ Variables: AuthVariables 
       source: detectSource(normalized),
       title: body.title ?? null,
       note: body.note ?? null,
+      locked,
     });
     deps.log({
       event: "bookmark_created",
       userId: user.id,
       bookmarkId: created.id,
       source: created.source,
+      locked,
     });
-    background(
-      deps.runPipeline({
-        id: created.id,
-        url: created.url,
-        urlHash: created.urlHash,
-        title: created.title,
-      }),
-      () => c.executionCtx,
-    );
+    // Un lymark verrouille ne traverse pas le pipeline : on ne paie Groq et
+    // Gemini qu'au deverrouillage, jamais pour un lien que personne ne lira.
+    if (!locked) {
+      background(
+        deps.runPipeline({
+          id: created.id,
+          url: created.url,
+          urlHash: created.urlHash,
+          title: created.title,
+        }),
+        () => c.executionCtx,
+      );
+    }
     return c.json({ bookmark: toBookmarkDto(created, deps.now()), duplicate: false }, 201);
   });
 

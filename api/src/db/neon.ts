@@ -28,7 +28,7 @@ type Row = Record<string, unknown>;
 
 const BOOKMARK_COLUMNS = `id, user_id, url, url_hash, source, title, note, summary, keywords,
   category, image_url, status, failure_reason, summary_version, saved_count, archived,
-  created_at, updated_at, last_opened_at, last_surfaced_at`;
+  locked, created_at, updated_at, last_opened_at, last_surfaced_at`;
 
 // `fts` est une colonne générée (migration 001) : le document plein texte est
 // maintenu par Postgres et indexé en GIN, sans répéter l'expression ici.
@@ -79,6 +79,7 @@ function toBookmark(r: Row): BookmarkRow {
     summaryVersion: Number(r["summary_version"]),
     savedCount: Number(r["saved_count"]),
     archived: Boolean(r["archived"]),
+    locked: Boolean(r["locked"]),
     createdAt: asDate(r["created_at"]),
     updatedAt: asDate(r["updated_at"]),
     lastOpenedAt: asDateOrNull(r["last_opened_at"]),
@@ -142,12 +143,30 @@ export function createNeonDb(databaseUrl: string): Db {
     bookmarks: {
       async insert(userId, data: NewBookmark) {
         const rows = await q(
-          `INSERT INTO bookmarks (user_id, url, url_hash, source, title, note)
-           VALUES ($1, $2, $3, $4, $5, $6)
+          `INSERT INTO bookmarks (user_id, url, url_hash, source, title, note, locked)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            RETURNING ${BOOKMARK_COLUMNS}`,
-          [userId, data.url, data.urlHash, data.source, data.title, data.note],
+          [userId, data.url, data.urlHash, data.source, data.title, data.note, data.locked ?? false],
         );
         return toBookmark(rows[0]!);
+      },
+      async countLocked(userId) {
+        const rows = await q(
+          `SELECT count(*)::int AS n FROM bookmarks WHERE user_id = $1 AND locked`,
+          [userId],
+        );
+        return Number(rows[0]?.["n"] ?? 0);
+      },
+      async unlockAll(userId) {
+        // Les lignes liberees n'ont jamais traverse le pipeline : l'appelant
+        // les y envoie, c'est le seul moment ou on paie les modeles.
+        const rows = await q(
+          `UPDATE bookmarks SET locked = false, updated_at = now()
+           WHERE user_id = $1 AND locked
+           RETURNING ${BOOKMARK_COLUMNS}`,
+          [userId],
+        );
+        return rows.map(toBookmark);
       },
       async findByHash(userId, urlHash) {
         const rows = await q(
@@ -217,8 +236,12 @@ export function createNeonDb(databaseUrl: string): Db {
         return rows.length > 0;
       },
       async countActive(userId) {
+        // Les verrouilles ne comptent pas : la limite Free porte sur ce qui
+        // est accessible. Les compter reviendrait a bloquer a jamais l'ajout
+        // de nouveaux liens lisibles, meme apres avoir archive.
         const rows = await q(
-          "SELECT count(*)::int AS n FROM bookmarks WHERE user_id = $1 AND archived = false",
+          `SELECT count(*)::int AS n FROM bookmarks
+           WHERE user_id = $1 AND archived = false AND locked = false`,
           [userId],
         );
         return Number(rows[0]?.["n"] ?? 0);

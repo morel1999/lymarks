@@ -46,6 +46,8 @@ export interface BookmarkRow {
   summaryVersion: number;
   savedCount: number;
   archived: boolean;
+  /** Au-dela de la limite Free : enregistre, mais inaccessible. */
+  locked: boolean;
   createdAt: Date;
   updatedAt: Date;
   lastOpenedAt: Date | null;
@@ -60,6 +62,8 @@ export interface NewBookmark {
   source: BookmarkSource;
   title: string | null;
   note: string | null;
+  /** Enregistre mais inaccessible : le pipeline ne tourne pas dessus. */
+  locked?: boolean;
 }
 
 /** Résultat du pipeline d'ingestion, écrit en une seule mise à jour. */
@@ -129,6 +133,9 @@ export interface Db {
   };
   bookmarks: {
     insert(userId: string, data: NewBookmark): Promise<BookmarkRow>;
+    countLocked(userId: string): Promise<number>;
+    /** Passage en Pro : tout redevient accessible. Rend les lignes liberees. */
+    unlockAll(userId: string): Promise<BookmarkRow[]>;
     findByHash(userId: string, urlHash: string): Promise<BookmarkRow | null>;
     /** Doublon d'URL : saved_count + 1, note remplacée si fournie (PRD §3). */
     bumpDuplicate(

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { PipelineResult } from "../src/db/types.js";
-import { FREE_ACTIVE_LIMIT } from "../src/services/plan.js";
+import { FREE_ACTIVE_LIMIT, FREE_LOCKED_LIMIT } from "../src/services/plan.js";
 import { FIXED_NOW, fakeEmbedding, harness, json } from "./helpers/app.js";
 
 const failedResult = (reason: string): PipelineResult => ({
@@ -115,25 +115,50 @@ describe("POST /bookmarks", () => {
     expect(h.db.bookmarks_.size).toBe(1);
   });
 
-  it("M5 : la limite Free est appliquée côté serveur, 403 limit_reached au 31ᵉ", async () => {
+  it("M5 : au-delà de la limite Free, le lien est gardé mais verrouillé", async () => {
     const h = harness();
     for (let i = 0; i < FREE_ACTIVE_LIMIT; i += 1) {
       expect((await create(h, "free", `https://example.com/${i}`)).res.status).toBe(201);
     }
     backdate(h);
-    const blocked = await h.as("free")("/bookmarks", json({ url: "https://example.com/31" }));
-    expect(blocked.status).toBe(403);
-    expect(await blocked.json()).toMatchObject({
-      error: "limit_reached",
-      details: { limit: 30, count: 30 },
-    });
-    // Archiver libère une place.
+    const jobsBefore = h.jobs.length;
+
+    // Le 31ᵉ n'est plus refusé : un partage qui échoue en silence fait
+    // perdre des liens à quelqu'un qui continue de défiler ailleurs.
+    const over = await h.as("free")("/bookmarks", json({ url: "https://example.com/31" }));
+    expect(over.status).toBe(201);
+    expect(await over.json()).toMatchObject({ bookmark: { locked: true } });
+
+    // Mais il ne traverse pas le pipeline : on ne paie les modèles que pour
+    // un lien que quelqu'un peut lire.
+    expect(h.jobs).toHaveLength(jobsBefore);
+
+    // Archiver libère une place : la capture suivante redevient accessible.
     const first = [...h.db.bookmarks_.values()][0]!;
     await h.as("free")(`/bookmarks/${first.id}`, {
       method: "PATCH",
       body: JSON.stringify({ archived: true }),
     });
-    expect((await create(h, "free", "https://example.com/31")).res.status).toBe(201);
+    const freed = await create(h, "free", "https://example.com/32");
+    expect(freed.res.status).toBe(201);
+    expect(freed.body).toMatchObject({ bookmark: { locked: false } });
+  });
+
+  it("M5 : le stockage verrouillé a un plafond, et il se dit", async () => {
+    const h = harness();
+    for (let i = 0; i < FREE_ACTIVE_LIMIT; i += 1)
+      await create(h, "free", `https://example.com/${i}`);
+    backdate(h);
+    for (let i = 0; i < FREE_LOCKED_LIMIT; i += 1) {
+      await h.as("free")("/bookmarks", json({ url: `https://locked.example.com/${i}` }));
+      backdate(h);
+    }
+    const full = await h.as("free")("/bookmarks", json({ url: "https://example.com/full" }));
+    expect(full.status).toBe(403);
+    expect(await full.json()).toMatchObject({
+      error: "limit_reached",
+      details: { lockedLimit: FREE_LOCKED_LIMIT, locked: FREE_LOCKED_LIMIT },
+    });
   });
 
   it("M5 : un doublon ne consomme pas de place et reste accepté à la limite", async () => {

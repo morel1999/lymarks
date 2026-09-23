@@ -23,6 +23,8 @@ export interface BookmarkDto {
   updatedAt: string;
   lastOpenedAt: string | null;
   archived: boolean;
+  /** Enregistre au-dela de la limite Free : visible, floute, illisible. */
+  locked: boolean;
   savedCount: number;
   failureReason: string | null;
 }
@@ -48,6 +50,10 @@ export function toBookmarkDto(b: BookmarkRow, now: Date = new Date()): BookmarkD
     updatedAt: b.updatedAt.toISOString(),
     lastOpenedAt: b.lastOpenedAt?.toISOString() ?? null,
     archived: b.archived,
+    // Enregistre mais inaccessible : l'app l'affiche floute, derriere
+    // l'invitation a passer Pro. Aucun contenu a masquer de toute facon,
+    // le pipeline n'a pas tourne dessus.
+    locked: b.locked,
     savedCount: b.savedCount,
     failureReason: stalled ? "stalled" : b.failureReason,
   };
