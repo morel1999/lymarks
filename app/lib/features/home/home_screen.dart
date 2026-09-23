@@ -35,8 +35,11 @@ class HomeScreen extends ConsumerWidget {
     // Les verrouilles vivent a part : ils sont les plus recents, ils
     // noieraient la liste lisible s'ils s'y melaient.
     final live = lymarks.where((l) => !l.archived && !l.locked);
-    final recent = live.take(6).toList();
     final locked = lymarks.where((l) => !l.archived && l.locked).toList();
+    // Quand des liens sont fermes, la liste lisible s'ecourte : le
+    // signalement doit arriver au bout de deux ou trois cartes, pas au bout
+    // de six. « See all » reste la porte vers la bibliotheque entiere.
+    final recent = live.take(locked.isEmpty ? 6 : 3).toList();
 
     // Le paywall ne surgit plus tout seul à l'ouverture. Il le faisait après
     // une capture refusée, sans contexte : on tombait sur une feuille de
