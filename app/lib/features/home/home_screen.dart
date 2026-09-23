@@ -12,6 +12,7 @@ import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/category_card.dart';
 import 'package:lymarks/shared/widgets/empty_state.dart';
+import 'package:lymarks/shared/widgets/locked_notice.dart';
 import 'package:lymarks/shared/widgets/ly_card.dart';
 import 'package:lymarks/shared/widgets/lymark_actions.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
@@ -31,17 +32,16 @@ class HomeScreen extends ConsumerWidget {
     final categories = ref.watch(categoriesProvider);
     final lymarks = ref.watch(lymarksProvider);
     final sync = ref.watch(librarySyncProvider);
-    final recent = lymarks.where((l) => !l.archived).take(6).toList();
+    // Les verrouilles vivent a part : ils sont les plus recents, ils
+    // noieraient la liste lisible s'ils s'y melaient.
+    final live = lymarks.where((l) => !l.archived && !l.locked);
+    final recent = live.take(6).toList();
+    final locked = lymarks.where((l) => !l.archived && l.locked).toList();
 
-    // 31ᵉ capture refusée par le serveur : le paywall s'affiche ici, après
-    // coup, jamais dans la feuille de partage (Monetization §4).
-    ref.listen(captureLimitHitProvider, (_, hit) {
-      if (!hit) return;
-      ref.read(captureLimitHitProvider.notifier).state = false;
-      unawaited(
-        PaywallSheet.show(context, trigger: PaywallTrigger.captureLimit),
-      );
-    });
+    // Le paywall ne surgit plus tout seul à l'ouverture. Il le faisait après
+    // une capture refusée, sans contexte : on tombait sur une feuille de
+    // vente sans savoir ce qui venait d'échouer. Les liens gardés hors
+    // d'atteinte s'expliquent désormais là où ils sont, dans la liste.
 
     return Scaffold(
       body: CustomScrollView(
@@ -136,6 +136,45 @@ class HomeScreen extends ConsumerWidget {
                 itemBuilder: (context, i) => _HomeCard(lymark: recent[i]),
               ),
             ),
+            if (locked.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  LySpace.screen,
+                  LySpace.xl,
+                  LySpace.screen,
+                  LySpace.m,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: LockedNotice(
+                    count: locked.length,
+                    onUpgrade: () => unawaited(
+                      PaywallSheet.show(
+                        context,
+                        trigger: PaywallTrigger.captureLimit,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: LySpace.screen,
+                ),
+                sliver: SliverList.separated(
+                  itemCount: locked.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: LySpace.m),
+                  itemBuilder: (context, i) => BookmarkCard(
+                    locked[i],
+                    onTap: () => unawaited(
+                      PaywallSheet.show(
+                        context,
+                        trigger: PaywallTrigger.captureLimit,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
           const SliverToBoxAdapter(
             child: SizedBox(height: LySpace.navBarInset),

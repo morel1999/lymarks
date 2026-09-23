@@ -432,4 +432,34 @@ void main() {
     await _settle(tester);
     await _shoot(tester, '24-detail-long-title');
   });
+
+  testWidgets('25 des lymarks gardes hors d atteinte', (tester) async {
+    // Plan Free au-dela de sa limite : les liens sont bien arrives, on les
+    // voit, on ne peut pas les lire. Le message est pose une fois au-dessus
+    // du groupe, avec la mascotte endormie — ni perdus, ni en echec.
+    // Peu de lisibles, pour que le groupe ferme tienne dans la capture.
+    final seed = [
+      ...MockData.lymarks.take(2),
+      for (final l in MockData.lymarks.skip(2).take(3))
+        l.copyWith(locked: true),
+    ];
+
+    await _boot(
+      tester,
+      plan: UserPlan.free,
+      overrides: [
+        lymarksRepositoryProvider.overrideWithValue(
+          MockLymarksRepository(seed: seed),
+        ),
+      ],
+    );
+    await _skipOnboarding(tester);
+    // Le groupe ferme vit sous la liste lisible : on y descend.
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0, -900),
+    );
+    await _settle(tester);
+    await _shoot(tester, '25-home-locked');
+  });
 }

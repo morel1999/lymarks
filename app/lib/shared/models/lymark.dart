@@ -41,6 +41,7 @@ class Lymark {
     this.accentSlot,
     this.lastOpenedAt,
     this.archived = false,
+    this.locked = false,
     this.savedCount = 1,
     this.failureReason,
     this.imageUrl,
@@ -73,6 +74,11 @@ class Lymark {
   /// catégorie : la vignette retombe alors sur son domaine.
   final int? accentSlot;
   final bool archived;
+
+  /// Enregistré au-delà de la limite du plan Free : visible dans la liste,
+  /// mais illisible tant que le compte n'est pas passé Pro. Le lien n'est
+  /// jamais perdu — c'est tout l'intérêt (Monetization §4).
+  final bool locked;
   final int savedCount;
 
   /// Code court renvoyé par l'API quand [status] vaut failed (`not_found`,
@@ -96,6 +102,7 @@ class Lymark {
     List<String>? keywords,
     DateTime? lastOpenedAt,
     bool? archived,
+    bool? locked,
     int? savedCount,
     Object? failureReason = _keep,
     String? imageUrl,
@@ -115,6 +122,7 @@ class Lymark {
       accentSlot: accentSlot,
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
       archived: archived ?? this.archived,
+      locked: locked ?? this.locked,
       savedCount: savedCount ?? this.savedCount,
       failureReason: identical(failureReason, _keep)
           ? this.failureReason

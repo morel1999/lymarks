@@ -8,6 +8,8 @@ import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/features/capture/share_host.dart';
 import 'package:lymarks/features/capture/shared_link.dart';
+import 'package:lymarks/shared/data/providers.dart';
+import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/widgets/source_avatar.dart';
 
 /// Feuille de capture du menu de partage (Design System §ShareSheetView).
@@ -78,6 +80,14 @@ class _ShareSheetViewState extends ConsumerState<ShareSheetView> {
     if (elapsed != null) debugPrint('[lymarks/share] closed after $elapsed ms');
   }
 
+  /// Vrai quand ce partage sera gardé mais fermé : plan Free ayant atteint
+  /// sa limite. La règle reste serveur (Monetization §3) ; ici on ne fait que
+  /// prévenir avec ce que le profil sait déjà.
+  bool _willLock() {
+    final profile = ref.read(profileProvider);
+    return !profile.isPro && profile.lymarkCount >= UserProfile.freeLimit;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ly = context.ly;
@@ -122,6 +132,10 @@ class _ShareSheetViewState extends ConsumerState<ShareSheetView> {
                         link: _link!,
                         note: _note,
                         saving: _phase == _Phase.saving,
+                        // Dit avant d'enregistrer, pas apres coup : le
+                        // profil connait deja le plan et le compte, aucune
+                        // raison d'attendre le serveur pour prevenir.
+                        willLock: _willLock(),
                         onSave: _save,
                       ),
                     },
@@ -178,12 +192,16 @@ class _Capture extends StatelessWidget {
     required this.link,
     required this.note,
     required this.saving,
+    required this.willLock,
     required this.onSave,
   });
 
   final SharedLink link;
   final TextEditingController note;
   final bool saving;
+
+  /// Le compte Free a atteint sa limite : le lien sera garde, mais ferme.
+  final bool willLock;
   final VoidCallback onSave;
 
   @override
@@ -229,6 +247,30 @@ class _Capture extends StatelessWidget {
                 : '${link.ignoredUrlCount} more links in this share. '
                       'Saving the first.',
             style: context.texts.labelSmall,
+          ),
+        ],
+        if (willLock) ...[
+          const SizedBox(height: LySpace.m),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                LyIcons.security,
+                size: LyIconSize.small,
+                color: ly.textSecondary,
+              ),
+              const SizedBox(width: LySpace.s),
+              Expanded(
+                child: Text(
+                  'Your free plan is full. This link is kept anyway, '
+                  'locked until you go Pro.',
+                  style: context.texts.labelSmall?.copyWith(
+                    color: ly.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
         const SizedBox(height: LySpace.l),

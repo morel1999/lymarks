@@ -22,6 +22,7 @@ Lymark lymarkFromJson(Map<String, dynamic> j) {
         ? null
         : DateTime.parse(j['lastOpenedAt'] as String).toLocal(),
     archived: j['archived'] == true,
+    locked: j['locked'] == true,
     savedCount: (j['savedCount'] as num?)?.toInt() ?? 1,
     failureReason: j['failureReason'] as String?,
     // Catégorie choisie par l'IA au résumé (taxonomie fermée côté API) ;
@@ -54,6 +55,7 @@ Map<String, dynamic> lymarkToJson(Lymark l) => {
   if (l.lastOpenedAt != null)
     'lastOpenedAt': l.lastOpenedAt!.toUtc().toIso8601String(),
   'archived': l.archived,
+  'locked': l.locked,
 };
 
 /// Résultat d'une capture : le lymark (nouveau ou existant) et s'il s'agissait

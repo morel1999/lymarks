@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
@@ -44,6 +46,10 @@ class BookmarkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Avant le statut : un lymark verrouille n'a jamais traverse le
+    // pipeline, il est donc `processing` cote serveur. Sans cette sortie il
+    // afficherait un squelette qui scintille pour toujours.
+    if (lymark.locked) return _LockedCard(lymark: lymark, onTap: onTap);
     if (lymark.status == LymarkStatus.processing) {
       return const _ProcessingCard();
     }
@@ -352,6 +358,78 @@ class _ProcessingCard extends StatelessWidget {
             const SkeletonBar(width: 210, height: 11),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Un lymark garde mais inaccessible (plan Free au-dela de sa limite).
+///
+/// Il est la, on voit qu'il y a quelque chose, on ne peut pas le lire. Le
+/// flou est litteral : le titre est rendu puis brouille, pas remplace par un
+/// texte generique — l'utilisateur doit sentir que **son** lien est bien
+/// arrive, pas qu'une case vide l'attend.
+class _LockedCard extends StatelessWidget {
+  const _LockedCard({required this.lymark, this.onTap});
+
+  final Lymark lymark;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+
+    return LyCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: _tileSize,
+            height: _tileSize,
+            decoration: BoxDecoration(
+              color: ly.chipFill,
+              borderRadius: LyRadius.tileR,
+            ),
+            child: Icon(
+              LyIcons.security,
+              size: LyIconSize.regular,
+              color: ly.textSecondary,
+            ),
+          ),
+          const SizedBox(width: LySpace.m),
+          Expanded(
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 4.5, sigmaY: 4.5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lymark.domain,
+                    style: context.texts.labelSmall?.copyWith(
+                      color: ly.textSecondary,
+                    ),
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: LySpace.xs),
+                  Text(
+                    lymark.title,
+                    style: context.texts.titleMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: LySpace.s),
+          Text(
+            'Locked',
+            style: context.texts.labelSmall?.copyWith(
+              color: ly.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
