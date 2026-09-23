@@ -67,7 +67,7 @@ Demande un fond vert uni : je le découpe proprement, et c'est sans ambiguïté.
 
 Chaque bloc ci-dessous est un **prompt complet** : copie-le entier, d'un seul tenant. Le personnage et le cadrage y sont déjà, tu n'as rien à assembler. Joins en plus `app/branding/mascot.png` comme image de référence si ton outil le permet.
 
-Les quatre premières servent des écrans qui existent déjà dans l'app ; les quatre suivantes préparent ceux à venir.
+**Six poses sont embarquées dans l'app** : perplexe, liste vide, recherche sans résultat, endormie, salut, et le rendu de face d'origine (`mascot.png`). Les trois autres — hors-ligne, en train de lire, célébration — ont été générées puis **retirées le 23/09** : aucun écran ne les affichait, et un asset qu'aucun écran n'affiche pèse dans l'APK tout en laissant croire que la fonctionnalité existe. Leurs prompts restent ci-dessous : le jour où un écran les réclame, la génération est prête.
 
 ### 1. Perplexe → `mascot-puzzled.png`
 
@@ -292,18 +292,39 @@ La pose « la mascotte dépasse derrière une carte » (deuxième écran de l'on
 
 ## 3. Ce que je fais des fichiers
 
-Dépose-les dans `app/branding/poses/`, nommés comme ci-dessus. Je m'occupe de :
+Dépose-les dans `app/branding/poses/`, nommés comme ci-dessus, puis lance :
 
-1. **Détourage** du fond vert, avec un contour propre (même traitement que le
-   rendu d'origine : `scratchpad/decheck.js`, remplissage depuis les bords).
-2. **Rotation de teinte de −35°**, la même pour toutes : c'est elle qui garantit
-   que deux poses ont exactement le même bleu.
-3. **Recadrage et mise à l'échelle** sur la hauteur d'affichage réelle, puis
-   encodage PNG filtré (une pose pèse ~380 Ko en 780 px, ~120 Ko en 420 px).
-4. **Déclaration en asset** et branchement sur l'état concerné.
+```
+node tools/mascot/build.js
+```
+
+Il fait quatre choses, dans cet ordre :
+
+1. **Détourage** du fond vert. Le remplissage part des bords plutôt que de viser
+   tout ce qui est vert, sinon un reflet vert **dans** le sujet deviendrait
+   transparent. Le « despill » ramène ensuite le vert qui a bavé sur le contour,
+   sans quoi la mascotte garde un liseré fluo.
+2. **Alignement de teinte sur `mascot.png`**, et non une rotation fixe : deux
+   rendus du même prompt ne sortent jamais du même violet. L'outil mesure la
+   teinte dominante de chaque pose et la tourne vers celle de la référence.
+3. **Remontée du bout froid du dégradé.** Ajoutée le 23/09, après que trois
+   poses régénérées soient sorties avec un flanc **vert**. La rotation ne
+   déplace que la moyenne : un lot plus froid que la référence descend jusqu'au
+   cyan-vert et y reste. L'outil compare désormais le 2ᵉ centile de teinte de
+   la pose à celui de la référence (188°) et comprime ce qui passe en dessous —
+   sans couper net, pour que le dégradé garde son modelé. Le rose des joues,
+   au-dessus du plancher, n'est pas touché.
+4. **Recadrage et mise à l'échelle** sur 560 px de haut, la hauteur d'affichage
+   réelle (120 à 180 dp sur un écran 3x), puis encodage PNG. Une pose pèse
+   260 à 360 Ko.
 
 Ne retouche rien toi-même : si une pose part d'un fichier traité autrement, sa
 couleur ne tombera pas sur celle des autres.
+
+**Vérification** : après un passage, les six poses doivent tenir dans une
+poignée de degrés de teinte les unes des autres. Au 23/09 elles sont entre 220°
+et 222,5°, pour une saturation de 76 à 85 % — sauf `mascot.png`, à 63 %, qui
+n'est jamais passée par ce pipeline puisqu'elle en est la référence.
 
 ## 4. Règles d'emploi dans l'app
 

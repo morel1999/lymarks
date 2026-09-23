@@ -92,6 +92,56 @@ function dominantHue({ w, h, px }) {
   return ((Math.atan2(y, x) / (2 * Math.PI)) + 1) % 1;
 }
 
+/**
+ * Teinte au centile [p] parmi les pixels du corps, en tours.
+ *
+ * Sert à comparer non pas la teinte moyenne de deux rendus, mais
+ * l'**étalement** de leur dégradé : c'est lui qui diffère d'un lot de
+ * génération à l'autre, et une moyenne identique peut cacher un bout froid
+ * bien plus froid.
+ */
+function huePercentile(img, p) {
+  const { w, h, px } = img;
+  const hues = [];
+  for (let i = 0; i < w * h * 4; i += 4) {
+    if (px[i + 3] < 250) continue;
+    const [hue, sat, lum] = rgbToHsl(px[i], px[i + 1], px[i + 2]);
+    if (sat < 0.25 || lum > 0.92 || lum < 0.12) continue;
+    hues.push(hue);
+  }
+  hues.sort((a, b) => a - b);
+  return hues[Math.floor(hues.length * p)];
+}
+
+/**
+ * Remonte le bout froid du dégradé au-dessus de [floor].
+ *
+ * Les rendus du générateur n'ont pas tous le même étalement de teintes. Un
+ * lot plus froid que la référence descend jusqu'au cyan-vert ; la rotation,
+ * qui ne fait que déplacer la moyenne, l'y laisse. Le flanc de la mascotte
+ * virait alors au vert (constaté le 23/09 sur les trois poses régénérées).
+ *
+ * On ne coupe pas net — ce serait une bande de couleur unie sur le contour.
+ * En deçà du plancher, l'écart est comprimé : la transformation reste
+ * continue, le dégradé garde son modelé, et rien ne descend plus dans le
+ * vert. Au-dessus du plancher, y compris le rose des joues, rien ne bouge.
+ */
+function liftCoolTail(px, floor, keep = 0.3) {
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] === 0) continue;
+    const [hue, sat, lum] = rgbToHsl(px[i], px[i + 1], px[i + 2]);
+    if (sat === 0 || hue >= floor) continue;
+    // Seule la famille des bleus est concernée : au-delà, une teinte basse
+    // est un jaune ou un rouge, qui n'a rien à voir avec ce dégradé.
+    if (hue < floor - 0.2) continue;
+    const lifted = floor - (floor - hue) * keep;
+    const [r, g, b] = hslToRgb(lifted, sat, lum);
+    px[i] = r;
+    px[i + 1] = g;
+    px[i + 2] = b;
+  }
+}
+
 /** Tourne la teinte de chaque pixel opaque de [delta] tours. */
 function rotateHue(px, delta) {
   if (Math.abs(delta) < 1e-4) return;
@@ -258,8 +308,14 @@ function fit(img, box, height) {
 
 // -------------------------------------------------------------------- main
 
-const target = dominantHue(decode(fs.readFileSync(REFERENCE)));
-console.log(`teinte de référence : ${(target * 360).toFixed(1)}°`);
+const reference = decode(fs.readFileSync(REFERENCE));
+const target = dominantHue(reference);
+/** Le bleu le plus froid que la référence s'autorise. Rien ne descend en dessous. */
+const floor = huePercentile(reference, 0.02);
+console.log(
+  `référence : teinte ${(target * 360).toFixed(1)}°, ` +
+    `plancher ${(floor * 360).toFixed(1)}°`,
+);
 
 const files = fs
   .readdirSync(SRC)
@@ -278,12 +334,16 @@ for (const file of files) {
   if (delta > 0.5) delta -= 1;
   if (delta < -0.5) delta += 1;
   rotateHue(cut.px, delta);
+  const before = huePercentile(cut, 0.02);
+  liftCoolTail(cut.px, floor);
 
   const out = fit(cut, bounds(cut), TARGET_HEIGHT);
   const dest = path.join(OUT, file);
   fs.writeFileSync(dest, encode(out));
   console.log(
     `${file} : ${(hue * 360).toFixed(1)}° → rotation ${(delta * 360).toFixed(1)}°` +
+      `, bout froid ${(before * 360).toFixed(0)}° → ` +
+      `${(huePercentile(cut, 0.02) * 360).toFixed(0)}°` +
       `, ${out.w}x${out.h}, ${Math.round(fs.statSync(dest).size / 1024)} Ko`,
   );
 }

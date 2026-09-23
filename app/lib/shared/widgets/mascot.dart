@@ -6,6 +6,12 @@ import 'package:lymarks/core/theme/app_colors.dart';
 /// Une pose par situation, jamais deux à l'écran en même temps. Elle
 /// accompagne le vide et l'échec — pas le succès courant : une carte qui se
 /// résume normalement n'a pas besoin d'un personnage (`02-ux/03-mascotte.md`).
+///
+/// Six poses, et six seulement : celles qui ont un écran. Trois autres
+/// avaient été générées — lecture en cours, hors-ligne, célébration — et
+/// n'étaient branchées nulle part. Un asset qu'aucun écran n'affiche pèse
+/// dans l'APK et ment sur ce que l'app sait faire ; leurs prompts restent
+/// dans `02-ux/03-mascotte.md` si un écran vient à les réclamer.
 enum MascotPose {
   /// De face, souriante. Onboarding, et repli de toute pose manquante.
   idle('mascot.png'),
@@ -13,20 +19,11 @@ enum MascotPose {
   /// Bras ouverts : une liste vide, une invitation à capturer.
   empty('mascot-empty.png'),
 
-  /// Câble débranché : hors-ligne, patiente, rien n'est perdu.
-  offline('mascot-offline.png'),
-
   /// Haussement d'épaule : Lymarks n'a pas su lire la page.
   puzzled('mascot-puzzled.png'),
 
-  /// Penchée sur une fiche : le résumé est en cours.
-  reading('mascot-reading.png'),
-
   /// Main en visière : la recherche n'a rien trouvé.
   searching('mascot-searching.png'),
-
-  /// Bras levés : un palier franchi. À garder rare, sinon il ne vaut plus rien.
-  celebrating('mascot-celebrating.png'),
 
   /// Assoupie : rien à faire remonter aujourd'hui.
   sleeping('mascot-sleeping.png'),
