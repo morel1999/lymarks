@@ -99,5 +99,15 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="http"/>
         </intent>
+
+        <!-- Navigateur en surcouche (Custom Tabs). url_launcher demande au
+             systeme quels navigateurs exposent le service ci-dessous ; sans
+             cette declaration la requete ne renvoie rien sur Android 11+,
+             le plugin conclut qu'aucune surcouche n'existe et ouvre le
+             navigateur externe — d'ou une page dont on ne revient qu'en
+             passant par le selecteur d'applications. -->
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService"/>
+        </intent>
     </queries>
 </manifest>
