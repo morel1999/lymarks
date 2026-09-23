@@ -37,6 +37,10 @@ abstract final class LyIcons {
   static const IconData retry = LucideIcons.rotateCw;
   static const IconData bookmark = LucideIcons.bookmark;
   static const IconData sparkle = LucideIcons.sparkles;
+  // L'offre payante a son propre signe. Les étincelles disaient « magie »,
+  // et elles appartiennent déjà à l'IA — sur un paywall elles laissaient
+  // croire qu'on vend du modèle. Une gemme dit la valeur, pas le procédé.
+  static const IconData pro = LucideIcons.gem;
   static const IconData clock = LucideIcons.clock;
   static const IconData calendar = LucideIcons.calendar;
   static const IconData link = LucideIcons.link;

@@ -7,6 +7,7 @@ import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Ce qui a déclenché le paywall, pour adapter l'argument principal
 /// (`09-produit/02-monetization-spec.md` §4).
@@ -34,6 +35,9 @@ class PaywallSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      // La poignée du thème est grise : elle se perdrait sur le bandeau
+      // sombre. Le bandeau dessine la sienne, en clair.
+      showDragHandle: false,
       builder: (_) => PaywallSheet(trigger: trigger),
     );
   }
@@ -94,129 +98,110 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     // Défilant : sur un petit écran (ou clavier ouvert) la feuille ne déborde
     // pas, elle se laisse faire défiler jusqu'au bouton de restauration.
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        LySpace.xl,
-        LySpace.s,
-        LySpace.xl,
-        LySpace.xl,
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: LySpace.m,
-                  vertical: LySpace.xs + 2,
-                ),
-                // Chrome : l'offre payante est la seule pastille metallique
-                // de l'ecran, elle doit se distinguer d'un accent de couleur.
-                decoration: BoxDecoration(
-                  gradient: ly.chromeGradient,
-                  borderRadius: LyRadius.pillR,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LyIcons.sparkle, size: 14, color: ly.gradientTop),
-                    const SizedBox(width: LySpace.s),
-                    Text(
-                      'Lymarks Pro',
-                      style: context.texts.labelSmall?.copyWith(
-                        color: ly.gradientTop,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: LySpace.l),
-          Text(
-            PaywallSheet._headlines[widget.trigger]!,
-            style: context.texts.displaySmall,
-          ),
+          _ProHeader(headline: PaywallSheet._headlines[widget.trigger]!),
           const SizedBox(height: LySpace.xl),
-          for (var i = 0; i < PaywallSheet._arguments.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: LySpace.l),
-              child: _Argument(
-                spec: PaywallSheet._arguments[i],
-                accent: ly.accents[i % ly.accents.length],
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LySpace.xl,
+              0,
+              LySpace.xl,
+              LySpace.xl,
             ),
-          const SizedBox(height: LySpace.s),
-          if (offer != null || loading)
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _PriceOption(
-                    label: 'Monthly',
-                    price: monthly?.priceString ?? '—',
-                    caption: 'per month',
-                    selected: selected != null && selected == monthly,
-                    onTap: monthly == null || _busy
-                        ? null
-                        : () => setState(() => _selected = ProPeriod.monthly),
+                for (var i = 0; i < PaywallSheet._arguments.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: LySpace.l),
+                    child: _Argument(
+                      spec: PaywallSheet._arguments[i],
+                      accent: ly.accents[i % ly.accents.length],
+                    ),
                   ),
-                ),
-                const SizedBox(width: LySpace.m),
-                Expanded(
-                  child: _PriceOption(
-                    label: 'Annual',
-                    price: annual?.priceString ?? '—',
-                    caption: savings == null
-                        ? 'per year'
-                        : 'per year · save $savings%',
-                    selected: selected != null && selected == annual,
-                    onTap: annual == null || _busy
-                        ? null
-                        : () => setState(() => _selected = ProPeriod.annual),
-                  ),
-                ),
-              ],
-            )
-          else
-            Text(
-              billing.isAvailable
-                  ? 'The store is not reachable right now. Try again later.'
-                  : 'Purchases are not available in this build.',
-              style: context.texts.bodySmall?.copyWith(
-                color: ly.textSecondary,
-              ),
-            ),
-          const SizedBox(height: LySpace.l),
-          FilledButton(
-            onPressed: selected == null || _busy
-                ? null
-                : () => _purchase(selected),
-            child: _busy
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                const SizedBox(height: LySpace.s),
+                if (offer != null || loading)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PriceOption(
+                          label: 'Monthly',
+                          price: monthly?.priceString ?? '—',
+                          caption: 'per month',
+                          selected: selected != null && selected == monthly,
+                          onTap: monthly == null || _busy
+                              ? null
+                              : () => setState(
+                                  () => _selected = ProPeriod.monthly,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: LySpace.m),
+                      Expanded(
+                        child: _PriceOption(
+                          label: 'Annual',
+                          price: annual?.priceString ?? '—',
+                          caption: savings == null
+                              ? 'per year'
+                              : 'per year · save $savings%',
+                          selected: selected != null && selected == annual,
+                          onTap: annual == null || _busy
+                              ? null
+                              : () => setState(
+                                  () => _selected = ProPeriod.annual,
+                                ),
+                        ),
+                      ),
+                    ],
                   )
-                : const Text('Continue'),
-          ),
-          const SizedBox(height: LySpace.s),
-          Center(
-            child: TextButton(
-              onPressed: _busy || (!billing.isAvailable && !AppConfig.isDemo)
-                  ? null
-                  : _restore,
-              child: const Text('Restore my purchases'),
+                else
+                  Text(
+                    billing.isAvailable
+                        ? 'The store is not reachable right now. '
+                              'Try again later.'
+                        : 'Purchases are not available in this build.',
+                    style: context.texts.bodySmall?.copyWith(
+                      color: ly.textSecondary,
+                    ),
+                  ),
+                const SizedBox(height: LySpace.l),
+                FilledButton(
+                  onPressed: selected == null || _busy
+                      ? null
+                      : () => _purchase(selected),
+                  child: _busy
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Continue'),
+                ),
+                const SizedBox(height: LySpace.s),
+                Center(
+                  child: TextButton(
+                    onPressed:
+                        _busy || (!billing.isAvailable && !AppConfig.isDemo)
+                        ? null
+                        : _restore,
+                    child: const Text('Restore my purchases'),
+                  ),
+                ),
+                if (offer != null)
+                  Text(
+                    'Renews automatically until cancelled from your '
+                    'store account.',
+                    textAlign: TextAlign.center,
+                    style: context.texts.labelSmall?.copyWith(
+                      color: ly.textTertiary,
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (offer != null)
-            Text(
-              'Renews automatically until cancelled from your store account.',
-              textAlign: TextAlign.center,
-              style: context.texts.labelSmall?.copyWith(
-                color: ly.textTertiary,
-              ),
-            ),
         ],
       ),
     );
@@ -291,6 +276,149 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         const SnackBar(content: Text('No purchase to restore.')),
       );
     }
+  }
+}
+
+/// Le bandeau du paywall.
+///
+/// C'est lui qui fait la différence entre une liste d'arguments et un
+/// moment : le dégradé de la marque, la mascotte, et le nom de l'offre.
+/// Le reste de la feuille reste clair et sobre — un dégradé derrière du
+/// texte long se paierait en lisibilité, et la règle est la même partout,
+/// 4,5:1 minimum pour du texte courant.
+///
+/// La mascotte est un **décor** : elle déborde du cadre, elle passe sous un
+/// voile, et elle ne porte aucune information. C'est pour ça qu'elle est
+/// masquée aux lecteurs d'écran.
+class _ProHeader extends StatelessWidget {
+  const _ProHeader({required this.headline});
+
+  final String headline;
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(gradient: ly.primaryGradient),
+        child: Stack(
+          children: [
+            // Posée assez bas pour que le bord haut du bandeau ne lui coupe
+            // pas la tête : une mascotte décapitée se lit comme un accident
+            // de cadrage, pas comme un décor.
+            const Positioned(
+              right: -18,
+              bottom: -26,
+              child: ExcludeSemantics(
+                child: Opacity(
+                  opacity: 0.32,
+                  child: MascotFigure(
+                    pose: MascotPose.waving,
+                    height: 152,
+                    glow: false,
+                  ),
+                ),
+              ),
+            ),
+            // Le voile. Opaque sous la colonne de texte, transparent sur la
+            // droite où la mascotte doit rester visible : le contraste du
+            // titre ne dépend donc pas de ce qui est dessiné derrière lui.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    stops: const [0.45, 1],
+                    colors: [
+                      ly.gradientTop,
+                      ly.gradientTop.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LySpace.xl,
+                LySpace.m,
+                LySpace.xl,
+                LySpace.xxl,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Poignée de la feuille, redessinée en clair : celle du
+                  // thème est grise et se perdrait sur ce fond.
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        borderRadius: LyRadius.pillR,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: LySpace.xl),
+                  const _ProBadge(),
+                  const SizedBox(height: LySpace.l),
+                  // Bornée : le titre ne court pas sous la mascotte.
+                  FractionallySizedBox(
+                    widthFactor: 0.78,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      headline,
+                      style: context.texts.displaySmall?.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// La pastille de l'offre payante.
+///
+/// Chrome sur bleu nuit : c'est la seule surface métallique de l'app, et
+/// elle ne ressemble à aucun accent de couleur — un accent dirait « une
+/// catégorie », le chrome dit « une autre nature de chose ».
+class _ProBadge extends StatelessWidget {
+  const _ProBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final ly = context.ly;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: LySpace.m,
+        vertical: LySpace.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        gradient: ly.chromeGradient,
+        borderRadius: LyRadius.pillR,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LyIcons.pro, size: 14, color: ly.gradientTop),
+          const SizedBox(width: LySpace.s),
+          Text(
+            'Lymarks Pro',
+            style: context.texts.labelSmall?.copyWith(
+              color: ly.gradientTop,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -372,7 +500,27 @@ class _PriceOption extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: context.texts.labelSmall),
+              Row(
+                children: [
+                  Expanded(child: Text(label, style: context.texts.labelSmall)),
+                  // La sélection ne tient pas qu'à la couleur : un daltonien
+                  // verrait deux cartes identiques. La coche la dit en forme.
+                  if (selected)
+                    Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: ly.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        LyIcons.check,
+                        size: 12,
+                        color: ly.onPrimary,
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: LySpace.xs),
               Text(price, style: context.texts.titleLarge),
               const SizedBox(height: 2),
