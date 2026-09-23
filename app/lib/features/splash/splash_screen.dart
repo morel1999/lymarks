@@ -10,18 +10,19 @@ import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Ouverture de l'app.
 ///
-/// Elle prolonge l'écran de lancement du système plutôt que de le remplacer :
-/// même bleu nuit (`ly_navy`, celui de l'icône adaptative), même mascotte au
-/// même endroit — celle qui salue, comme à la connexion : c'est la même
-/// première rencontre. Elle naît d'un point (0,05) et grandit jusqu'à sa
-/// taille : le regard a quelque chose à suivre dès la première frame, au
-/// lieu d'un fond nu le temps qu'elle paraisse.
+/// Elle ne remplace pas l'écran de lancement du système : elle **continue**
+/// le dessin que la fenêtre porte déjà. `launch_background.xml` pose le même
+/// bleu nuit et la même mascotte — même pose, 148dp, remontée de 28dp pour
+/// laisser la place au nom. Quand Flutter prend la main, la mascotte est
+/// déjà là et ne bouge pas : rien ne clignote, rien ne saute, seul le nom
+/// paraît sous elle.
 ///
-/// L'entrée tient dans le premier tiers, le reste est une pause : l'écran
-/// s'annonce vite et se laisse regarder, au lieu de s'étirer mollement sur
-/// toute la durée. La durée vient d'un provider, que les tests ramènent à
-/// zéro — sans quoi chaque test paierait l'attente avant d'atteindre son
-/// écran.
+/// C'est pour ça que la mascotte n'est pas animée ici. Une entrée en
+/// fondu ou en échelle serait un mouvement de trop : elle passerait pour un
+/// raté d'affichage, puisque l'utilisateur la regardait déjà.
+///
+/// La durée vient d'un provider, que les tests ramènent à zéro — sans quoi
+/// chaque test paierait l'attente avant d'atteindre son écran.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -49,16 +50,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         });
       });
 
-  /// La mascotte se pose, puis le nom paraît : deux temps, jamais ensemble.
-  /// Les deux sont finis à un tiers du chemin ; ce qui suit est la pause.
-  late final Animation<double> _mascot = CurvedAnimation(
-    parent: _enter,
-    curve: const Interval(0, 0.22, curve: Curves.easeOutCubic),
-  );
-
+  /// Le nom paraît sous la mascotte, dans le premier quart ; ce qui suit
+  /// est une pause, le temps de le lire.
   late final Animation<double> _wordmark = CurvedAnimation(
     parent: _enter,
-    curve: const Interval(0.14, 0.34, curve: Curves.easeOut),
+    curve: const Interval(0, 0.25, curve: Curves.easeOut),
   );
 
   @override
@@ -78,43 +74,40 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     return Scaffold(
       backgroundColor: SplashScreen.navy,
       body: Center(
-        child: AnimatedBuilder(
-          animation: _enter,
-          builder: (context, child) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Opacity(
-                opacity: _mascot.value,
-                child: Transform.scale(
-                  scale: 0.05 + _mascot.value * 0.95,
-                  child: child,
-                ),
-              ),
-              const SizedBox(height: LySpace.xl),
-              Opacity(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Ni opacité ni échelle : elle est déjà à l'écran, posée par la
+            // fenêtre. Les 148dp et la pose sont ceux de
+            // `launch_background.xml`, et la gouttière ci-dessous entre dans
+            // le calcul des 28dp dont le dessin natif la remonte.
+            const MascotFigure(
+              pose: MascotPose.waving,
+              height: 148,
+              glow: false,
+            ),
+            const SizedBox(height: LySpace.xl),
+            AnimatedBuilder(
+              animation: _wordmark,
+              builder: (context, child) => Opacity(
                 opacity: _wordmark.value,
                 child: Transform.translate(
                   offset: Offset(0, (1 - _wordmark.value) * 8),
-                  child: const Text(
-                    'Lymarks',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: child,
                 ),
               ),
-            ],
-          ),
-          // Hors du builder : l'image est décodée une fois, pas à chaque frame.
-          child: const MascotFigure(
-            pose: MascotPose.waving,
-            height: 148,
-            glow: false,
-          ),
+              child: const Text(
+                'Lymarks',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

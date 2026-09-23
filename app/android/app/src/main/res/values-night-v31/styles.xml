@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+ en mode sombre. Le fond du splash reste le bleu de la
+<!-- Android 12+ en mode sombre. Le fond du lancement reste le bleu de la
      marque : l'icone ne change pas avec le theme, l'ecran de lancement non
-     plus. -->
+     plus. Copie conforme de `values-v31`, au parent pres. -->
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowSplashScreenBackground">@color/ly_navy</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <!-- Le relais de l ecran de lancement. Par defaut c est le fond du
-             theme, donc BLANC en clair : entre la disparition du splash
-             systeme et la premiere frame Flutter, l ouverture clignotait en
-             blanc. Le bleu nuit prolonge le splash jusqu a la mascotte. -->
-        <item name="android:windowBackground">@color/ly_navy</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
 </resources>

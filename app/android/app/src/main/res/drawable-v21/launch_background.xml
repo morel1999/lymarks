@@ -1,13 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 21 a 30 : cette variante prime sur `drawable/`. Meme fond bleu
-     nuit et meme mascotte, sans quoi le lancement repasserait au blanc du
-     systeme sur toute cette plage de versions. Sur 12+, values-v31 prend le
-     relais et c'est le systeme qui centre l'icone. -->
+<!-- Android 21 a 30 : cette variante prime sur `drawable/`, et doit donc
+     rester sa copie conforme — sans quoi le lancement repasserait au blanc
+     du systeme sur toute cette plage de versions.
+
+     Fond de la fenetre pendant que le moteur Flutter demarre.
+     Il doit etre indiscernable de la premiere image que Flutter dessine :
+     meme bleu, meme mascotte, meme pose, meme taille, meme place. L oeil ne
+     doit rien voir changer au moment ou l app prend la main.
+
+     148dp de haut : la taille du `MascotFigure` de l ecran d ouverture.
+     56dp de marge basse : l ecran Flutter empile la mascotte, une gouttiere
+     de 24 et le nom (environ 32 de haut), ce qui remonte le centre de la
+     mascotte de 28dp au-dessus du centre de l ecran. On remonte donc la
+     notre d autant, en insérant le double en bas. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/ly_navy" />
-    <item>
+    <item
+        android:bottom="56dp"
+        android:width="142dp"
+        android:height="148dp"
+        android:gravity="center">
         <bitmap
-            android:gravity="center"
+            android:gravity="fill"
             android:src="@drawable/splash_mascot" />
     </item>
 </layer-list>

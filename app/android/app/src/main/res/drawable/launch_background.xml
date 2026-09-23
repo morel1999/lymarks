@@ -1,12 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 et anterieurs : le systeme ne peint que ce fond, la mascotte
-     est donc posee a la main. Sur 12+, values-v31 prend le relais et c'est
-     l'icone du lanceur que le systeme centre lui-meme. -->
+<!-- Fond de la fenetre pendant que le moteur Flutter demarre.
+     Il doit etre indiscernable de la premiere image que Flutter dessine :
+     meme bleu, meme mascotte, meme pose, meme taille, meme place. L oeil ne
+     doit rien voir changer au moment ou l app prend la main.
+
+     148dp de haut : la taille du `MascotFigure` de l ecran d ouverture.
+     56dp de marge basse : l ecran Flutter empile la mascotte, une gouttiere
+     de 24 et le nom (environ 32 de haut), ce qui remonte le centre de la
+     mascotte de 28dp au-dessus du centre de l ecran. On remonte donc la
+     notre d autant, en insérant le double en bas. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/ly_navy" />
-    <item>
+    <item
+        android:bottom="56dp"
+        android:width="142dp"
+        android:height="148dp"
+        android:gravity="center">
         <bitmap
-            android:gravity="center"
+            android:gravity="fill"
             android:src="@drawable/splash_mascot" />
     </item>
 </layer-list>
