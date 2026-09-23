@@ -13,6 +13,14 @@ premières minutes de la vidéo.
 
 ---
 
+## Tagline
+
+> **You don't need to remember the link. You only need to remember what you were
+> looking for.**
+
+*(Version française, si le formulaire le permet : « Vous n'avez pas besoin de vous
+souvenir du lien. Vous devez seulement vous souvenir de ce que vous cherchiez. »)*
+
 ## Categories I'm entering, and why
 
 **Next Gen** — I'm a student, there's no paid developer account behind this. The
@@ -35,6 +43,9 @@ exact words it used.
 Every bookmarking app I tried solves **storage**. None of them solves **recall**.
 That's the whole idea of Lymarks: a saved link is worthless until you can find it
 again on a day when you remember nothing about it but a vague shape.
+
+So the app is built around one promise: **you don't need to remember the link. You
+only need to remember what you were looking for.**
 
 ## What it does
 
@@ -133,8 +144,9 @@ days ago" sometimes landed in the same millisecond and sometimes didn't — and
   it came from testing on a device rather than from a spec.
 - 112 behaviour tests and 30 reference renders on the app, plus the API's security
   suites. The renders caught real regressions, not just cosmetic drift.
-- A design system with its own mascot — nine poses generated, then colour-matched
-  by a reproducible pipeline that lives in the repository.
+- A design system with its own mascot. Nine poses were generated and colour-matched
+  by a reproducible pipeline that lives in the repository; **six ship**. The three
+  no screen used were deleted rather than carried as dead weight in the APK.
 - Documentation kept alive rather than written once, including a build journal
   that records what actually broke and why.
 

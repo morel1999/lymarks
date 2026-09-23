@@ -2,6 +2,9 @@
 
 **Turn forgotten links into a memory you can search.**
 
+> *You don't need to remember the link. You only need to remember what you were
+> looking for.*
+
 You save links all day and never open them again. Lymarks reads each one, writes a
 three-bullet summary, files it under a category, and lets you find it months later by
 describing what you remember — not by guessing the exact words you bookmarked.
