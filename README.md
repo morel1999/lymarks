@@ -6,8 +6,13 @@ You save links all day and never open them again. Lymarks reads each one, writes
 three-bullet summary, files it under a category, and lets you find it months later by
 describing what you remember — not by guessing the exact words you bookmarked.
 
-Built for [RevenueCat Shipaton 2026](https://shipaton.revenuecat.com/), **Next Gen** category.
+Built for [RevenueCat Shipaton 2026](https://shipaton.revenuecat.com/) — **Next Gen**,
+and **HAMM Award** for the monetization design: past the free limit Lymarks *keeps*
+the link instead of refusing it, and the RevenueCat webhook is what opens it. See
+[Monetization](#monetization-what-the-free-plan-does-instead-of-refusing).
+
 Android first; iOS is deliberately deferred (see `03-architecture/adr/`).
+Submission screenshots and text live in [`app/devpost/`](app/devpost/).
 
 ---
 
@@ -106,14 +111,35 @@ RevenueCat entitlement identifiers cannot be renamed, so an entitlement created 
 
 | | |
 |---|---|
-| Behaviour tests | 94 |
-| Reference renders | 23 |
+| Behaviour tests | 112 |
+| Reference renders | 30 |
 | Static analysis | `flutter analyze --fatal-infos`, zero findings |
 | CI | analysis + tests + per-ABI APKs on every push |
 
 No test touches the network. The renders are Windows-generated and therefore excluded
 from the Linux runner — font antialiasing differs enough to flag 0.4–2% of pixels — so
 they are a local guardrail, and CI judges behaviour.
+
+---
+
+## Monetization: what the free plan does instead of refusing
+
+The obvious free-plan design is a limit that **refuses**: past 30 links, the capture
+fails. That shipped first, and testing it on a real phone showed how bad it is — you
+keep sharing links from other apps and none of them arrive. You don't find out until
+you open the app. The product quietly loses your data to protect its own pricing.
+
+So the limit changed nature. Past 30, the link is still **saved** — it arrives locked:
+visible in your library, blurred, with a line that says *we saved every link you sent,
+nothing is lost*. No model call is spent on a locked link, so the free tier still costs
+nothing to run. When the RevenueCat webhook confirms the entitlement, every locked link
+unlocks and the pipeline runs on all of them at once.
+
+The upgrade is not a gate you hit. It is a key to something you already own.
+
+RevenueCat carries the whole flow: offerings drive the paywall prices, the `appUserID`
+is the Clerk user id, and the entitlement is confirmed **server side** by the webhook —
+the app never decides on its own that you are Pro.
 
 ---
 
