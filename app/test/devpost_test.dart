@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lymarks/features/onboarding/scene.dart';
 import 'package:lymarks/main.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
@@ -63,6 +64,9 @@ Future<void> _precacheImages(WidgetTester tester) async {
   await tester.runAsync(() async {
     for (final pose in MascotPose.values) {
       await precacheImage(AssetImage(pose.asset), context);
+    }
+    for (final scene in OnboardingSceneKind.values) {
+      await precacheImage(AssetImage(scene.asset), context);
     }
   });
 }
@@ -120,29 +124,41 @@ void main() {
     await _loadFonts();
   });
 
-  testWidgets('01 la Home', (tester) async {
+  testWidgets('01 l onboarding, capturer', (tester) async {
     await _boot(tester);
-    await _skipOnboarding(tester);
-    await _shoot(tester, '01-home');
+    await _shoot(tester, '01-onboarding-capture');
   });
 
-  testWidgets('02 une fiche', (tester) async {
+  testWidgets('02 l onboarding, retrouver', (tester) async {
+    await _boot(tester);
+    await tester.tap(find.text('Next'));
+    await _settle(tester);
+    await _shoot(tester, '02-onboarding-find');
+  });
+
+  testWidgets('03 la Home', (tester) async {
+    await _boot(tester);
+    await _skipOnboarding(tester);
+    await _shoot(tester, '03-home');
+  });
+
+  testWidgets('04 une fiche', (tester) async {
     await _boot(tester);
     await _skipOnboarding(tester);
     await tester.tap(find.text('Building AI Agents').first);
     await _settle(tester);
-    await _shoot(tester, '02-lymark');
+    await _shoot(tester, '04-lymark');
   });
 
-  testWidgets('03 le chemin d une categorie', (tester) async {
+  testWidgets('05 le chemin d une categorie', (tester) async {
     await _boot(tester);
     await _skipOnboarding(tester);
     await tester.tap(find.text('Explore your AI knowledge'));
     await _settle(tester);
-    await _shoot(tester, '03-category-path');
+    await _shoot(tester, '05-category-path');
   });
 
-  testWidgets('04 des lymarks gardes hors d atteinte', (tester) async {
+  testWidgets('06 des lymarks gardes hors d atteinte', (tester) async {
     // L'histoire RevenueCat : au-dela de la limite Free le lien est garde,
     // pas perdu, et le passage a Pro l'ouvre.
     final seed = [
@@ -164,16 +180,16 @@ void main() {
       const Offset(0, -700),
     );
     await _settle(tester);
-    await _shoot(tester, '04-locked');
+    await _shoot(tester, '06-locked');
   });
 
-  testWidgets('05 le paywall', (tester) async {
+  testWidgets('07 le paywall', (tester) async {
     await _boot(tester, plan: UserPlan.free);
     await _skipOnboarding(tester);
     await tester.tap(find.bySemanticsLabel('Profile'));
     await _settle(tester);
     await tester.tap(find.text('Upgrade'));
     await _settle(tester);
-    await _shoot(tester, '05-paywall');
+    await _shoot(tester, '07-paywall');
   });
 }

@@ -142,11 +142,18 @@ days ago" sometimes landed in the same millisecond and sometimes didn't — and
 
 - The locked-instead-of-refused free tier. It changed how the product feels, and
   it came from testing on a device rather than from a spec.
-- 112 behaviour tests and 30 reference renders on the app, plus the API's security
+- 112 behaviour tests and 32 reference renders on the app, plus the API's security
   suites. The renders caught real regressions, not just cosmetic drift.
 - A design system with its own mascot. Nine poses were generated and colour-matched
   by a reproducible pipeline that lives in the repository; **six ship**. The three
   no screen used were deleted rather than carried as dead weight in the APK.
+- The onboarding's two 3D scenes, held to that same discipline. Both arrived with the
+  mascot 25° too violet to be the one the app ships, one of them as a 26 MB 256-colour
+  GIF whose dark gradient was a dither pattern that crawls on an OLED screen. The build
+  script measures the target hue off the shipped mascot instead of hard-coding it,
+  removes the dither before upscaling rather than after, and neutralises a third-party
+  logo that was legible on a card. 255 KB for both, at the exact pixel width of the
+  screen.
 - Documentation kept alive rather than written once, including a build journal
   that records what actually broke and why.
 
