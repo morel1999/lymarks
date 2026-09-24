@@ -16,6 +16,11 @@ on:
     paths: ["api/**", ".github/workflows/api.yml"]
   workflow_dispatch:
 
+# Le reglage du depot vaut deja `read`, mais un workflow ne doit pas en
+# dependre : ce qu'il lui faut est ecrit ici.
+permissions:
+  contents: read
+
 concurrency:
   group: api-${{ github.ref }}
   cancel-in-progress: true

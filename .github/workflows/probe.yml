@@ -15,15 +15,23 @@ on:
         default: https://lymarks-api.lymarks.workers.dev
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   health:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    # L'entree passe par l'environnement, jamais par `${{ }}` dans un `run:` :
+    # Actions y substitue le texte brut avant que bash ne l'analyse, et une
+    # URL contenant un guillemet suffirait a executer autre chose.
+    env:
+      URL: ${{ inputs.url }}
     steps:
       - name: /health jusqu'a reponse
         run: |
           for i in $(seq 1 20); do
-            if out="$(curl -fsS --max-time 15 "${{ inputs.url }}/health" 2>&1)"; then
+            if out="$(curl -fsS --max-time 15 "$URL/health" 2>&1)"; then
               echo "OK apres $i essai(s) : $out"
               exit 0
             fi
@@ -35,9 +43,9 @@ jobs:
 
       - name: Refus sans jeton (401 attendu)
         run: |
-          code="$(curl -s -o /dev/null -w '%{http_code}' "${{ inputs.url }}/me")"
+          code="$(curl -s -o /dev/null -w '%{http_code}' "$URL/me")"
           echo "GET /me sans jeton -> HTTP $code"
           test "$code" = "401"
 
       - name: En-tetes de transport
-        run: curl -sSI "${{ inputs.url }}/health" | grep -iE "strict-transport-security|x-content-type-options|cache-control"
+        run: curl -sSI "$URL/health" | grep -iE "strict-transport-security|x-content-type-options|cache-control"

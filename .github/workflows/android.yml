@@ -18,6 +18,11 @@ on:
     paths: ["app/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
+# Le reglage du depot vaut deja `read`, mais un workflow ne doit pas en
+# dependre : ce qu'il lui faut est ecrit ici.
+permissions:
+  contents: read
+
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
@@ -38,7 +43,9 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: subosito/flutter-action@v2
+      # Action tierce : epinglee au commit, pas a l'etiquette. Une etiquette se
+      # deplace, et c'est alors son mainteneur qui choisit ce qui tourne ici.
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           # Epinglee sur la version de la machine de dev (07-dev/02-journal).
           flutter-version: "3.41.9"
