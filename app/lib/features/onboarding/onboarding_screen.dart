@@ -10,8 +10,7 @@ import 'package:lymarks/core/router/app_router.dart';
 import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/theme/app_theme.dart';
-import 'package:lymarks/core/utils/ly_icons.dart';
-import 'package:lymarks/features/onboarding/mascot.dart';
+import 'package:lymarks/features/onboarding/scene.dart';
 
 /// Onboarding — deux écrans, pas un tutoriel (wireframe 01).
 ///
@@ -29,7 +28,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final PageController _pages = PageController();
   int _index = 0;
 
@@ -40,8 +39,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     duration: const Duration(seconds: 6),
   )..repeat();
 
+  /// L'arrivée de la scène en relief : un mouvement d'avant, une seule fois.
+  /// Séparé de [_wave], qui boucle, et des entrées de diapositive, qui se
+  /// rejouent à chaque passage.
+  late final AnimationController _sceneEnter = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..forward();
+
+  /// Avancement du glissement entre les deux écrans, de 0 à 1. Sert à la
+  /// parallaxe et au fondu de la scène ; `_index` ne suffirait pas, il
+  /// saute d'un cran quand la page est déjà arrivée.
+  double get _away {
+    if (!_pages.hasClients) return _index.toDouble();
+    return (_pages.page ?? _index.toDouble()).clamp(0.0, 1.0);
+  }
+
   @override
   void dispose() {
+    _sceneEnter.dispose();
     _wave.dispose();
     _pages.dispose();
     super.dispose();
@@ -98,6 +114,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
               ),
             ),
+            // Les deux rendus en relief, l'un derrière l'autre. Le premier
+            // s'efface en glissant pendant que le second arrive : le ciel
+            // peint reste dessous, et c'est lui qu'on voit à mi-course et
+            // sur les bords, là où aucun rendu ne porte.
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_wave, _sceneEnter, _pages]),
+                builder: (_, _) {
+                  final away = _away;
+                  // Les deux fondus se croisent sur le ciel peint et non
+                  // l'un sur l'autre : en se chevauchant à parts égales,
+                  // deux mascottes se superposaient au milieu du geste. Le
+                  // premier rendu est parti avant que le second n'arrive.
+                  final leaving = (1 - away / 0.55).clamp(0.0, 1.0);
+                  final coming = ((away - 0.45) / 0.55).clamp(0.0, 1.0);
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      OnboardingScene(
+                        kind: OnboardingSceneKind.capture,
+                        enter: _sceneEnter.value,
+                        visible: leaving,
+                        slide: -away * 0.22,
+                        wave: _wave.value,
+                      ),
+                      OnboardingScene(
+                        kind: OnboardingSceneKind.find,
+                        // Son arrivée est le geste lui-même : elle grandit
+                        // et se révèle au rythme du doigt, plutôt que de
+                        // jouer une animation minutée une fois posée.
+                        enter: coming,
+                        visible: coming,
+                        slide: (1 - away) * 0.22,
+                        wave: _wave.value,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
             SafeArea(
               child: Column(
                 children: [
@@ -107,8 +163,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       controller: _pages,
                       onPageChanged: (i) => setState(() => _index = i),
                       children: [
-                        _CaptureSlide(wave: _wave, active: _index == 0),
-                        _FindSlide(wave: _wave, active: _index == 1),
+                        _CaptureSlide(active: _index == 0),
+                        _FindSlide(active: _index == 1),
                       ],
                     ),
                   ),
@@ -341,23 +397,18 @@ class _NightBackdrop extends CustomPainter {
       old.wave != wave || old.palette != palette;
 }
 
-/// Socle commun aux deux diapositives : une illustration qui se réduit sur
-/// les écrans courts, un titre, un sous-titre.
+/// Socle commun aux deux diapositives : la place que prend le rendu, puis
+/// un titre et un sous-titre qui montent a l'arrivee.
 class _Slide extends StatefulWidget {
   const _Slide({
     required this.active,
-    required this.illustration,
     required this.title,
     required this.body,
   });
 
   /// La diapositive visible. `PageView` construit aussi la voisine : sans ce
-  /// drapeau, son entrée serait jouée hors champ et déjà finie à l'arrivée.
+  /// drapeau, son entree serait jouee hors champ et deja finie a l'arrivee.
   final bool active;
-
-  /// Reçoit l'avancement de l'entrée (0 → 1) pour décaler ses éléments.
-  final Widget Function(BuildContext context, Animation<double> enter)
-  illustration;
   final String title;
   final String body;
 
@@ -398,29 +449,27 @@ class _SlideState extends State<_Slide> with SingleTickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Dessinée à taille fixe puis réduite : la composition ne se
-          // recalcule pas d'un écran à l'autre, elle se met à l'échelle.
-          // `Expanded` lui donne toute la place restante et `scaleDown` la
-          // rétrécit sur un écran court sans jamais l'agrandir au-delà de sa
-          // taille de dessin — c'est ce qui evite un débordement.
-          Expanded(
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: SizedBox(
-                  width: _designWidth,
-                  height: _designHeight,
-                  child: widget.illustration(context, _enter),
-                ),
+          // La place du rendu, qui occupe le cadre derriere la page. Vide
+          // ici, mais reservee : c'est elle qui fait tomber les deux titres
+          // a la meme hauteur, sans quoi le texte sauterait pendant le
+          // glissement.
+          const Spacer(),
+          const SizedBox(height: LySpace.xl),
+          _Enter(
+            enter: _enter,
+            delay: 0,
+            child: Text(widget.title, style: context.texts.displayLarge),
+          ),
+          const SizedBox(height: LySpace.l),
+          _Enter(
+            enter: _enter,
+            delay: 0.2,
+            child: Text(
+              widget.body,
+              style: context.texts.bodyLarge?.copyWith(
+                color: ly.textSecondary,
               ),
             ),
-          ),
-          const SizedBox(height: LySpace.xl),
-          Text(widget.title, style: context.texts.displayLarge),
-          const SizedBox(height: LySpace.l),
-          Text(
-            widget.body,
-            style: context.texts.bodyLarge?.copyWith(color: ly.textSecondary),
           ),
           const SizedBox(height: LySpace.xxl),
         ],
@@ -429,24 +478,23 @@ class _SlideState extends State<_Slide> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Toile de référence des deux illustrations.
-const double _designWidth = 320;
-const double _designHeight = 300;
-
-/// Entrée d'un élément : il monte et apparaît, avec un retard propre.
+/// Entree d'un element : il monte et apparait, avec un retard propre.
 class _Enter extends StatelessWidget {
   const _Enter({
     required this.enter,
     required this.delay,
     required this.child,
-    this.from = const Offset(0, 24),
   });
+
+  /// D'ou l'element vient. Fixe : les deux textes montent, et rien d'autre
+  /// ne se sert de cette entree depuis que les illustrations dessinees ont
+  /// cede la place aux rendus.
+  static const Offset _from = Offset(0, 24);
 
   final Animation<double> enter;
 
-  /// Part de l'animation déjà écoulée avant que cet élément ne bouge.
+  /// Part de l'animation deja ecoulee avant que cet element ne bouge.
   final double delay;
-  final Offset from;
   final Widget child;
 
   @override
@@ -460,7 +508,7 @@ class _Enter extends StatelessWidget {
       builder: (_, inner) => Opacity(
         opacity: curved.value,
         child: Transform.translate(
-          offset: from * (1 - curved.value),
+          offset: _from * (1 - curved.value),
           child: inner,
         ),
       ),
@@ -469,11 +517,13 @@ class _Enter extends StatelessWidget {
   }
 }
 
-/// 01A — Capturer : les liens viennent à la mascotte.
+/// 01A — Capturer : les liens gravitent autour de la mascotte.
+///
+/// Sans illustration propre, comme sa voisine : le rendu en relief occupe
+/// deja tout le cadre, derriere la page.
 class _CaptureSlide extends StatelessWidget {
-  const _CaptureSlide({required this.wave, required this.active});
+  const _CaptureSlide({required this.active});
 
-  final Animation<double> wave;
   final bool active;
 
   @override
@@ -482,91 +532,14 @@ class _CaptureSlide extends StatelessWidget {
       active: active,
       title: 'Capture what\nyou discover.',
       body: 'One tap from any app.\nLymarks reads the page for you.',
-      illustration: (context, enter) {
-        final ly = context.ly;
-        return AnimatedBuilder(
-          animation: wave,
-          builder: (context, _) => Stack(
-            children: [
-              // La mascotte tient la droite de la toile : les cartes
-              // arrivent par la gauche et passent devant son corps, jamais
-              // devant son visage — c'est lui qui porte l'écran.
-              Positioned(
-                left: 136,
-                top: 34,
-                child: Mascot(height: 182, wave: wave.value),
-              ),
-              Positioned(
-                left: 0,
-                top: 6,
-                child: _Float(
-                  wave: wave.value,
-                  phase: 0.1,
-                  child: _Enter(
-                    enter: enter,
-                    delay: 0.15,
-                    child: OnboardingLinkCard(
-                      accent: ly.pink,
-                      icon: LyIcons.openExternal,
-                      title: 'Awesome video',
-                      domain: 'youtube.com',
-                      width: 176,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 0,
-                top: 92,
-                child: _Float(
-                  wave: wave.value,
-                  phase: 0.45,
-                  child: _Enter(
-                    enter: enter,
-                    delay: 0.3,
-                    child: OnboardingLinkCard(
-                      accent: ly.blue,
-                      icon: LyIcons.bookmark,
-                      title: 'Design ideas',
-                      domain: 'pinterest.com',
-                      width: 158,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 6,
-                bottom: 10,
-                child: _Float(
-                  wave: wave.value,
-                  phase: 0.75,
-                  child: _Enter(
-                    enter: enter,
-                    delay: 0.45,
-                    child: OnboardingLinkCard(
-                      accent: ly.lime,
-                      icon: LyIcons.note,
-                      title: 'Interesting article',
-                      domain: 'medium.com',
-                      width: 178,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
 
-/// 01B — Retrouver : la recherche devant, les catégories autour, la mascotte
-/// qui dépasse derrière.
+/// 01B — Retrouver : la mascotte presente la recherche.
 class _FindSlide extends StatelessWidget {
-  const _FindSlide({required this.wave, required this.active});
+  const _FindSlide({required this.active});
 
-  final Animation<double> wave;
   final bool active;
 
   @override
@@ -577,223 +550,6 @@ class _FindSlide extends StatelessWidget {
       body:
           'Summaries, categories, and a search\nthat understands what you '
           'meant.',
-      illustration: (context, enter) {
-        final ly = context.ly;
-        return AnimatedBuilder(
-          animation: wave,
-          builder: (context, _) => Stack(
-            children: [
-              // La mascotte passe derrière la carte : le halo est coupé, il
-              // trahirait le fait qu'elle est simplement posée dessous.
-              Positioned(
-                left: 92,
-                top: 26,
-                child: Mascot(
-                  height: 150,
-                  wave: wave.value,
-                  glow: false,
-                  drift: 6,
-                ),
-              ),
-              Positioned(
-                left: 0,
-                top: 4,
-                child: _Float(
-                  wave: wave.value,
-                  phase: 0.3,
-                  child: _Enter(
-                    enter: enter,
-                    delay: 0.1,
-                    from: const Offset(-18, 0),
-                    child: OnboardingCategoryCard(
-                      accent: ly.lime,
-                      icon: LyIcons.sparkle,
-                      label: 'AI',
-                      count: 24,
-                      width: 108,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 52,
-                child: _Float(
-                  wave: wave.value,
-                  phase: 0.65,
-                  child: _Enter(
-                    enter: enter,
-                    delay: 0.2,
-                    from: const Offset(18, 0),
-                    child: OnboardingCategoryCard(
-                      accent: ly.yellow,
-                      icon: LyIcons.collection,
-                      label: 'Design',
-                      count: 12,
-                      width: 112,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 0,
-                child: _Enter(
-                  enter: enter,
-                  delay: 0.35,
-                  child: const _SearchPreview(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
-  }
-}
-
-/// La barre de recherche et deux résultats, tels qu'ils sortent de l'app.
-class _SearchPreview extends StatelessWidget {
-  const _SearchPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    final ly = context.ly;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ly.card,
-        borderRadius: LyRadius.cardR,
-        border: Border.all(color: ly.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: ly.chipFill,
-              borderRadius: LyRadius.pillR,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'that post about money',
-                    style: context.texts.labelMedium?.copyWith(
-                      color: ly.textSecondary,
-                    ),
-                  ),
-                ),
-                Icon(LyIcons.search, size: 15, color: ly.primary),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          _ResultRow(
-            accent: ly.blue,
-            icon: LyIcons.bookmark,
-            title: 'Design inspiration',
-            domain: 'pinterest.com',
-          ),
-          const SizedBox(height: 8),
-          _ResultRow(
-            accent: ly.steel,
-            icon: LyIcons.note,
-            title: 'AI tools list',
-            domain: 'notion.so',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ResultRow extends StatelessWidget {
-  const _ResultRow({
-    required this.accent,
-    required this.icon,
-    required this.title,
-    required this.domain,
-  });
-
-  final LyAccent accent;
-  final IconData icon;
-  final String title;
-  final String domain;
-
-  @override
-  Widget build(BuildContext context) {
-    final ly = context.ly;
-
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: accent.fill,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 14, color: accent.onFill),
-        ),
-        const SizedBox(width: 9),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.texts.labelMedium,
-              ),
-              Text(
-                domain,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.texts.labelSmall?.copyWith(
-                  color: ly.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Icon(LyIcons.forward, size: 14, color: ly.textTertiary),
-      ],
-    );
-  }
-}
-
-/// Flottement lent d'un élément de décor, désynchronisé par [phase].
-class _Float extends StatelessWidget {
-  const _Float({
-    required this.wave,
-    required this.phase,
-    required this.child,
-  });
-
-  /// Amplitude du flottement des cartes : plus courte que celle de la
-  /// mascotte, le décor ne doit pas lui voler la vedette.
-  static const double amplitude = 6;
-
-  final double wave;
-  final double phase;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final dy = math.sin((wave + phase) * 2 * math.pi) * amplitude;
-    return Transform.translate(offset: Offset(0, dy), child: child);
   }
 }

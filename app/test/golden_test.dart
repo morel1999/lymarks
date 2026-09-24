@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lymarks/core/auth/auth_session.dart';
+import 'package:lymarks/features/onboarding/scene.dart';
 import 'package:lymarks/main.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/mock_repository.dart';
@@ -95,6 +96,9 @@ Future<void> _precacheImages(WidgetTester tester) async {
   await tester.runAsync(() async {
     for (final pose in MascotPose.values) {
       await precacheImage(AssetImage(pose.asset), context);
+    }
+    for (final scene in OnboardingSceneKind.values) {
+      await precacheImage(AssetImage(scene.asset), context);
     }
   });
 }

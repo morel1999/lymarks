@@ -288,7 +288,11 @@ perfectly uniform, no gradient, no floor, no shadow. Square 1:1, at least
 
 ### Ce qui n'a **pas** besoin d'un rendu
 
-La pose « la mascotte dépasse derrière une carte » (deuxième écran de l'onboarding) s'obtient en posant le rendu de face **derrière** la carte dans la composition. Inutile de la générer.
+La pose « la mascotte dépasse derrière une carte » s'obtient en posant le rendu de face **derrière** la carte dans la composition. Inutile de la générer.
+
+### L'onboarding ne se compose plus ici
+
+Depuis le 24/09, ses deux écrans portent chacun un **rendu 3D entier** — mascotte, décor et interface dans la même image — et non une pose détourée qu'on met en scène avec des widgets. Ces rendus vivent dans `app/branding/onboarding/` et passent par `tools/onboarding/build.py`, qui leur applique la même discipline de teinte : la cible est mesurée sur `mascot.png`, jamais écrite en dur. Les poses de cette page n'habillent donc plus que les états vides de l'app.
 
 ## 3. Ce que je fais des fichiers
 
@@ -345,5 +349,6 @@ bout froid au-dessus de 180° et une teinte médiane entre 218° et 226°.
 - **Elle ne commente jamais une erreur de l'utilisateur.** Un lien illisible
   est un échec de Lymarks, pas du lecteur : la pose est perplexe, jamais
   réprobatrice.
-- **Taille** : 120 à 180 px de haut dans un état vide, 200 à 260 px dans
-  l'onboarding. Au-delà, elle écrase le texte qu'elle est censée servir.
+- **Taille** : 120 à 180 px de haut dans un état vide. Au-delà, elle écrase
+  le texte qu'elle est censée servir. L'onboarding ne suit pas cette règle :
+  sa mascotte fait partie d'un rendu entier, cadré par l'image elle-même.
