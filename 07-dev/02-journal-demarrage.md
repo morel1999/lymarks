@@ -45,7 +45,7 @@ Le mode sombre est **dérivé**, pas mesuré — aucune maquette sombre n'existe
 3. **Icônes de marque** — Lucide a retiré ses icônes de marque (licence). Pas de logo React / Medium / Vercel / HuggingFace : chaque source reçoit une icône sémantique (`squarePlay` pour YouTube, `briefcase` pour LinkedIn…). Si les logos sont indispensables au rendu final, il faudra une seconde bibliothèque (`simple-icons`) — **question ouverte**.
 4. **Aperçu de source (fiche détail)** — aplat dégradé teinté de l'accent au lieu de l'image OG. Aucune image distante n'est chargée dans les listes : cela protège le budget de scroll 60 FPS et évite toute requête tierce depuis l'app.
 5. **Barre d'onglets** — visible uniquement sur Home / Search / Digest. Les maquettes la montrent aussi sur Détail, Parcours et Réglages ; les wireframes 03, 04, 07 et le §9 « Navigation globale » disent l'inverse. Le comportement suit les wireframes (source de vérité comportementale), la couleur suit la Home.
-6. **`Ecran/Home.png` est un doublon exact** de `Ecran/Profil moderne aux accents pastel.png` (même MD5). Il n'existe donc **aucune maquette d'onboarding** : l'écran 01 est construit à partir du seul wireframe.
+6. **`02-ux/maquettes/Home.png` est un doublon exact** de `02-ux/maquettes/Profil moderne aux accents pastel.png` (même MD5). Il n'existe donc **aucune maquette d'onboarding** : l'écran 01 est construit à partir du seul wireframe.
 
 ## 4. Vérification et contraintes de test découvertes
 

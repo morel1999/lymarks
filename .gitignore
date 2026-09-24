@@ -39,9 +39,10 @@ api/dist/
 Thumbs.db
 .gstack/
 
-# Skills d agents : la source est .agents/skills/ (versionnee, reproductible
-# via skills-lock.json) ; .claude/skills/ n en contient que des jonctions Windows.
-.claude/skills/
+# Etat local de l agent : jonctions Windows vers .agents/skills/, arbres de
+# travail temporaires, reglages propres a la machine. Rien la-dedans ne
+# decrit le produit, et le dossier pese 36 Mo.
+.claude/
 .neon
 node_modules/
 
@@ -57,3 +58,17 @@ node_modules/
 # Notes de travail personnelles : options non retenues, pistes de mise a jour.
 # Hors du depot public — ce n'est pas au jury de lire le carnet de bord.
 /prive/
+
+# Rushes et montage de la video de soumission : 119 Mo qui n'apprennent rien
+# a qui lit le code. La video finie vit sur YouTube.
+app/branding/videos/
+
+# Script de narration : un document de travail personnel, cale au montage
+# d'une prise precise. Il ne decrit pas le produit.
+app/devpost/voiceover.md
+
+# Documentation tierce (Clerk, Neon) recopiee pour outiller le poste de
+# travail : 163 fichiers que rien dans le projet ne lit, et qui ne sont pas
+# a nous pour etre redistribues sous notre licence.
+.agents/
+skills-lock.json

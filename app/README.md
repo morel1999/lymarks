@@ -55,8 +55,8 @@ Feature-first, conformément à `../07-dev/01-coding-standards.md` §1.
 
 ## Couleur
 
-La palette est **échantillonnée au pixel** sur `../Ecran/Accueil de curation
-des connaissances IA.png` (base) et `../Ecran/Parcours IA pastel sur
+La palette est **échantillonnée au pixel** sur `../02-ux/maquettes/Accueil de curation
+des connaissances IA.png` (base) et `../02-ux/maquettes/Parcours IA pastel sur
 mobile.png` (accents saturés). Valeurs et méthode :
 `../07-dev/02-journal-demarrage.md` §2.
 

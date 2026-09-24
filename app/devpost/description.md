@@ -144,9 +144,9 @@ days ago" sometimes landed in the same millisecond and sometimes didn't — and
   it came from testing on a device rather than from a spec.
 - 112 behaviour tests and 32 reference renders on the app, plus the API's security
   suites. The renders caught real regressions, not just cosmetic drift.
-- A design system with its own mascot. Nine poses were generated and colour-matched
-  by a reproducible pipeline that lives in the repository; **six ship**. The three
-  no screen used were deleted rather than carried as dead weight in the APK.
+- A design system with its own mascot, whose poses are colour-matched by a
+  reproducible pipeline that lives in the repository: the target hue is measured
+  off the asset the app actually ships, never written as a constant.
 - The onboarding's two 3D scenes, held to that same discipline. Both arrived with the
   mascot 25° too violet to be the one the app ships, one of them as a 26 MB 256-colour
   GIF whose dark gradient was a dither pattern that crawls on an OLED screen. The build

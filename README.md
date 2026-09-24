@@ -173,7 +173,7 @@ documentation — **written in French**, and kept alive rather than written once
 | Folder | Contents |
 |---|---|
 | `01-vision` | product vision · **PRD** · roadmap |
-| `02-ux` | UX bible · design system · mascot |
+| `02-ux` | UX bible · design system · mascot · the sampled mockups |
 | `03-architecture` | architecture document · 10 ADRs |
 | `04-securite` | security architecture · threat model · privacy spec |
 | `05-data` | knowledge vault spec · database schema |
