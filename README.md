@@ -36,6 +36,11 @@ Demo mode is not a mock-up bolted on for reviewers: it is the same code path the
 tests and the reference renders use. Supplying a Clerk publishable key at build time
 (`--dart-define=CLERK_PUBLISHABLE_KEY=…`) switches the same app to the live API.
 
+It boots as a **Free** account, because that is where this product is worth looking
+at. The 30 oldest lymarks are open; the 24 most recent were saved and then locked —
+never refused, and never summarised either, since the pipeline only runs on what you
+can read. The purchase is simulated, so you can watch all 24 open at once.
+
 Requires Flutter 3.41.9 (pinned in CI).
 
 ---

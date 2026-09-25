@@ -200,14 +200,23 @@ class MockLymarksRepository implements LymarksRepository {
     }
     // Même code que la recherche hors-ligne : la démo ne doit rien montrer
     // que l'app ne sache reproduire sans réseau.
+    //
+    // Et sur la vue que le serveur rendrait, jamais sur les donnees brutes :
+    // un lymark garde n'a ni resume ni mots-cles, il ne peut donc se trouver
+    // que par son titre, et il arrive ferme. Cote serveur c'est la meme
+    // chose sans effort — sa colonne `fts` ne contient que ce qui existe.
     return SearchPage(
-      items: localSearch(_items, query),
+      items: localSearch(_asServerWould(_items, settle: true), query),
       semantic: semantic && isPro,
     );
   }
 
   @override
-  Future<List<Lymark>> similar(String id) async => localSimilar(_items, id);
+  /// Sur la meme vue que la recherche : un lymark garde n'a pas de mots-cles,
+  /// il ne peut donc etre le voisin de personne — pas plus que le serveur ne
+  /// lui aurait calcule d'embedding.
+  Future<List<Lymark>> similar(String id) async =>
+      localSimilar(_asServerWould(_items, settle: true), id);
 
   @override
   Future<MeInfo?> me() async {
@@ -227,10 +236,13 @@ class MockLymarksRepository implements LymarksRepository {
   @override
   Future<Map<String, dynamic>> export() async {
     calls.add('export');
+    // Ce que le serveur detient, et rien de plus : un lymark garde s'exporte
+    // sans resume, puisqu'il n'en a jamais eu.
+    final vus = _asServerWould(_items, settle: true);
     return {
       'exportedAt': _clock().toUtc().toIso8601String(),
-      'lymarkCount': _items.length,
-      'lymarks': [for (final l in _items) lymarkToJson(l)],
+      'lymarkCount': vus.length,
+      'lymarks': [for (final l in vus) lymarkToJson(l)],
     };
   }
 
