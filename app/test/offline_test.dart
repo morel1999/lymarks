@@ -95,8 +95,17 @@ void main() {
   }
 
   /// Laisse retomber la chaîne restauration → rafraîchissement.
+  /// Laisse retomber la chaine restauration du cache -> appel reseau ->
+  /// reecriture du cache.
+  ///
+  /// 40 ms suffisaient quand la machine n'avait rien d'autre a faire, et le
+  /// test « le reseau revenu reprend la main sur le cache » tombait une fois
+  /// sur quatre des qu'un test un peu long le precedait. Le reseau gagne des
+  /// qu'il a repondu (`LymarksNotifier`, la restauration se retire si l'etat
+  /// n'est plus vide) : lui laisser de la marge rend l'issue certaine, et
+  /// deux dixiemes de seconde par demarrage ne coutent rien.
   Future<void> settle() =>
-      Future<void>.delayed(const Duration(milliseconds: 40));
+      Future<void>.delayed(const Duration(milliseconds: 200));
 
   /// Démarre comme l'app : le conteneur, puis la chaîne restauration du
   /// cache → appel réseau, laissée retomber.
@@ -240,6 +249,27 @@ void main() {
       final c = await boot(repo: _OfflineRepository());
 
       expect(c.read(lymarksProvider), isEmpty);
+      expect(c.read(librarySyncProvider), LibrarySync.offline);
+    });
+
+    // Le seul endroit ou une carte est encore « en traitement » : le reseau
+    // a manque, l'envoi sera rejoue, et entre-temps la capture reste visible
+    // plutot que de disparaitre (PRD 3 : l'UX ne change pas sans reseau).
+    test('hors-ligne, la capture reste visible en traitement', () async {
+      final c = await boot(repo: _OfflineRepository());
+
+      final arejouer = await c.read(lymarksProvider.notifier).addCaptures([
+        PendingCapture(
+          id: 'cap-1',
+          url: 'https://example.org/article',
+          title: 'Un article',
+          capturedAt: DateTime.utc(2026, 9, 25, 10),
+        ),
+      ]);
+
+      expect(arejouer.map((p) => p.id), ['cap-1']);
+      final carte = c.read(lymarksProvider).firstWhere((l) => l.id == 'cap-1');
+      expect(carte.status, LymarkStatus.processing);
       expect(c.read(librarySyncProvider), LibrarySync.offline);
     });
 

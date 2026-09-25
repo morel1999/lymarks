@@ -37,6 +37,17 @@ class MockLymarksRepository implements LymarksRepository {
     return List.unmodifiable(_items);
   }
 
+  /// Le mock rend la carte **deja remplie**, la ou la vraie API la rend en
+  /// `processing` et laisse le pipeline la completer.
+  ///
+  /// Sans cela le mode demo laissait une carte squelette que rien ne venait
+  /// remplir : `processingPollProvider` vaut null hors mode reel, donc
+  /// personne ne relit la liste. Or partager un lien est le geste central du
+  /// produit, et la premiere chose qu'on essaie.
+  ///
+  /// Les puces disent ce qu'elles sont. Trois phrases plausibles mais fausses
+  /// laisseraient croire que le resume est mauvais ; celles-ci disent qu'il
+  /// n'y a pas de serveur dans ce build, ce qui est la verite.
   @override
   Future<CaptureResult> capture(PendingCapture c) async {
     calls.add('capture:${c.url}');
@@ -50,7 +61,15 @@ class MockLymarksRepository implements LymarksRepository {
       _items[i] = bumped;
       return CaptureResult(lymark: bumped, duplicate: true);
     }
-    final created = c.toLymark();
+    final created = c.toLymark().copyWith(
+      status: LymarkStatus.ready,
+      bullets: const [
+        'Saved without leaving the page you were on.',
+        'Demo mode has no server, so these three bullets are canned.',
+        'Give the build an API key and the pipeline writes real ones.',
+      ],
+      keywords: const ['Demo', 'Capture'],
+    );
     _items.insert(0, created);
     return CaptureResult(lymark: created, duplicate: false);
   }

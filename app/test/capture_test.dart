@@ -169,7 +169,11 @@ void main() {
   });
 
   group('LymarksNotifier.addCaptures', () {
-    test('une capture devient un lymark processing en tête', () async {
+    // En demo le depot rend la carte deja remplie : aucun serveur ne viendra
+    // la completer, et le sondage est desactive hors mode reel. Un lien
+    // partage restait sinon un squelette pour toujours — soit le geste
+    // central du produit, casse pour qui clone le depot.
+    test('une capture arrive en tete, deja remplie en demo', () async {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       final before = c.read(lymarksProvider).length;
@@ -186,8 +190,9 @@ void main() {
       final list = c.read(lymarksProvider);
       expect(list.length, before + 1);
       expect(list.first.id, 'cap-1');
-      expect(list.first.status, LymarkStatus.processing);
       expect(list.first.domain, 'example.org');
+      expect(list.first.status, LymarkStatus.ready);
+      expect(list.first.bullets, hasLength(3));
     });
 
     test(
@@ -300,4 +305,5 @@ void main() {
       expect(host.closeCalls, 1);
     });
   });
+
 }
