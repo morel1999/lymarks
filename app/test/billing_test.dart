@@ -283,6 +283,18 @@ void main() {
 
       expect(ouverts, hasLength(UserProfile.freeLimit));
       expect(vivants.length, greaterThan(ouverts.length));
+      // Les fermes sont les plus recents : le plafond se pose a la capture.
+      final dernierOuvert = ouverts
+          .map((l) => l.savedAt)
+          .reduce((a, b) => a.isAfter(b) ? a : b);
+      for (final l in vivants.where((l) => l.locked)) {
+        expect(l.savedAt.isAfter(dernierOuvert), isTrue, reason: l.id);
+      }
+      // Et ils n'ont jamais traverse le pipeline : rien a montrer.
+      for (final l in vivants.where((l) => l.locked)) {
+        expect(l.bullets, isEmpty, reason: l.id);
+        expect(l.keywords, isEmpty, reason: l.id);
+      }
       // Et plus aucune carte ne charge indefiniment.
       expect(items.where((l) => l.status == LymarkStatus.processing), isEmpty);
     });
@@ -302,12 +314,32 @@ void main() {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       await c.read(lymarksProvider.notifier).refresh();
-      expect(c.read(lymarksProvider).where((l) => l.locked), isNotEmpty);
+      final gardes = {
+        for (final l in c.read(lymarksProvider))
+          if (l.locked) l.id,
+      };
+      expect(gardes, isNotEmpty);
 
       await c.read(profileProvider.notifier).grantProInDemo();
 
-      expect(c.read(lymarksProvider).where((l) => l.locked), isEmpty);
+      final apres = c.read(lymarksProvider);
+      expect(apres.where((l) => l.locked), isEmpty);
       expect(c.read(profileProvider).plan, UserPlan.pro);
+
+      // Et elles ne s'ouvrent pas vides : le resume revient. Le serveur fait
+      // la meme chose pour une autre raison — il lance le pipeline au
+      // deverrouillage, puisqu'il ne l'avait pas paye. Ici le texte etait
+      // deja ecrit, il reparait. (La carte en echec n'a jamais eu de puces :
+      // on ne juge que celles qui sont pretes.)
+      final rouvertes = [
+        for (final l in apres)
+          if (gardes.contains(l.id) && l.status == LymarkStatus.ready) l,
+      ];
+      expect(rouvertes, isNotEmpty);
+      for (final l in rouvertes) {
+        expect(l.bullets, isNotEmpty, reason: l.id);
+        expect(l.keywords, isNotEmpty, reason: l.id);
+      }
     });
   });
 }

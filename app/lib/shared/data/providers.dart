@@ -771,7 +771,9 @@ final digestProvider = Provider<List<({Lymark lymark, String reason})>>((ref) {
   final out = <({Lymark lymark, String reason})>[];
   for (final entry in MockData.digest) {
     final match = all.where((l) => l.id == entry.lymarkId).firstOrNull;
-    if (match != null && !match.archived) {
+    // Ni archive, ni garde : on ne remet pas sous les yeux un lien qu'on ne
+    // peut pas ouvrir, et qui n'a de toute facon pas de resume a montrer.
+    if (match != null && !match.archived && !match.locked) {
       out.add((lymark: match, reason: entry.reason));
     }
   }

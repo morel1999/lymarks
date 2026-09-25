@@ -8,6 +8,7 @@ import 'package:lymarks/shared/data/mock_data.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
+import 'package:lymarks/shared/widgets/bookmark_card.dart';
 import 'package:lymarks/shared/widgets/preview_image.dart';
 import 'package:lymarks/shared/widgets/profile_avatar.dart';
 
@@ -52,7 +53,11 @@ void main() {
       await settle(tester);
 
       expect(find.text('All Lymarks'), findsOneWidget);
-      expect(find.text('Building AI Agents'), findsWidgets);
+      // Sur la structure, pas sur un titre : la demo part en Free, donc quels
+      // lymarks sont lisibles depend du plafond et changerait au moindre
+      // reglage. Ce qui doit tenir, c'est que la Home montre des cartes et
+      // dit ce qui est garde.
+      expect(find.byType(BookmarkCard), findsWidgets);
     });
 
     testWidgets('les trois onglets sont accessibles', (tester) async {

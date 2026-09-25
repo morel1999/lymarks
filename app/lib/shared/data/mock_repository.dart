@@ -53,18 +53,28 @@ class MockLymarksRepository implements LymarksRepository {
           l,
     ];
     if (isPro) return [for (final l in done) l.copyWith(locked: false)];
-    // Le plafond Free garde ouverts les plus recents. Au-dela, la carte est
-    // gardee et fermee, jamais refusee : c'est tout le propos du produit.
+    // Le plafond se pose **a la capture** (`shouldLock`, api/src/routes/
+    // bookmarks.ts) : les trente premiers liens restent ouverts, et tout ce
+    // qui arrive ensuite est garde. Les fermes sont donc les plus recents —
+    // ce que la Home suppose pour les ranger a part.
     final vivants = [
       for (final l in done)
         if (!l.archived) l,
-    ]..sort(Lymark.byRecency);
+    ]..sort((a, b) => a.savedAt.compareTo(b.savedAt));
     final ouverts = {
       for (final l in vivants.take(UserProfile.freeLimit)) l.id,
     };
     return [
       for (final l in done)
-        l.copyWith(locked: !l.archived && !ouverts.contains(l.id)),
+        if (l.archived || ouverts.contains(l.id))
+          l
+        else
+          // Un lymark garde n'a jamais traverse le pipeline : ni resume ni
+          // mots-cles. Le serveur le formule ainsi — « aucun contenu a
+          // masquer de toute facon, le pipeline n'a pas tourne dessus ». Sans
+          // cela, un ecran qui ne connait pas `locked` montrerait le resume
+          // d'un lien qu'on n'a pas paye.
+          l.copyWith(locked: true, bullets: const [], keywords: const []),
     ];
   }
 
