@@ -105,7 +105,10 @@ jobs:
           case "$REVENUECAT_PUBLIC_KEY" in
             test_*) mode=profile; echo "::notice::Cle Test Store : build profile (debuggable, AOT)." ;;
           esac
-          flutter build apk --$mode --split-per-abi             --dart-define=CLERK_PUBLISHABLE_KEY="$CLERK_PUBLISHABLE_KEY"             --dart-define=REVENUECAT_PUBLIC_KEY="$REVENUECAT_PUBLIC_KEY"             --dart-define=LYMARKS_API_URL=https://lymarks-api.lymarks.workers.dev
+          flutter build apk --$mode --split-per-abi \
+            --dart-define=CLERK_PUBLISHABLE_KEY="$CLERK_PUBLISHABLE_KEY" \
+            --dart-define=REVENUECAT_PUBLIC_KEY="$REVENUECAT_PUBLIC_KEY" \
+            --dart-define=LYMARKS_API_URL=https://lymarks-api.lymarks.workers.dev
 
       - name: Taille installee (budget 40 Mo, 08-qualite/02-performance-budget)
         run: ls -la build/app/outputs/flutter-apk/*.apk
