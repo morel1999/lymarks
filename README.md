@@ -15,7 +15,8 @@ the link instead of refusing it, and the RevenueCat webhook is what opens it. Se
 [Monetization](#monetization-what-the-free-plan-does-instead-of-refusing).
 
 Android first; iOS is deliberately deferred (see `03-architecture/adr/`).
-Submission screenshots and text live in [`app/devpost/`](app/devpost/).
+Submission screenshots live in [`app/devpost/`](app/devpost/) — rendered by the test
+suite itself, so they cannot drift from the build.
 
 ---
 
