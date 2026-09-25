@@ -300,6 +300,27 @@ void main() {
       expect(localSearch(items, 'postgres'), isEmpty);
     });
 
+    // On invite l'utilisateur a *decrire* ce qu'il cherche — c'est la promesse
+    // du produit. Une phrase entiere ramenait alors toute la bibliotheque,
+    // puisque « a » ou « to » se trouvent dans n'importe quel resume.
+    test('les mots vides ne ramenent pas toute la bibliotheque', () {
+      final items = [
+        lymark('vise', title: 'Postgres et les index'),
+        lymark('autre', title: 'Autre chose'),
+      ];
+      final hits = localSearch(
+        items,
+        'a way to get postgres in my own project',
+      );
+      expect(hits.map((l) => l.id), ['vise']);
+    });
+
+    test('un terme est cherche en debut de mot', () {
+      final items = [lymark('a', title: 'What embeddings really encode')];
+      expect(localSearch(items, 'embed').map((l) => l.id), ['a']);
+      expect(localSearch(items, 'bed'), isEmpty);
+    });
+
     test('hors-ligne, la recherche se fait sur ce qui est deja la', () async {
       final cache = await cacheWith([
         lymark('a', title: 'Postgres et les index'),

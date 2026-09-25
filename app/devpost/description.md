@@ -142,7 +142,7 @@ days ago" sometimes landed in the same millisecond and sometimes didn't — and
 
 - The locked-instead-of-refused free tier. It changed how the product feels, and
   it came from testing on a device rather than from a spec.
-- 115 behaviour tests and 32 reference renders on the app, plus the API's security
+- 117 behaviour tests and 32 reference renders on the app, plus the API's security
   suites. The renders caught real regressions, not just cosmetic drift.
 - A design system with its own mascot, whose poses are colour-matched by a
   reproducible pipeline that lives in the repository: the target hue is measured

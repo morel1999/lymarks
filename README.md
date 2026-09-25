@@ -117,7 +117,7 @@ RevenueCat entitlement identifiers cannot be renamed, so an entitlement created 
 
 | | |
 |---|---|
-| Behaviour tests | 115 |
+| Behaviour tests | 117 |
 | Reference renders | 32 |
 | Static analysis | `flutter analyze --fatal-infos`, zero findings |
 | CI | analysis + tests + per-ABI APKs on every push |
