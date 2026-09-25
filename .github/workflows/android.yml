@@ -17,6 +17,11 @@ on:
   pull_request:
     paths: ["app/**", ".github/workflows/android.yml"]
   workflow_dispatch:
+    inputs:
+      demo:
+        description: "APK en mode demo : aucune cle, aucun appel reseau"
+        type: boolean
+        default: false
 
 # Le reglage du depot vaut deja `read`, mais un workflow ne doit pas en
 # dependre : ce qu'il lui faut est ecrit ici.
@@ -66,10 +71,19 @@ jobs:
       # La publishable key Clerk (publique par design) et l'URL de l'API sont
       # injectees au build (AppConfig). Sans cle, l'app tournerait en mode
       # demo : on refuse de produire un APK ambigu.
+      # `demo: true` (lancement manuel) : on n'injecte rien, et l'app tombe
+      # alors sur son mode demo — exactement ce que voit quelqu'un qui clone
+      # le depot sans cle. L'APK produit porte « demo » dans son nom : c'est
+      # le seul moyen de ne pas recreer l'ambiguite que ce garde-fou refuse.
       - name: Configuration de build
         env:
           CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          DEMO: ${{ inputs.demo }}
         run: |
+          if [ "$DEMO" = "true" ]; then
+            echo "::notice::Build demo demande : aucune cle ne sera injectee."
+            exit 0
+          fi
           if [ -z "$CLERK_PUBLISHABLE_KEY" ]; then
             echo "::error::CLERK_PUBLISHABLE_KEY absent des GitHub Secrets : l'APK serait en mode demo."
             exit 1
@@ -97,7 +111,17 @@ jobs:
         env:
           CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
           REVENUECAT_PUBLIC_KEY: ${{ secrets.REVENUECAT_PUBLIC_KEY }}
+          DEMO: ${{ inputs.demo }}
         run: |
+          if [ "$DEMO" = "true" ]; then
+            flutter build apk --release --split-per-abi
+            cd build/app/outputs/flutter-apk
+            for f in app-*-release.apk; do
+              mv "$f" "${f%-release.apk}-demo.apk"
+            done
+            ls -la ./*.apk
+            exit 0
+          fi
           if [ -z "$REVENUECAT_PUBLIC_KEY" ]; then
             echo "::warning::REVENUECAT_PUBLIC_KEY absent des GitHub Secrets : APK sans achats."
           fi
@@ -116,7 +140,7 @@ jobs:
       - name: Publier les APK
         uses: actions/upload-artifact@v4
         with:
-          name: lymarks-release-${{ github.sha }}
+          name: lymarks-${{ inputs.demo && 'demo' || 'release' }}-${{ github.sha }}
           path: |
             app/build/app/outputs/flutter-apk/app-arm64-v8a-*.apk
             app/build/app/outputs/flutter-apk/app-armeabi-v7a-*.apk
