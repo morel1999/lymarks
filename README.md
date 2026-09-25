@@ -43,6 +43,32 @@ can read. The purchase is simulated, so you can watch all 24 open at once.
 
 Requires Flutter 3.41.9 (pinned in CI).
 
+### Walk through it end to end
+
+None of this needs a network. Airplane mode changes nothing — that is the point.
+
+1. **Onboarding, then the Home.** Two screens, then the library. You are already
+   signed in as a demo user; there is no login wall.
+2. **Open a lymark.** Tap any readable card: three bullets, the keywords, the note,
+   and the link to the original.
+3. **Search for what you remember, not for what it was called.** Type
+   `german and finnish make labels longer`. The first hit is *A type scale that
+   survives translation*, and none of those words are in its title — they are in the
+   summary. Note what is running here: the on-device fallback, the same one the app
+   uses when the phone has no network. Real semantic search needs an embedding, so it
+   needs the server.
+4. **Meet the free plan.** Scroll to the bottom of the Home: *24 lymarks are waiting
+   for you.* They were saved, never refused. They carry no summary either — the
+   pipeline only runs on what you are allowed to read.
+5. **Buy Pro.** Tap a locked card, then **Continue** in the paywall. The purchase is
+   simulated: all 24 open at once, summaries included.
+6. **Save a link.** On an installed Android build, share any page from the browser
+   into Lymarks. The card lands filled, and its bullets say plainly that this build
+   has no server behind it.
+7. **Leave.** Settings → **Export my data** writes the library out as JSON.
+   **Delete account** is as final here as anywhere: reinstall the app to replay the
+   whole flow.
+
 ---
 
 ## What it looks like
