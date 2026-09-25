@@ -6,7 +6,6 @@ import 'package:lymarks/core/theme/app_colors.dart';
 import 'package:lymarks/core/theme/app_dimens.dart';
 import 'package:lymarks/core/utils/ly_icons.dart';
 import 'package:lymarks/shared/data/providers.dart';
-import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/widgets/mascot.dart';
 
 /// Ce qui a déclenché le paywall, pour adapter l'argument principal
@@ -212,10 +211,15 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     final navigator = Navigator.of(context);
     final profile = ref.read(profileProvider.notifier);
 
-    // Démo : pas de store, le plan bascule localement (rendus, tests).
+    // Démo : pas de store. Le plan bascule localement, et la bibliothèque
+    // est relue pour que les cartes gardées s'ouvrent — le même message
+    // qu'en mode réel, parce que c'est la même chose qui vient de se passer.
     if (!ref.read(billingProvider).isAvailable) {
       navigator.pop();
-      profile.setPlan(UserPlan.pro);
+      await profile.grantProInDemo();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Welcome to Lymarks Pro.')),
+      );
       return;
     }
 

@@ -50,6 +50,11 @@ ProviderContainer _container({List<Override> overrides = const []}) {
       clockProvider.overrideWithValue(() => _fixedNow),
       // L'ouverture de l'app n'a pas a etre traversee par chaque test.
       splashDurationProvider.overrideWithValue(Duration.zero),
+      // Un rendu de reference choisit son depot ; il ne subit pas le cablage
+      // de la demo. Sans cette ligne, rendre la demo Free — et son depot
+      // capable de verrouiller au-dela du plafond — repeignait six rendus qui
+      // n'ont rien a voir avec le plan. L'etat verrouille a deja le sien.
+      lymarksRepositoryProvider.overrideWithValue(MockLymarksRepository()),
       ...overrides,
     ],
   );

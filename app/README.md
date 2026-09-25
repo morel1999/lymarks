@@ -18,7 +18,7 @@ le signale, et seule la chaîne Android est en défaut.
 
 ```bash
 flutter analyze            # very_good_analysis, strict : doit rendre 0 issue
-flutter test               # 118 tests de comportement + 32 rendus de référence
+flutter test               # 121 tests de comportement + 32 rendus de référence
 flutter test --update-goldens   # après un changement visuel volontaire
 ```
 

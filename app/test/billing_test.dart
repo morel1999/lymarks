@@ -5,8 +5,10 @@ import 'package:lymarks/core/auth/auth_session.dart';
 import 'package:lymarks/core/billing/billing.dart';
 import 'package:lymarks/core/billing/billing_link.dart';
 import 'package:lymarks/core/theme/app_theme.dart';
+import 'package:lymarks/shared/data/mock_repository.dart';
 import 'package:lymarks/shared/data/providers.dart';
 import 'package:lymarks/shared/models/knowledge.dart';
+import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/widgets/paywall_sheet.dart';
 
 /// Store de test : offre fixée, achats journalisés, issue pilotable.
@@ -260,6 +262,52 @@ void main() {
         tester.element(find.byType(Scaffold)),
       );
       expect(container.read(profileProvider).plan, UserPlan.pro);
+    });
+  });
+  // Sans serveur, personne n'appliquait le plafond : `locked` n'arrive
+  // normalement que du JSON de l'API. La demo affichait donc un compte Pro
+  // sans rien de garde — c'est-a-dire sans rien de ce que le produit a de
+  // particulier, et sans moyen d'atteindre le paywall.
+  group('Mode demo : Free, puis Pro', () {
+    test('les plus recents restent ouverts, le reste est garde', () async {
+      final repo = MockLymarksRepository(isPro: false, simulatesServer: true);
+      final items = await repo.fetchAll();
+      final vivants = [
+        for (final l in items)
+          if (!l.archived) l,
+      ];
+      final ouverts = [
+        for (final l in vivants)
+          if (!l.locked) l,
+      ];
+
+      expect(ouverts, hasLength(UserProfile.freeLimit));
+      expect(vivants.length, greaterThan(ouverts.length));
+      // Et plus aucune carte ne charge indefiniment.
+      expect(items.where((l) => l.status == LymarkStatus.processing), isEmpty);
+    });
+
+    test('les rendus de reference ne subissent pas ce plafond', () async {
+      final items = await MockLymarksRepository().fetchAll();
+
+      expect(items.where((l) => l.locked), isEmpty);
+      // L'etat `processing` reste visible pour qui veut le rendre.
+      expect(
+        items.where((l) => l.status == LymarkStatus.processing),
+        isNotEmpty,
+      );
+    });
+
+    test('l achat simule ouvre les cartes gardees', () async {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      await c.read(lymarksProvider.notifier).refresh();
+      expect(c.read(lymarksProvider).where((l) => l.locked), isNotEmpty);
+
+      await c.read(profileProvider.notifier).grantProInDemo();
+
+      expect(c.read(lymarksProvider).where((l) => l.locked), isEmpty);
+      expect(c.read(profileProvider).plan, UserPlan.pro);
     });
   });
 }

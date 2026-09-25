@@ -126,8 +126,13 @@ void main() {
       await container.read(searchStateProvider.notifier).run('agents');
       final results = container.read(searchResultsProvider);
 
+      // Sur le rang, et non sur la tete : « Building effective agents » porte
+      // desormais le mot dans son titre et dans ses mots-cles, et il est plus
+      // recent — il passe donc devant a score egal. Ce que ce test doit dire,
+      // c'est que la recherche regarde ailleurs que dans le titre ; la
+      // ponderation, elle, est jugee dans offline_test.
       expect(results, isNotEmpty);
-      expect(results.first.title, 'Building AI Agents');
+      expect(results.map((l) => l.title), contains('Building AI Agents'));
     });
 
     test('une requete vide ne retourne aucun resultat', () async {

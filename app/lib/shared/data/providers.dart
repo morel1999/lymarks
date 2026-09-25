@@ -43,7 +43,16 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
 /// tests, qui le surchargent pour contrôler le jeu de données).
 final Provider<LymarksRepository> lymarksRepositoryProvider =
     Provider<LymarksRepository>((ref) {
-      if (AppConfig.isDemo) return MockLymarksRepository();
+      if (AppConfig.isDemo) {
+        // Compte **Free** : c'est le plan par defaut d'un nouvel arrivant, et
+        // c'est le seul depuis lequel on peut voir ce que le produit a de
+        // particulier — des lymarks gardes et fermes plutot que refuses, puis
+        // l'achat qui les ouvre. Un compte Pro d'emblee cache toute la scene.
+        //
+        // `simulatesServer` : sans serveur derriere, personne ne terminerait
+        // le travail en cours ni n'appliquerait le plafond.
+        return MockLymarksRepository(isPro: false, simulatesServer: true);
+      }
       return ApiLymarksRepository(ref.watch(apiClientProvider));
     });
 
@@ -580,6 +589,19 @@ class ProfileNotifier extends Notifier<UserProfile> {
       memberSince: me?.createdAt ?? user?.createdAt ?? fallback.memberSince,
       avatar: override != null ? override.avatar : me?.avatar,
     );
+  }
+
+  /// Achat simule, en demo : ni store ni webhook.
+  ///
+  /// C'est le depot local qui detient le droit Pro : on le lui dit, puis on
+  /// relit la bibliotheque. Les cartes gardees s'ouvrent alors d'un coup,
+  /// exactement comme apres la confirmation du serveur en mode reel.
+  Future<void> grantProInDemo() async {
+    setPlan(UserPlan.pro);
+    final repo = ref.read(lymarksRepositoryProvider);
+    if (repo is MockLymarksRepository) repo.isPro = true;
+    ref.invalidate(meProvider);
+    await ref.read(lymarksProvider.notifier).refresh();
   }
 
   void setPlan(UserPlan plan) {

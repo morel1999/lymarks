@@ -3,6 +3,7 @@ import 'package:lymarks/features/capture/capture_queue.dart';
 import 'package:lymarks/shared/data/local_search.dart';
 import 'package:lymarks/shared/data/lymarks_repository.dart';
 import 'package:lymarks/shared/data/mock_data.dart';
+import 'package:lymarks/shared/models/knowledge.dart';
 import 'package:lymarks/shared/models/lymark.dart';
 import 'package:lymarks/shared/models/page_content.dart';
 
@@ -17,6 +18,7 @@ class MockLymarksRepository implements LymarksRepository {
     List<Lymark>? seed,
     bool? isPro,
     DateTime Function()? clock,
+    this.simulatesServer = false,
   }) : _items = [...seed ?? MockData.lymarks],
        isPro = isPro ?? MockData.profile.isPro,
        _clock = clock ?? DateTime.now;
@@ -25,16 +27,58 @@ class MockLymarksRepository implements LymarksRepository {
   final DateTime Function() _clock;
   bool isPro;
 
+  /// Vrai quand ce depot doit se comporter comme le serveur : terminer le
+  /// travail en cours et appliquer le plafond du plan Free.
+  ///
+  /// C'est le mode demo, et lui seul. Les tests et les rendus de reference le
+  /// laissent faux : ils veulent justement voir l'etat `processing` fige, et
+  /// choisissent leur plan eux-memes (`setPlan`). Sans ce partage, la demo
+  /// montrait une carte qui chargeait indefiniment, et aucun lymark verrouille
+  /// puisque `locked` n'arrive normalement que du JSON de l'API.
+  final bool simulatesServer;
+
+  /// Ce que le serveur aurait rendu : le pipeline a fini, et le plafond du
+  /// plan est applique.
+  ///
+  /// [settle] est faux pour la liste initiale : la carte en traitement
+  /// apparait alors en squelette, puis le premier `fetchAll` la remplit — ce
+  /// que decrit la regle 4 de l'UX Bible, et ce que raconte la video.
+  List<Lymark> _asServerWould(List<Lymark> items, {required bool settle}) {
+    if (!simulatesServer) return items;
+    final done = [
+      for (final l in items)
+        if (settle && l.status == LymarkStatus.processing)
+          l.copyWith(status: LymarkStatus.ready)
+        else
+          l,
+    ];
+    if (isPro) return [for (final l in done) l.copyWith(locked: false)];
+    // Le plafond Free garde ouverts les plus recents. Au-dela, la carte est
+    // gardee et fermee, jamais refusee : c'est tout le propos du produit.
+    final vivants = [
+      for (final l in done)
+        if (!l.archived) l,
+    ]..sort(Lymark.byRecency);
+    final ouverts = {
+      for (final l in vivants.take(UserProfile.freeLimit)) l.id,
+    };
+    return [
+      for (final l in done)
+        l.copyWith(locked: !l.archived && !ouverts.contains(l.id)),
+    ];
+  }
+
   /// Journal des appels, pour les assertions de test.
   final List<String> calls = [];
 
   @override
-  List<Lymark> get initial => List.unmodifiable(_items);
+  List<Lymark> get initial =>
+      List.unmodifiable(_asServerWould(_items, settle: false));
 
   @override
   Future<List<Lymark>> fetchAll() async {
     calls.add('fetchAll');
-    return List.unmodifiable(_items);
+    return List.unmodifiable(_asServerWould(_items, settle: true));
   }
 
   /// Le mock rend la carte **deja remplie**, la ou la vraie API la rend en

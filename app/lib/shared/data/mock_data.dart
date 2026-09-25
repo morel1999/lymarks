@@ -195,6 +195,15 @@ abstract final class MockData {
       savedAt: _ago(const Duration(seconds: 20)),
       status: LymarkStatus.processing,
       categoryId: 'ai',
+      // Le resume est deja la : c'est le statut, et lui seul, qui dit que le
+      // pipeline n'a pas fini. Le depot de demonstration bascule le statut
+      // quand il se comporte en serveur, et la carte se remplit avec ceci.
+      bullets: const [
+        'The simplest pattern that works beats an elaborate agent.',
+        'Compose with plain code before reaching for a framework.',
+        'Give the model few tools, described as carefully as an API.',
+      ],
+      keywords: const ['AI', 'Agents', 'Patterns'],
     ),
     // État `partial` : page inaccessible au scraping, métadonnées seules.
     Lymark(
