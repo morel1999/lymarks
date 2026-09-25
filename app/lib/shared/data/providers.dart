@@ -48,8 +48,11 @@ final Provider<LymarksRepository> lymarksRepositoryProvider =
     });
 
 /// Lecteur de pages bloquées côté serveur (repli client). Surchargé en test.
+///
+/// En démo, [DemoPageRescue] : le bouton « Try again » doit jouer jusqu'au
+/// bout, mais sans qu'une requête parte du téléphone.
 final Provider<PageRescue> pageRescueProvider = Provider<PageRescue>(
-  (_) => const PageRescue(),
+  (_) => AppConfig.isDemo ? const DemoPageRescue() : const PageRescue(),
 );
 
 /// Achats in-app. Sans store (démo, tests, build sans clé) : [NoBilling].

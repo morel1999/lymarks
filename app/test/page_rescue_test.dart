@@ -261,6 +261,24 @@ void main() {
       expect(c.read(lymarksProvider).single.failureReason, 'blocked');
     });
   });
+
+  // Même promesse que pour les images : le jeu de démonstration contient un
+  // lymark en échec, donc un bouton « Try again ». Sans cette substitution,
+  // le toucher envoyait le téléphone chercher la vraie page.
+  group('Sauvetage en démo', () {
+    test('le lecteur de pages ne sort pas du téléphone', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      expect(c.read(pageRescueProvider), isA<DemoPageRescue>());
+    });
+
+    test('la lecture figée rend de quoi remplir la carte', () async {
+      final content = await const DemoPageRescue().read(
+        Uri.parse('https://x.com/status/1234567890'),
+      );
+      expect(content?.text, isNotEmpty);
+    });
+  });
 }
 
 class _FakeRescue extends PageRescue {

@@ -3,10 +3,16 @@ import 'package:lymarks/shared/models/lymark.dart';
 
 /// Jeu de données de démonstration.
 ///
-/// Il reprend fidèlement le contenu des maquettes (`Ecran/`) pour que les
-/// écrans soient comparables au design de référence. Il sera remplacé par
-/// l'API Hono à l'étape 3 de la roadmap ; aucun écran ne doit dépendre de
+/// Il reprend fidèlement le contenu des maquettes (`02-ux/maquettes/`) pour
+/// que les écrans soient comparables au design de référence. Il sera remplacé
+/// par l'API Hono à l'étape 3 de la roadmap ; aucun écran ne doit dépendre de
 /// cette classe autrement que par les providers.
+///
+/// **Aucune image distante ici**, volontairement : `PreviewImage` charge une
+/// `imageUrl` en `Image.network` : la Home en chargeait trois dès son
+/// ouverture. Le mode démo promet de ne faire aucun appel réseau (README) ;
+/// la vignette de source prend donc le relais — ce que montrent déjà les
+/// rendus de référence, générés sans réseau.
 abstract final class MockData {
   /// Instant de référence du jeu de démo, lu une seule fois.
   ///
@@ -36,10 +42,6 @@ abstract final class MockData {
       ],
       keywords: const ['AI', 'Agents', 'Tools', 'Framework', 'LLM'],
       note: "This could be useful for the agent system I'm building.",
-      // Aperçus : trois lymarks suffisent à juger le rendu. Sans réseau
-      // (tests, goldens) l'image échoue et la vignette de source reprend.
-      imageUrl:
-          'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200',
     ),
     Lymark(
       id: 'lm-next',
@@ -54,8 +56,6 @@ abstract final class MockData {
         'Use caching and streaming to deliver content faster.',
       ],
       keywords: const ['Next.js', 'Performance', 'Web', 'Rendering'],
-      imageUrl:
-          'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200',
     ),
     Lymark(
       id: 'lm-ds',
@@ -71,8 +71,6 @@ abstract final class MockData {
       ],
       keywords: const ['Design', 'Systems', 'Tokens'],
       note: 'Reference for the Lymarks design system.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200',
     ),
     Lymark(
       id: 'lm-rsc',

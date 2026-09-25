@@ -38,5 +38,20 @@ void main() {
       final ids = MockData.lymarks.map((l) => l.id).toList();
       expect(ids.toSet(), hasLength(ids.length));
     });
+
+    // Le README promet un mode démo qui « makes no network calls at all », et
+    // la vidéo de soumission le dit à voix haute. Trois lymarks portaient une
+    // `imageUrl` chez images.unsplash.com ; `PreviewImage` la chargeait en
+    // `Image.network` depuis la Home, donc la démo sortait sur le réseau sans
+    // que personne n'ait rien touché. Les rendus de référence ne l'avaient
+    // jamais montré : ils sont générés sans réseau, l'image échouait, et le
+    // repli tenait l'écran.
+    test('aucun lymark de la démo ne pointe vers une image distante', () {
+      final distantes = [
+        for (final lymark in MockData.lymarks)
+          if (lymark.imageUrl != null) '${lymark.id} -> ${lymark.imageUrl}',
+      ];
+      expect(distantes, isEmpty);
+    });
   });
 }

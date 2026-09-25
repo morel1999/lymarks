@@ -284,3 +284,23 @@ class PageRescue {
     },
   );
 }
+
+/// Mode démo : le sauvetage aboutit sans qu'aucune requête ne parte.
+///
+/// Le jeu de démonstration contient un lymark en échec, donc un bouton
+/// « Try again » qui doit jouer — et [PageRescue.read] irait chercher la vraie
+/// page. Ce lecteur-ci rend un contenu figé ; le dépôt de démonstration le
+/// résume comme l'API le ferait, la carte se remplit, et la promesse du mode
+/// démo tient : aucun appel réseau.
+class DemoPageRescue extends PageRescue {
+  const DemoPageRescue();
+
+  /// Sans titre : le dépôt garde alors celui que la carte porte déjà.
+  @override
+  Future<PageContent?> read(Uri url, {http.Client? client}) async =>
+      const PageContent(
+        text:
+            'Retrieval is judged on what the reader was looking for, not on '
+            'how many words the query and the document happen to share.',
+      );
+}
