@@ -201,7 +201,7 @@ The full statement is in the app under Settings → Privacy, and its source of t
 
 `app/` is the Flutter client, `api/` the Cloudflare Worker, `tools/` the small scripts
 that keep assets reproducible. The numbered folders are the project's design
-documentation — **written in French**, and kept alive rather than written once:
+documentation — kept alive rather than written once. Most folders are in English; four internal files remain in French (the mascot visual spec, the database schema, the coding standards, and the build journal):
 
 | Folder | Contents |
 |---|---|
