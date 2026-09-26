@@ -1,20 +1,20 @@
 # Release Plan — Lymarks V1.0
 
-> **But :** jalons, gel, critères go/no-go, soumission. · **Statut :** vivant · **Màj :** 2026-09-17
+> **Purpose:** milestones, freeze, go/no-go criteria, submission. · **Status:** living · **Updated:** 2026-09-17
 
-> **V1.0 = Google Play seul** (ADR-007).
+> **V1.0 = Google Play only** (ADR-007).
 
-> **Réorientation du 19/09/2026 — la soumission aux stores est abandonnée pour cette échéance.** Le sprint vise la catégorie **Next Gen** du Shipaton (vidéo de démonstration + dépôt open source, sans compte développeur), dont le troisième critère sur quatre est l'usage réfléchi de RevenueCat. Les jalons « soumission Play » et le buffer de review ci-dessous sont donc caducs ; ce qui les remplace : dépôt public, README, LICENSE, vidéo de deux minutes et page Devpost avant le 30/09. Le reste du document décrit toujours le chemin store, qui redeviendra d'actualité pour une vraie sortie.
+> **Reorientation — 2026-09-19: store submission dropped for this deadline.** The sprint targets the **Next Gen** category of the Shipaton (demo video + open-source repository, no developer account required), whose third criterion out of four is thoughtful use of RevenueCat. The "Play submission" milestones and the review buffer below are therefore obsolete; what replaces them: public repository, README, LICENSE, two-minute video, and Devpost page before 30/09. The rest of this document still describes the store path, which will become relevant again for a real release.
 
-## Jalons (sprint 14 jours — cf. Roadmap)
-- **J1–J2** infra · **J3–J6** app+share · **J7–J10** IA+recherche · **J11** 🔒 **gel des features** · **J11–J13** paywall, polish, checklist E2E, assets stores · **J14** soumission Google Play.
-- Entre soumission et le **30/09/2026** : buffer review (48 h à plusieurs jours) + 1 cycle de rejet absorbable (Risk R1).
+## Milestones (14-day sprint — see Roadmap)
+- **D1–D2** infra · **D3–D6** app+share · **D7–D10** AI+search · **D11** 🔒 **feature freeze** · **D11–D13** paywall, polish, manual E2E checklist, store assets · **D14** Google Play submission.
+- Between submission and **30/09/2026**: review buffer (48 h to several days) + 1 absorbable rejection cycle (Risk R1).
 
-## Critères GO de soumission
-1. Checklist E2E manuelle 100 % verte sur 2 devices Android physiques (un récent, un Android 10).
-2. Gates CI verts (Test Strategy) ; budgets perfs « capture <2 s » et « recherche <800 ms » tenus.
-3. Achat sandbox + restore OK sur Play Billing ; suppression de compte fonctionnelle.
-4. Data Safety form rempli conformément à la Privacy Spec ; Store Compliance checklist Google Play verte.
+## GO criteria for submission *(future: store launch)*
+1. Manual E2E checklist 100% green on 2 physical Android devices (one recent, one Android 10).
+2. CI gates green (Test Strategy); "capture <2 s" and "search <800 ms" performance budgets met.
+3. Sandbox purchase + restore OK on Play Billing; account deletion functional.
+4. Data Safety form filled in accordance with the Privacy Spec; Google Play Store Compliance checklist green.
 
-## Règles de version
-`MAJOR.MINOR.PATCH` + build number auto. Tout envoi aux stores = tag git + entrée changelog. Hotfix post-lancement : branche depuis le tag, patch only.
+## Versioning rules
+`MAJOR.MINOR.PATCH` + auto build number. Every store submission = git tag + changelog entry. Post-launch hotfix: branch from the tag, patch only.

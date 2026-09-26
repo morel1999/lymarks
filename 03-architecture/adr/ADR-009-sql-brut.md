@@ -1,10 +1,10 @@
-# ADR-009 — Accès aux données : SQL brut, pas d'ORM
-**Statut :** accepté · 2026-09-18
-**Contexte :** le Database Schema proposait Drizzle ORM (⚠️ à décider) et le registre des dépendances listait `drizzle-orm` + `@neondatabase/serverless` avec l'alternative « SQL brut + postgres.js ». Le schéma de référence est déjà écrit en SQL dans la doc ; les opérations clés — distance cosinus pgvector (`<=>`), `to_tsquery` avec préfixes, `ON CONFLICT … WHERE` pour l'idempotence du webhook — sont du SQL que tout ORM finit par exposer en `sql\`…\``.
-**Décision :** SQL brut via le pilote HTTP `@neondatabase/serverless` (`neon(url).query(text, params)`), concentré dans un seul fichier `api/src/db/neon.ts` qui implémente le contrat `Db` (`api/src/db/types.ts`). Migrations = fichiers SQL numérotés dans `api/migrations/`, joués par `scripts/migrate.ts` (Node, transaction par fichier, table `schema_migrations`). Un dépôt en mémoire implémente le même contrat pour les tests.
-**Alternatives :** Drizzle — un schéma TypeScript à maintenir en double du SQL de la doc, `drizzle-kit` en plus dans une machine à 3,8 Go, et les requêtes vectorielles/FTS restent en SQL brut de toute façon ; Prisma — client lourd, pgvector mal supporté sur Workers.
-**Conséquences :**
-- Le contrat `Db` est la frontière testable : les routes ne voient jamais de SQL, les suites M5/M6 tournent sans base (Coding Standards §3 respectés à la lettre : « aucune requête SQL hors de `src/db/` »).
-- Le mapping ligne → objet est manuel (`toBookmark`, `toUser`) : lisible, mais à mettre à jour à chaque colonne ajoutée — le typecheck strict le signale.
-- Pas de branche Neon de test en CI pour l'instant : `neon.ts` est vérifié par le typecheck et par la première mise en service ; un test d'intégration sur branche éphémère est à ajouter quand le pipeline tourne (Test Strategy, intégration API).
-- Réversible : passer à Drizzle plus tard ne change que `neon.ts`.
+# ADR-009 — Data access: raw SQL, no ORM
+**Status:** accepted · 2026-09-18
+**Context:** the Database Schema proposed Drizzle ORM (⚠️ TBD) and the dependency register listed `drizzle-orm` + `@neondatabase/serverless` with the alternative "raw SQL + postgres.js". The reference schema is already written in SQL in the docs; the key operations — pgvector cosine distance (`<=>`), `to_tsquery` with prefixes, `ON CONFLICT … WHERE` for webhook idempotence — are SQL that every ORM ends up exposing as `sql\`…\``.
+**Decision:** raw SQL via the HTTP driver `@neondatabase/serverless` (`neon(url).query(text, params)`), concentrated in a single file `api/src/db/neon.ts` implementing the `Db` contract (`api/src/db/types.ts`). Migrations = numbered SQL files in `api/migrations/`, run by `scripts/migrate.ts` (Node, one transaction per file, `schema_migrations` table). An in-memory repository implements the same contract for tests.
+**Alternatives:** Drizzle — a TypeScript schema to maintain alongside the SQL doc, `drizzle-kit` on top of a 3.8 GB machine, and vector/FTS queries stay in raw SQL anyway; Prisma — heavy client, poor pgvector support on Workers.
+**Consequences:**
+- The `Db` contract is the testable boundary: routes never see SQL, M5/M6 suites run without a database (Coding Standards §3: "no SQL query outside `src/db/`").
+- Row → object mapping is manual (`toBookmark`, `toUser`): readable, but must be updated on every added column — strict typechecking flags it.
+- No Neon test branch in CI for now: `neon.ts` is verified by typechecking and by first deployment; an integration test on an ephemeral branch to add when the pipeline is running (Test Strategy, API integration).
+- Reversible: switching to Drizzle later only changes `neon.ts`.

@@ -1,34 +1,34 @@
 # Monetization Spec — Lymarks (RevenueCat)
 
-> **But :** produits, entitlements, enforcement. · **Statut :** vivant · **Màj :** 2026-09-19
+> **Purpose:** products, entitlements, enforcement. · **Status:** living · **Updated:** 2026-09-19
 
-## 1. Offres
-| Plan | Contenu | Limites appliquées |
+## 1. Plans
+| Plan | Content | Enforced limits |
 |---|---|---|
-| **Free** | Capture + résumés IA, recherche mots-clés | 30 lymarks actifs (`archived=false`), pas de sémantique, pas de digest |
-| **Pro** mensuel / annuel | Illimité, recherche sémantique, Daily Digest, export | — |
+| **Free** | Capture + AI summaries, keyword search | 30 active lymarks (`archived=false`), no semantic search, no digest |
+| **Pro** monthly / annual | Unlimited, semantic search, Daily Digest, export | — |
 
-Prix ⚠️ à décider — proposition : 4,99 €/mois · 39,99 €/an (−33 %), à ajuster par territoire via les consoles. Essai gratuit ⚠️ à décider (proposition : 7 jours sur l'annuel uniquement).
+Price ⚠️ TBD — proposal: €4.99/month · €39.99/year (−33%), to adjust by territory via the consoles. Free trial ⚠️ TBD (proposal: 7 days on annual only).
 
 ## 2. RevenueCat
-Entitlement unique **`pro`** ; offerings `default` (monthly, annual). App : `purchases_flutter`, login RevenueCat avec l'ID Clerk (`appUserID = clerk_id`) pour lier achats ↔ compte. « Restaurer mes achats » visible sur le paywall et dans les réglages (exigence Apple).
+Single entitlement **`pro`**; offerings `default` (monthly, annual). App: `purchases_flutter`, RevenueCat login with the Clerk ID (`appUserID = clerk_id`) to link purchases ↔ account. "Restore purchases" visible on the paywall and in settings (Apple requirement).
 
-### Configuration effective (19/09, branchée dans le code)
-| Objet | Valeur | Où c'est lu |
+### Effective configuration (19/09, wired in code)
+| Object | Value | Where it's read |
 |---|---|---|
-| Entitlement | `pro` | `RevenueCatBilling.proEntitlement` ; webhook `entitlement_ids` |
-| Offering courante | `default` (« current ») | `Purchases.getOfferings().current` |
-| Packages | `$rc_monthly` → mensuel, `$rc_annual` → annuel (types standard RevenueCat ; tout autre package est ignoré) | `RevenueCatBilling.offer()` |
-| Produits (Test Store) | `lymarks_pro_monthly` (P1M), `lymarks_pro_annual` (P1Y) | RevenueCat seulement — l'app ne connaît que les packages |
-| Clé SDK | `--dart-define=REVENUECAT_PUBLIC_KEY` (GitHub Secret, clé publique du SDK ; `REVENUECAT_API_KEY` reste la clé secrète REST de l'API) | `AppConfig.revenuecatPublicKey` |
-| Webhook | `POST https://lymarks-api…/webhooks/revenuecat`, en-tête `Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>` (secret Workers) | `api/src/routes/webhooks.ts` |
+| Entitlement | `pro` | `RevenueCatBilling.proEntitlement`; webhook `entitlement_ids` |
+| Current offering | `default` ("current") | `Purchases.getOfferings().current` |
+| Packages | `$rc_monthly` → monthly, `$rc_annual` → annual (standard RevenueCat types; any other package is ignored) | `RevenueCatBilling.offer()` |
+| Products (Test Store) | `lymarks_pro_monthly` (P1M), `lymarks_pro_annual` (P1Y) | RevenueCat only — the app only knows about packages |
+| SDK key | `--dart-define=REVENUECAT_PUBLIC_KEY` (GitHub Secret, SDK public key; `REVENUECAT_API_KEY` remains the secret REST API key) | `AppConfig.revenuecatPublicKey` |
+| Webhook | `POST https://lymarks-api…/webhooks/revenuecat`, header `Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>` (Workers secret) | `api/src/routes/webhooks.ts` |
 
-**Chemin Shipaton Next Gen : le Test Store.** Sans compte développeur Play, RevenueCat fournit une app de type *Test Store* : le SDK, configuré avec sa clé, affiche une feuille d'achat simulée (réussir / échouer / annuler), les abonnements se renouvellent en accéléré (5 renouvellements, puis annulation) et **les webhooks partent comme en production** (`environment: SANDBOX`). Passer à Google Play plus tard = créer l'app Play dans RevenueCat, y rattacher les mêmes produits/entitlement/offering, changer la clé au build. Le code ne bouge pas.
+**Shipaton Next Gen path: the Test Store.** Without a Play developer account, RevenueCat provides a Test Store app: the SDK, configured with its key, displays a simulated purchase sheet (succeed / fail / cancel), subscriptions renew at an accelerated pace (5 renewals, then cancellation), and **webhooks fire as in production** (`environment: SANDBOX`). Switching to Google Play later = create the Play app in RevenueCat, attach the same products/entitlement/offering, change the key at build time. The code does not move.
 
-**Côté app** (`app/lib/core/billing/`) : `Billing` est le contrat (offre, achat, restauration, identité) ; `RevenueCatBilling` l'implémente, `NoBilling` sert la démo et les tests ; `BillingLink` suit la session Clerk (`identify` à la connexion, `forget` à la déconnexion). Après un achat confirmé par le store, `ProfileNotifier` affiche Pro immédiatement et relit `GET /me` (1, 2, 4, 8 s) jusqu'à ce que le webhook ait posé le droit côté serveur — l'app n'attend jamais, ne décide jamais.
+**App-side** (`app/lib/core/billing/`): `Billing` is the contract (offer, purchase, restore, identity); `RevenueCatBilling` implements it, `NoBilling` serves demo and tests; `BillingLink` follows the Clerk session (`identify` at sign-in, `forget` at sign-out). After a store-confirmed purchase, `ProfileNotifier` shows Pro immediately and re-reads `GET /me` (1, 2, 4, 8 s) until the webhook has set the right server-side — the app never waits, never decides.
 
-## 3. Enforcement — règle absolue
-**La source de vérité des droits est la table `subscriptions`, alimentée par le webhook RevenueCat (signé, idempotent).** L'API vérifie le plan à chaque : création au-delà de 30 (`403 limit_reached`), recherche sémantique, inscription au digest, export. Le client ne fait qu'afficher — jamais décider (Threat Model M5).
+## 3. Enforcement — absolute rule
+**The source of truth for rights is the `subscriptions` table, fed by the RevenueCat webhook (signed, idempotent).** The API checks the plan on every: creation beyond 30 (`403 limit_reached`), semantic search, digest subscription, export. The client only displays — never decides (Threat Model M5).
 
-## 4. Déclencheurs du paywall (UX Bible règle 11)
-31ᵉ capture (après enregistrement, bandeau in-app — jamais dans la share sheet) · 1ʳᵉ recherche sémantique · activation du digest · écran réglages. Downgrade (expiration Pro) : rien n'est supprimé ; au-delà de 30 lymarks, lecture seule sur l'excédent + capture bloquée jusqu'à archivage ⚠️ à valider.
+## 4. Paywall triggers (UX Bible rule 11)
+31st capture (after save, in-app banner — never in the share sheet) · 1st semantic search · digest activation · settings screen. Downgrade (Pro expiry): nothing is deleted; beyond 30 lymarks, read-only on the excess + capture blocked until archiving ⚠️ to validate.

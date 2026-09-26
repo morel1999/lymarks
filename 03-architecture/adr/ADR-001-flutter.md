@@ -1,6 +1,6 @@
-# ADR-001 — Flutter pour le mobile
-**Statut :** accepté · 2026-08-07
-**Contexte :** app iOS+Android à livrer en 14 jours par un dev solo ; UI fluide (60–120 FPS) et intégration du menu de partage requises.
-**Décision :** Flutter (Dart), avec `receive_sharing_intent` pour la share extension.
-**Alternatives :** React Native (écosystème share extensions plus fragmenté), natif double (impossible en solo/14 j), KMP (maturité UI).
-**Conséquences :** un seul codebase ; vigilance sur la partie native de l'extension de partage iOS (App Groups) ; taille d'app à surveiller (budget <40 MB).
+# ADR-001 — Flutter for mobile
+**Status:** accepted · 2026-08-07
+**Context:** iOS+Android app to deliver in 14 days by a solo dev; smooth UI (60–120 FPS) and share-menu integration required.
+**Decision:** Flutter (Dart), with `receive_sharing_intent` for the share extension.
+**Alternatives:** React Native (more fragmented share-extension ecosystem), native dual (impossible solo/14d), KMP (UI maturity).
+**Consequences:** single codebase; vigilance on the native part of the iOS share extension (App Groups); app size to watch (budget <40 MB).

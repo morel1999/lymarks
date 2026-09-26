@@ -1,17 +1,17 @@
 # Performance Budget — Lymarks
 
-> **But :** chiffres à tenir, mesurés, bloquants. · **Statut :** stable · **Màj :** 2026-08-07
+> **Purpose:** numbers to meet, measured, blocking. · **Status:** stable · **Updated:** 2026-08-07
 
-| Métrique | Budget | Mesure |
+| Metric | Budget | Measurement |
 |---|---|---|
-| Capture : tap Partager → fermeture share sheet | **< 2 s** | Chrono manuel + trace, device milieu de gamme |
-| Réponse `POST /bookmarks` (201) | < 300 ms P95 | Analytics Workers |
-| Pipeline complet (processing → ready) | < 15 s P95 | Timestamps DB |
-| Recherche plein texte | < 500 ms P95 | ressenti in-app |
-| Recherche sémantique (embedding + pgvector) | < 800 ms P95 | idem |
-| Framerate UI (scroll liste 200 cartes) | 60 FPS min, 0 jank visible | DevTools Flutter |
-| Cold start app | < 2 s | device milieu de gamme |
-| Taille app installée | < 40 MB | store listing |
-| Notification digest | fenêtre ±15 min de l'heure choisie | logs cron |
+| Capture: tap Share → share sheet closed | **< 2 s** | Manual stopwatch + trace, mid-range device |
+| `POST /bookmarks` response (201) | < 300 ms P95 | Workers analytics |
+| Full pipeline (processing → ready) | < 15 s P95 | DB timestamps |
+| Full-text search | < 500 ms P95 | in-app feel |
+| Semantic search (embedding + pgvector) | < 800 ms P95 | same |
+| UI framerate (scroll of 200-card list) | 60 FPS min, 0 visible jank | Flutter DevTools |
+| App cold start | < 2 s | mid-range device |
+| Installed app size | < 40 MB | store listing |
+| Digest notification | ±15 min window of chosen time | cron logs |
 
-Dépassement d'un budget = bug de priorité égale à un bug fonctionnel (règle Core Principles).
+Exceeding a budget = bug of the same priority as a functional bug (Core Principles rule).

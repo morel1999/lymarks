@@ -1,41 +1,41 @@
 # Knowledge Vault Specification — Lymarks
 
-> **But :** la mémoire de connaissances : structure, indexation, re-surfaçage. · **Statut :** vivant · **Màj :** 2026-08-07
+> **Purpose:** the knowledge memory: structure, indexing, re-surfacing. · **Status:** living · **Updated:** 2026-08-07
 
-## 1. Unité de connaissance : le lymark
+## 1. Unit of knowledge: the lymark
 ```
 lymark = {
   url, url_hash, source,           // source ∈ {x, youtube, linkedin, web}
-  title, note_utilisateur,
-  summary: [puce1, puce2, puce3],  // générées, langue du contenu
-  keywords: [..],                  // 3–6, générés
-  embedding: vector(768),          // sur titre + puces
+  title, user_note,
+  summary: [bullet1, bullet2, bullet3],  // generated, in content language
+  keywords: [..],                        // 3–6, generated
+  embedding: vector(768),                // on title + bullets
   status, saved_count,
   created_at, last_opened_at, last_surfaced_at
 }
 ```
-La **note utilisateur** est l'intention (« pour mon projet du week-end ») : elle pèse dans la recherche plein texte mais n'est jamais envoyée aux LLM (Privacy §2).
+The **user note** is the intent ("for my weekend project"): it weighs in the full-text search but is never sent to LLMs (Privacy §2).
 
 ## 2. Tags
-V1.0 : `keywords` générés = tags de fait (affichés en chips, cliquables → recherche). Tags manuels éditables : V1.2. Pas de dossiers, jamais (philosophie : le rangement est le travail de la machine).
+V1.0: generated `keywords` = de facto tags (displayed as chips, clickable → search). Editable manual tags: V1.2. No folders, ever (philosophy: filing is the machine's job).
 
-## 3. Relations et graphe
-V1.0 : relations implicites uniquement — « lymarks similaires » = top-3 par cosinus (>0,75) affichés sur la fiche. Graphe explicite : hors périmètre (⚠️ réévaluer en V2 si usage réel).
+## 3. Relations and graph
+V1.0: implicit relations only — "similar lymarks" = top-3 by cosine (>0.75) displayed on the detail card. Explicit graph: out of scope (⚠️ reassess in V2 if real usage demands it).
 
-## 4. Re-surfaçage (algorithme du Daily Digest)
-Candidats : lymarks `ready`, non ouverts depuis ≥7 jours, non surfacés depuis ≥14 jours, non archivés.
+## 4. Re-surfacing (Daily Digest algorithm)
+Candidates: `ready` lymarks, not opened for ≥7 days, not surfaced for ≥14 days, not archived.
 ```
-score = 0,5 × pertinence + 0,3 × oubli + 0,2 × fraîcheur_intérêt
-  pertinence      = cos(embedding, centroïde des 10 derniers lymarks sauvés)
-  oubli           = min(jours_depuis_sauvegarde / 30, 1)      // inspiré révision espacée
-  fraîcheur_intérêt = 1 si keywords ∩ keywords récents ≠ ∅, sinon 0,3
+score = 0.5 × relevance + 0.3 × forgetting + 0.2 × interest_freshness
+  relevance         = cos(embedding, centroid of the last 10 saved lymarks)
+  forgetting        = min(days_since_save / 30, 1)      // inspired by spaced repetition
+  interest_freshness = 1 if keywords ∩ recent_keywords ≠ ∅, else 0.3
 ```
-Sélection = meilleur score ; égalité → le plus ancien. « Reporter » → exclu 7 jours. « Archiver » → exclu définitivement. Coefficients ⚠️ à calibrer après 2 semaines de données réelles.
+Selection = highest score; tie → oldest. "Snooze" → excluded for 7 days. "Archive" → excluded permanently. Weights ⚠️ to calibrate after 2 weeks of real data.
 
-## 5. Recherche et indexation
-- Plein texte : Postgres `tsvector` sur (title, note, puces, keywords), config `simple` (multilingue FR/EN ⚠️ à valider).
-- Sémantique : pgvector, distance cosinus, index **HNSW** (`m=16, ef_construction=64`) — créé dès la migration 001 (coût nul à petite échelle, évite un re-index).
-- Fusion Pro : `score = 0,7 × sémantique + 0,3 × texte` (⚠️ à calibrer, voir SAD Flux 2).
+## 5. Search and indexing
+- Full-text: Postgres `tsvector` on (title, note, bullets, keywords), `simple` config (multilingual FR/EN ⚠️ to validate).
+- Semantic: pgvector, cosine distance, **HNSW** index (`m=16, ef_construction=64`) — created from migration 001 (zero cost at small scale, avoids a re-index).
+- Pro fusion: `score = 0.7 × semantic + 0.3 × text` (⚠️ to calibrate, see SAD Flow 2).
 
-## 6. Versioning et synchronisation
-Le serveur est la source de vérité (sync multi-appareils automatique). Modification de note : dernière écriture gagne (V1) ; résolution de conflits offline : P2 (PRD). Re-résumé d'un lymark : remplace puces+keywords+embedding, `summary_version += 1`.
+## 6. Versioning and synchronisation
+The server is the source of truth (automatic multi-device sync). Note update: last write wins (V1); offline conflict resolution: P2 (PRD). Re-summarising a lymark: replaces bullets+keywords+embedding, `summary_version += 1`.

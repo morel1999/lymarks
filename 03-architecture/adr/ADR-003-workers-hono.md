@@ -1,6 +1,6 @@
 # ADR-003 — Cloudflare Workers + Hono
-**Statut :** accepté · 2026-08-07
-**Contexte :** backend appelé depuis une share extension → chaque milliseconde de latence dégrade la capture <2 s.
-**Décision :** Hono (TypeScript) sur Workers : 0 ms cold start, edge mondial, `waitUntil` pour l'async, Cron Triggers pour le digest.
-**Alternatives :** Node sur VPS (ops en plus), AWS Lambda (cold starts), Supabase Edge Functions (moins de contrôle réseau).
-**Conséquences :** runtime non-Node (choisir des libs compatibles Workers) ; limites CPU/temps → pipeline découpé, option Queues si besoin.
+**Status:** accepted · 2026-08-07
+**Context:** backend called from a share extension → every millisecond of latency degrades the <2 s capture.
+**Decision:** Hono (TypeScript) on Workers: 0 ms cold start, global edge, `waitUntil` for async, Cron Triggers for the digest.
+**Alternatives:** Node on VPS (extra ops), AWS Lambda (cold starts), Supabase Edge Functions (less network control).
+**Consequences:** non-Node runtime (choose Workers-compatible libs); CPU/time limits → pipeline split, Queues option if needed.

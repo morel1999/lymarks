@@ -1,22 +1,22 @@
 # Product Roadmap — Lymarks
 
-> **But :** jalons versionnés. · **Statut :** vivant · **Màj :** 2026-09-18
+> **Purpose:** versioned milestones. · **Status:** living · **Updated:** 2026-09-18
 
-> **Périmètre V1.0 = Android seul** (ADR-007). iOS en V1.1.
+> **V1.0 scope = Android only** (ADR-007). iOS in V1.1.
 
-> **Réorientation du 19/09/2026 — la soumission aux stores est abandonnée pour cette échéance.** Le sprint vise la catégorie **Next Gen** du Shipaton (vidéo de démonstration + dépôt open source, sans compte développeur), dont le troisième critère sur quatre est l'usage réfléchi de RevenueCat. Les jalons « soumission Play » et le buffer de review ci-dessous sont donc caducs ; ce qui les remplace : dépôt public, README, LICENSE, vidéo de deux minutes et page Devpost avant le 30/09. Le reste du document décrit toujours le chemin store, qui redeviendra d'actualité pour une vraie sortie.
+> **Reorientation — 2026-09-19: store submission dropped for this deadline.** The sprint targets the **Next Gen** category of the Shipaton (demo video + open-source repository, no developer account required), whose third criterion out of four is thoughtful use of RevenueCat. The "Play submission" milestones and the review buffer below are therefore obsolete; what replaces them: public repository, README, LICENSE, two-minute video, and Devpost page before 30/09. The rest of this document still describes the store path, which will become relevant again for a real release.
 
-## Sprint Shipaton 2026 (V1.0)
-| Étape | Jours | Contenu | Critère de sortie |
+## Shipaton 2026 Sprint (V1.0)
+| Step | Days | Content | Exit criterion |
 |---|---|---|---|
-| 1. Infra cloud | J1–J2 | Neon + pgvector (schéma initial), Clerk configuré, API Hono déployée sur Workers | **Atteint le 18/09** : `https://lymarks-api.lymarks.workers.dev/health` → `{ok:true, db:ok}`, `/me` → 401 sans jeton. Neon eu-central-1 migré, Clerk lié, secrets en CI. |
-| 2. Core Flutter + Share | J3–J6 | Projet Flutter ✔ (04/09), share sheet **Android** en canal natif ✔ (ADR-008, 18/09), liste + états ✔, **app branchée sur l'API + auth Clerk ✔ (18/09, ADR-010)** | **Atteint le 18/09** : capture réelle depuis Chrome sur un Android physique, réactivité jugée bonne, cartes `processing` visibles. X et YouTube à confirmer. Bout en bout (capture → résumé IA sur device) à valider avec l'APK suivant. |
-| 3. Pipeline IA + recherche | J7–J10 | Scraper → Groq → Gemini → Neon ; recherche plein texte + cosinus | Code prêt le 18/09 (pipeline, anti-SSRF, recherche hybride, sur mocks). Critère inchangé : un lien partagé ressort via une requête sémantique **en prod** |
-| 4. Monétisation + store | J11–J14 | Produits Play, paywall RevenueCat, gel des features à J11, soumission ≤ J14 | Build soumis à Google Play |
+| 1. Cloud infra | D1–D2 | Neon + pgvector (initial schema), Clerk configured, Hono API deployed on Workers | **Reached 18/09**: `https://lymarks-api.lymarks.workers.dev/health` → `{ok:true, db:ok}`, `/me` → 401 without token. Neon eu-central-1 migrated, Clerk linked, secrets in CI. |
+| 2. Core Flutter + Share | D3–D6 | Flutter project ✔ (04/09), Android share sheet via native channel ✔ (ADR-008, 18/09), list + states ✔, **app connected to API + Clerk auth ✔ (18/09, ADR-010)** | **Reached 18/09**: real capture from Chrome on a physical Android, responsiveness judged good, `processing` cards visible. X and YouTube to confirm. End-to-end (capture → AI summary on device) to validate with next APK. |
+| 3. AI pipeline + search | D7–D10 | Scraper → Groq → Gemini → Neon; full-text + cosine search | Code ready 18/09 (pipeline, anti-SSRF, hybrid search, on mocks). Criterion unchanged: a shared link surfaces via a semantic query **in production** |
+| 4. Monetisation + store | D11–D14 | Play products, RevenueCat paywall, feature freeze at D11, submission ≤ D14 | Build submitted to Google Play |
 
-**Buffer review stores :** soumettre à J14 laisse la marge nécessaire avant le 30/09/2026 (rejet possible → itération, voir Risk Register R1).
+**Store review buffer:** submitting at D14 leaves the necessary margin before 30/09/2026 (possible rejection → iteration, see Risk Register R1).
 
-## Post-lancement
-- **V1.1 :** **iOS** (Apple Sign-In, share extension avec App Groups, Privacy Labels, IAP Apple — nécessite un Mac, voir ADR-007), Daily Digest si sorti du périmètre V1.0, transcripts YouTube, meilleure extraction des pages JS.
-- **V1.2 :** widgets iOS/Android, tags manuels, collections.
-- **V2 :** ⚠️ à décider — app web ou API publique. Décision après données d'usage réelles.
+## Post-launch
+- **V1.1:** **iOS** (Apple Sign-In, share extension with App Groups, Privacy Labels, IAP Apple — requires a Mac, see ADR-007), Daily Digest if out of V1.0 scope, YouTube transcripts, better extraction of JS-heavy pages.
+- **V1.2:** iOS/Android widgets, manual tags, collections.
+- **V2:** ⚠️ TBD — web app or public API. Decision after real usage data.

@@ -1,6 +1,6 @@
-# ADR-002 — Clerk pour l'authentification
-**Statut :** accepté · 2026-08-07
-**Contexte :** Google/Apple/e-mail requis, zéro temps à consacrer à la sécurité des mots de passe.
-**Décision :** Clerk ; l'API vérifie les JWT via JWKS (aucun appel réseau Clerk sur le chemin chaud).
-**Alternatives :** Supabase Auth (couplerait à un autre écosystème DB), Firebase Auth (config native plus lourde), auth maison (exclu : risque + délai).
-**Conséquences :** dépendance SaaS payante à l'échelle ; vendor lock-in limité (JWT standard) ; Apple Sign-In couvert nativement.
+# ADR-002 — Clerk for authentication
+**Status:** accepted · 2026-08-07
+**Context:** Google/Apple/email required, zero time to spend on password security.
+**Decision:** Clerk; the API verifies JWTs via JWKS (no network call to Clerk on the hot path).
+**Alternatives:** Supabase Auth (would couple to another DB ecosystem), Firebase Auth (heavier native config), home-grown auth (excluded: risk + delay).
+**Consequences:** paid SaaS dependency at scale; vendor lock-in limited (standard JWT); Apple Sign-In covered natively.

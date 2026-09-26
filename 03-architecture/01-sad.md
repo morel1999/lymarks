@@ -1,65 +1,65 @@
 # Software Architecture Document (SAD) — Lymarks
 
-> **But :** carte des composants, flux, et specs des modules. · **Statut :** vivant · **Màj :** 2026-08-07
+> **Purpose:** component map, flows, and module specs. · **Status:** living · **Updated:** 2026-08-07
 
-## Vue d'ensemble
+## Overview
 
 ```
-[App Flutter] ──(share intent)── [Share Extension iOS/Android]
+[Flutter App] ──(share intent)── [Share Extension iOS/Android]
       │                                  │
       └────────── HTTPS + JWT Clerk ─────┘
                         │
-              [API Hono @ Cloudflare Workers]
-                        │  (waitUntil / Queues pour l'async)
+              [Hono API @ Cloudflare Workers]
+                        │  (waitUntil / Queues for async)
    ┌───────────┬────────┼─────────────┬──────────────┐
 [Scraper]  [Summarizer] [Embedder]  [Neon Postgres] [Push]
 (fetch +    (Groq        (Gemini     (+ pgvector)   (FCM/APNs)
 Readability) Llama 3.3)  emb-004)
 ```
 
-Auth : **Clerk** (JWT vérifié par middleware Hono via JWKS). Monétisation : **RevenueCat** (webhook → table `subscriptions`).
+Auth: **Clerk** (JWT verified by Hono middleware via JWKS). Monetisation: **RevenueCat** (webhook → `subscriptions` table).
 
-## Flux 1 — Ingestion d'un lymark
+## Flow 1 — Lymark ingestion
 1. Share extension → `POST /bookmarks` `{url, note?}` (JWT).
-2. L'API répond **201 immédiatement** (`status: processing`) puis continue en arrière-plan (`ctx.waitUntil`). ⚠️ À décider : passage à Cloudflare Queues si les timeouts Workers posent problème sur les grosses pages.
-3. Scraper : fetch de l'URL (protections SSRF, voir Security §3) → extraction texte (Readability-like), tronqué à ~8 000 tokens.
-4. Summarizer : Groq → `{bullets[3], keywords[], lang}` (JSON strict).
-5. Embedder : Gemini `text-embedding-004` sur `titre + puces + note` → vector(768).
-6. UPDATE du bookmark → `status: ready` (ou `partial`/`failed`).
+2. API responds **201 immediately** (`status: processing`) then continues in background (`ctx.waitUntil`). ⚠️ TBD: move to Cloudflare Queues if Workers timeouts are a problem on large pages.
+3. Scraper: fetch the URL (SSRF protections, see Security §3) → text extraction (Readability-like), truncated to ~8,000 tokens.
+4. Summarizer: Groq → `{bullets[3], keywords[], lang}` (strict JSON).
+5. Embedder: Gemini `text-embedding-004` on `title + bullets + note` → vector(768).
+6. UPDATE bookmark → `status: ready` (or `partial`/`failed`).
 
-## Flux 2 — Recherche
-`GET /search?q=` → si plan Free : plein texte Postgres (`tsvector` ou `ILIKE` V1). Si Pro : embedding de la requête (Gemini) + `ORDER BY embedding <=> $1` (cosinus, index HNSW) fusionné avec le plein texte (score pondéré 0,7 sémantique / 0,3 texte ⚠️ à calibrer).
+## Flow 2 — Search
+`GET /search?q=` → if Free plan: Postgres full-text (`tsvector` or `ILIKE` V1). If Pro: query embedding (Gemini) + `ORDER BY embedding <=> $1` (cosine, HNSW index) merged with full-text (weighted score 0.7 semantic / 0.3 text ⚠️ to calibrate).
 
-## Flux 3 — Daily Digest
-Cron Trigger Workers (toutes les 30 min) → sélectionne les utilisateurs Pro dont l'heure locale = heure choisie → algorithme de re-surfaçage (voir Knowledge Vault Spec §4) → push FCM/APNs. ⚠️ À décider : FCM seul (couvre iOS via APNs) — proposé pour n'avoir qu'un canal.
+## Flow 3 — Daily Digest
+Workers Cron Trigger (every 30 min) → selects Pro users whose local time = chosen time → re-surfacing algorithm (see Knowledge Vault Spec §4) → FCM/APNs push. ⚠️ TBD: FCM only (covers iOS via APNs) — proposed for a single channel.
 
-## Spécifications des modules
+## Module specifications
 
-### M1 — Share Extension (Flutter + natif)
-**Responsabilités :** intercepter URL+texte partagés, saisir la note, POST, se fermer. **Interfaces :** `receive_sharing_intent` ; `POST /bookmarks`. **Événements :** `share_received`, `bookmark_submitted`, `queued_offline`. **Tests :** partage depuis X, Safari, Chrome, YouTube, LinkedIn sur devices réels iOS et Android (cases limites : texte sans URL, multi-URL).
+### M1 — Share Extension (Flutter + native)
+**Responsibilities:** intercept shared URL+text, capture note, POST, close. **Interfaces:** `receive_sharing_intent`; `POST /bookmarks`. **Events:** `share_received`, `bookmark_submitted`, `queued_offline`. **Tests:** share from X, Safari, Chrome, YouTube, LinkedIn on real iOS and Android devices (edge cases: text without URL, multi-URL).
 
 ### M2 — Ingestion Pipeline (Workers)
-**Responsabilités :** orchestrer scraper→LLM→embedding→DB ; idempotence par `(user_id, url_hash)` ; retries (1 retry Groq, puis `failed`). **Interfaces :** internes ; sortie = ligne `bookmarks`. **Tests :** mocks Groq/Gemini ; pages OK / paywall / JS-only / 404 / >8k tokens ; injection de prompt dans le contenu.
+**Responsibilities:** orchestrate scraper→LLM→embedding→DB; idempotence by `(user_id, url_hash)`; retries (1 Groq retry, then `failed`). **Interfaces:** internal; output = `bookmarks` row. **Tests:** Groq/Gemini mocks; OK / paywalled / JS-only / 404 / >8k tokens / prompt injection in content pages.
 
 ### M3 — Search Engine (Workers + Neon)
-**Responsabilités :** requêtes texte + vectorielles, fusion, scoping strict par `user_id`. **Tests :** rappel sur jeu de 50 bookmarks de test ; latence P95 <800 ms.
+**Responsibilities:** text + vector queries, fusion, strict scoping by `user_id`. **Tests:** recall on 50-bookmark test set; P95 latency <800 ms.
 
 ### M4 — Digest Engine (Cron Workers)
-**Responsabilités :** scoring, choix du lien, envoi push, journalisation `digests`. **Tests :** jamais 2 push/jour ; respect du fuseau ; opt-out effectif.
+**Responsibilities:** scoring, link selection, push send, `digests` logging. **Tests:** never 2 pushes/day; timezone respected; opt-out effective.
 
 ### M5 — Paywall & Entitlements (Flutter + Workers)
-**Responsabilités :** afficher le paywall RevenueCat, refléter l'entitlement `pro` côté serveur (webhook), **appliquer les limites côté serveur**. **Tests :** achat sandbox, restore, expiration, tentative de bypass (appel direct API en Free au-delà de 30).
+**Responsibilities:** display RevenueCat paywall, reflect `pro` entitlement server-side (webhook), **enforce limits server-side**. **Tests:** sandbox purchase, restore, expiration, bypass attempt (direct API call in Free beyond 30).
 
-## Annexe — Stack technique et rôles
-| Couche | Techno | Rôle | Version épinglée |
+## Appendix — Tech stack and roles
+| Layer | Tech | Role | Pinned version |
 |---|---|---|---|
-| Mobile | Flutter (Dart 3) | UI 60–120 FPS, share extension | ⚠️ fixer à J1 |
-| Auth | Clerk | Comptes, OAuth Google/Apple, JWT | SDK stable courant |
-| API | Hono (TS) sur Cloudflare Workers | Latence minimale, 0 ms cold start | idem |
-| DB | Neon Postgres + pgvector | Données + vecteurs, branching dev/prod | pgvector ≥0.7 |
-| LLM | Groq (Llama 3.3 70B) | Résumés 3 puces, extraction mots-clés | — |
-| Embeddings | Gemini `text-embedding-004` | Vecteurs 768 d | — |
-| Paiement | RevenueCat (`purchases_flutter`) | Abonnements, entitlements | — |
-| Push | FCM (+APNs) | Digest | ⚠️ à décider |
+| Mobile | Flutter (Dart 3) | UI 60–120 FPS, share extension | ⚠️ pin at D1 |
+| Auth | Clerk | Accounts, Google/Apple OAuth, JWT | current stable SDK |
+| API | Hono (TS) on Cloudflare Workers | Minimal latency, 0 ms cold start | same |
+| DB | Neon Postgres + pgvector | Data + vectors, dev/prod branching | pgvector ≥0.7 |
+| LLM | Groq (Llama 3.3 70B) | 3-bullet summaries, keyword extraction | — |
+| Embeddings | Gemini `text-embedding-004` | 768-d vectors | — |
+| Payments | RevenueCat (`purchases_flutter`) | Subscriptions, entitlements | — |
+| Push | FCM (+APNs) | Digest | ⚠️ TBD |
 
-Justification de chaque choix : voir `adr/`.
+Justification for each choice: see `adr/`.

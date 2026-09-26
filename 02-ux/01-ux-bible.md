@@ -1,20 +1,20 @@
 # UX Bible — Lymarks
 
-> **But :** règles d'expérience non négociables, valables pour des années. · **Statut :** stable · **Màj :** 2026-08-07
+> **Purpose:** non-negotiable experience rules, valid for years. · **Status:** stable · **Updated:** 2026-08-07
 
-## Règles dures
-1. **La capture ne bloque jamais.** La share sheet se ferme dès le tap sur Enregistrer (<2 s tap→fermeture). Aucun spinner d'attente du pipeline IA, jamais.
-2. **L'utilisateur ne quitte jamais son environnement.** La capture se fait dans la fenêtre de partage native ; retour automatique à l'app source. Jamais d'ouverture de l'app Lymarks pendant une capture.
-3. **Zéro décision imposée à la capture.** Pas de dossier, pas de tag obligatoire, pas de catégorie. La note est optionnelle. Un seul bouton principal.
-4. **Le traitement est visible mais pas bruyant.** Dans l'app, un lymark en cours = carte squelette animée qui se remplit seule. Pas de notification « votre résumé est prêt ».
-5. **La recherche est un seul champ.** Pas de filtres obligatoires, pas de syntaxe. Résultats <500 ms (plein texte) / <800 ms (sémantique).
-6. **Le digest respecte l'attention.** 1 notification/jour maximum, jamais deux. Opt-out en 1 geste depuis la notification. Aucune notification marketing.
-7. **Toute action destructive est réversible.** Suppression d'un lymark = undo 5 s (snackbar). Exception : suppression de compte (confirmation explicite double).
-8. **Animations <150 ms** pour les micro-interactions ; 200–250 ms max pour les transitions de listes. Jamais d'animation qui fait attendre.
-9. **Jamais de full page pour une action simple.** Note, tags, report du digest : bottom sheets. Les pages complètes sont réservées à la lecture d'un lymark et aux réglages.
-10. **Toujours revenir à l'endroit exact.** Position de scroll, requête de recherche et onglet sont restaurés après navigation ou kill de l'app.
-11. **Le paywall n'interrompt jamais une capture.** La limite Free se signale *après* l'enregistrement (le 31ᵉ lien est capturé puis mis en attente), jamais dans la share sheet. ⚠️ À décider : file « en attente » vs blocage doux — proposition : capture acceptée + bandeau dans l'app.
-12. **Le vide est un état conçu.** Liste vide = mini-tutoriel de capture (3 étapes illustrées), pas un écran blanc.
+## Hard rules
+1. **Capture never blocks.** The share sheet closes on tap of Save (<2 s tap→close). No spinner waiting for the AI pipeline, ever.
+2. **The user never leaves their environment.** Capture happens in the native share sheet; automatic return to the source app. The Lymarks app is never opened during a capture.
+3. **Zero decisions forced at capture.** No folder, no required tag, no category. The note is optional. One single primary button.
+4. **Processing is visible but not noisy.** In the app, a lymark in progress = an animated skeleton card that fills itself. No "your summary is ready" notification.
+5. **Search is a single field.** No required filters, no syntax. Results <500 ms (full-text) / <800 ms (semantic).
+6. **The digest respects attention.** 1 notification/day maximum, never two. Opt-out in 1 gesture from the notification. No marketing notifications.
+7. **Every destructive action is reversible.** Lymark deletion = 5-second undo (snackbar). Exception: account deletion (explicit double confirmation).
+8. **Animations <150 ms** for micro-interactions; 200–250 ms max for list transitions. Never an animation that makes the user wait.
+9. **Never a full page for a simple action.** Notes, tags, digest snooze: bottom sheets. Full pages are reserved for reading a lymark and settings.
+10. **Always return to the exact same place.** Scroll position, search query and tab are restored after navigation or app kill.
+11. **The paywall never interrupts a capture.** The Free limit signals itself *after* the save (the 31st link is captured then held), never in the share sheet. ⚠️ TBD: "held" queue vs soft block — proposal: capture accepted + in-app banner.
+12. **Empty is a designed state.** Empty list = mini capture tutorial (3 illustrated steps), not a blank screen.
 
-## Ton et langage
-Interface sobre, vocabulaire concret (« Enregistré », « 1 lien oublié refait surface »). Pas de gamification, pas de badges, pas de culpabilisation (« vous avez 47 liens non lus » est interdit).
+## Tone and language
+Sober interface, concrete vocabulary ("Saved", "1 forgotten link surfaced"). No gamification, no badges, no guilt-tripping ("you have 47 unread links" is forbidden).

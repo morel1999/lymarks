@@ -1,37 +1,37 @@
 # Security Architecture — Lymarks
 
-> **But :** mesures de sécurité par couche. · **Statut :** vivant · **Màj :** 2026-08-07
+> **Purpose:** security measures by layer. · **Status:** living · **Updated:** 2026-08-07
 
-## 1. Authentification et sessions
-- JWT Clerk vérifiés à **chaque** requête par le middleware Hono (signature via JWKS mis en cache, `exp` court, audience contrôlée).
-- Aucun endpoint non authentifié hors `/health` et le webhook RevenueCat (protégé par signature dédiée).
-- `user_id` extrait du JWT uniquement — jamais du body — et injecté dans **chaque** requête SQL (`WHERE user_id = $1`). Aucun ID de ressource énumérable : UUID v4 partout.
+## 1. Authentication and sessions
+- Clerk JWTs verified on **every** request by Hono middleware (signature via cached JWKS, short `exp`, controlled audience).
+- No unauthenticated endpoint except `/health` and the RevenueCat webhook (protected by its own dedicated signature).
+- `user_id` extracted from the JWT only — never from the body — and injected into **every** SQL query (`WHERE user_id = $1`). No enumerable resource IDs: UUID v4 everywhere.
 
 ## 2. Secrets
-- Clés Groq, Gemini, Neon, secret webhook RevenueCat : **Cloudflare Workers Secrets** exclusivement. Zéro clé dans l'app Flutter, zéro clé dans le repo (`.dev.vars` gitignoré, GitLeaks en CI ⚠️ à confirmer dans les Coding Standards).
-- L'app mobile ne parle qu'à l'API Lymarks — jamais directement à Groq/Gemini/Neon.
-- Clerk publishable key (publique par design) seule embarquée côté client.
+- Groq, Gemini, Neon, RevenueCat webhook secret keys: **Cloudflare Workers Secrets** exclusively. Zero keys in the Flutter app, zero keys in the repo (`.dev.vars` gitignored, GitLeaks in CI ⚠️ to confirm in Coding Standards).
+- The mobile app only talks to the Lymarks API — never directly to Groq/Gemini/Neon.
+- Only the Clerk publishable key (public by design) is bundled client-side.
 
-## 3. Scraper — anti-SSRF (surface critique n°1)
-L'utilisateur soumet une URL arbitraire que **notre** serveur va fetcher :
-- Schémas autorisés : `http(s)` uniquement.
-- Résolution DNS puis blocage des IP privées/réservées (10/8, 172.16/12, 192.168/16, 127/8, 169.254/16, ::1, fd00::/8) — re-vérifié **après chaque redirection** (max 3).
-- Timeout 10 s, taille max 2 MB, content-types autorisés : `text/html`, `application/xhtml+xml`.
-- Le fetch part de l'edge Cloudflare, sans credentials, User-Agent identifié `LymarksBot/1.0`.
+## 3. Scraper — anti-SSRF (critical surface #1)
+The user submits an arbitrary URL that **our** server will fetch:
+- Allowed schemes: `http(s)` only.
+- DNS resolution then blocking of private/reserved IPs (10/8, 172.16/12, 192.168/16, 127/8, 169.254/16, ::1, fd00::/8) — re-checked **after every redirect** (max 3).
+- Timeout 10 s, max size 2 MB, allowed content-types: `text/html`, `application/xhtml+xml`.
+- Fetch goes from the Cloudflare edge, no credentials, User-Agent identified as `LymarksBot/1.0`.
 
-## 4. Contenu non fiable → LLM
-Le texte scrapé peut contenir des instructions hostiles. Voir Threat Model M2. Mesures : prompt système strict (le contenu est une donnée, pas une instruction), sortie JSON schéma-validée (3 puces max, longueurs bornées), aucune capacité d'action donnée au LLM (pas d'outils), échappement à l'affichage côté Flutter.
+## 4. Untrusted content → LLM
+Scraped text can contain hostile instructions. See Threat Model M2. Measures: strict system prompt (content is data, not instruction), JSON-schema-validated output (max 3 bullets, bounded lengths), no tools given to the LLM, escaped at display in Flutter.
 
-## 5. Quotas et abus
-- Rate limiting par utilisateur : 30 captures/h, 60 recherches/h (Workers Rate Limiting ⚠️ ou compteur Neon). Protège les coûts Groq/Gemini.
-- Limites de plan appliquées côté serveur (voir Monetization Spec §3).
+## 5. Quotas and abuse
+- Per-user rate limiting: 30 captures/h, 60 searches/h (Workers Rate Limiting ⚠️ or Neon counter). Protects Groq/Gemini costs.
+- Plan limits enforced server-side (see Monetization Spec §3).
 
-## 6. Transport, stockage, client
-- TLS partout (défaut Cloudflare/Neon), HSTS.
-- Neon : chiffrement au repos (natif), rôle SQL applicatif aux droits minimaux, branch dev ≠ prod.
-- Flutter : tokens en stockage sécurisé (`flutter_secure_storage` : Keychain/Keystore), pas de logs de données sensibles, certificate pinning ⚠️ à décider (proposé : non en V1, complexité > risque).
+## 6. Transport, storage, client
+- TLS everywhere (Cloudflare/Neon default), HSTS.
+- Neon: encryption at rest (native), minimal-rights SQL application role, dev branch ≠ prod.
+- Flutter: tokens in secure storage (`flutter_secure_storage`: Keychain/Keystore), no sensitive data in logs, certificate pinning ⚠️ TBD (proposed: no in V1, complexity > risk).
 
-## 7. Chaîne de livraison
-- Signature des builds : App Store (automatique), Play App Signing.
-- CI : lint + tests + scan secrets avant tout déploiement (`wrangler deploy` uniquement depuis la CI).
-- Dépendances épinglées (pubspec.lock / package-lock committés), audit avant release.
+## 7. Delivery chain
+- Build signing: App Store (automatic), Play App Signing.
+- CI: lint + tests + secrets scan before any deployment (`wrangler deploy` from CI only).
+- Pinned dependencies (pubspec.lock / package-lock committed), audit before release.

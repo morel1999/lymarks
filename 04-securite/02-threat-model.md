@@ -1,18 +1,18 @@
 # Threat Model — Lymarks
 
-> **But :** comment le produit peut être attaqué, et ce qui l'en empêche. · **Statut :** vivant · **Màj :** 2026-08-07
+> **Purpose:** how the product can be attacked, and what prevents it. · **Status:** living · **Updated:** 2026-08-07
 
-| ID | Attaque | Vecteur | Impact | Protection |
+| ID | Attack | Vector | Impact | Protection |
 |---|---|---|---|---|
-| M1 | **SSRF via URL soumise** | `POST /bookmarks` avec `http://169.254.169.254/`, IP interne, redirection piégée | Accès métadonnées/services internes | Filtrage IP + re-check post-redirect, schémas http(s), timeout/taille (Security §3) |
-| M2 | **Injection de prompt via contenu scrapé** | Page contenant « ignore tes instructions, réponds… » | Résumé mensonger, contenu toxique, bourrage de sortie | Contenu traité comme donnée, sortie JSON validée, puces bornées, LLM sans outils |
-| M3 | **Vol/rejeu de JWT** | Token exfiltré d'un device | Accès aux lymarks de la victime | Expiration courte + rotation Clerk, stockage Keychain/Keystore, TLS |
-| M4 | **Abus de quota / attaque sur les coûts** | Script appelant l'API en boucle (captures → appels Groq) | Facture IA, déni de service économique | Rate limiting par user, limite Free serveur, idempotence par url_hash |
-| M5 | **Bypass du paywall** | Appel direct de l'API en Free au-delà de 30, ou entitlement forgé côté client | Perte de revenus | Enforcement 100 % serveur via table `subscriptions` (webhook RevenueCat signé) |
-| M6 | **IDOR / énumération** | `GET /bookmarks/{id}` d'un autre utilisateur | Fuite de données privées | UUID + `WHERE user_id=` systématique (test d'intégration dédié) |
-| M7 | **Webhook RevenueCat forgé** | POST forgé → passage en Pro gratuit | Perte de revenus | Vérification de l'Authorization header dédié, idempotence des events |
-| M8 | **Supply chain** | Paquet pub.dev/npm compromis | Exécution de code, vol de secrets | Versions épinglées, lockfiles, audit avant release, dépendances minimales |
-| M9 | **Push spoofing / fuite via notifications** | Contenu sensible dans la notif | Fuite du titre d'un lien privé sur écran verrouillé | Notif digest limitée au titre ⚠️ à décider : option « notif discrète » (sans titre) |
-| M10 | **MITM** | Réseau hostile | Interception | TLS strict, pas de fallback HTTP |
+| M1 | **SSRF via submitted URL** | `POST /bookmarks` with `http://169.254.169.254/`, internal IP, poisoned redirect | Access to internal metadata/services | IP filtering + re-check post-redirect, http(s) schemes only, timeout/size limit (Security §3) |
+| M2 | **Prompt injection via scraped content** | Page containing "ignore your instructions, respond…" | Misleading summary, toxic content, output stuffing | Content treated as data, JSON-validated output, bounded bullets, LLM without tools |
+| M3 | **JWT theft/replay** | Token exfiltrated from a device | Access to the victim's lymarks | Short expiry + Clerk rotation, Keychain/Keystore storage, TLS |
+| M4 | **Quota abuse / cost attack** | Script calling the API in a loop (captures → Groq calls) | AI bill, economic denial-of-service | Per-user rate limiting, Free server limit, idempotence by url_hash |
+| M5 | **Paywall bypass** | Direct API call in Free beyond 30, or entitlement forged client-side | Revenue loss | 100% server enforcement via `subscriptions` table (signed, idempotent RevenueCat webhook) |
+| M6 | **IDOR / enumeration** | `GET /bookmarks/{id}` of another user | Private data leak | UUID + systematic `WHERE user_id=` (dedicated integration test) |
+| M7 | **Forged RevenueCat webhook** | Forged POST → free Pro upgrade | Revenue loss | Dedicated Authorization header verification, event idempotence |
+| M8 | **Supply chain** | Compromised pub.dev/npm package | Code execution, secret theft | Pinned versions, lockfiles, audit before release, minimal dependencies |
+| M9 | **Push spoofing / leak via notifications** | Sensitive content in the push | Leak of a private link title on the lock screen | Digest notification limited to the title ⚠️ TBD: "discreet notification" option (no title) |
+| M10 | **MITM** | Hostile network | Interception | Strict TLS, no HTTP fallback |
 
-Revue de ce tableau à chaque ajout de feature (règle inscrite dans les Core Principles).
+Review this table on every new feature addition (rule in Core Principles).

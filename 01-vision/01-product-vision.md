@@ -1,37 +1,37 @@
 # Product Vision — Lymarks
 
-> **But :** pourquoi Lymarks existe. · **Statut :** stable (ne change presque jamais) · **Màj :** 2026-08-07
+> **Purpose:** why Lymarks exists. · **Status:** stable (rarely changes) · **Updated:** 2026-08-07
 
 ## Vision
-Transformer les liens oubliés en mémoire active et accessible. Chaque contenu sauvegardé doit pouvoir resservir au bon moment, sans effort de rangement.
+Turn forgotten links into active, accessible knowledge. Every saved piece of content must be retrievable at the right moment, with no filing effort.
 
 ## Mission
-Offrir sur mobile la capture d'un lien avec son intention en moins de 2 secondes, puis restituer ce savoir via la recherche en langage naturel et un re-surfaçage quotidien intelligent.
+Deliver on mobile a link-capture-with-intent in under 2 seconds, then surface that knowledge through natural-language search and intelligent daily re-surfacing.
 
-## Le problème
-Le « cimetière de liens » : des dizaines d'articles, tweets, vidéos et ressources sauvegardés chaque semaine, dont le contexte est oublié et qui ne sont jamais relus. Les bookmarks natifs stockent des URL ; ils ne stockent ni l'intention, ni le sens.
+## The problem
+The "link graveyard": dozens of articles, tweets, videos and resources saved every week, whose context is forgotten and which are never revisited. Native bookmarks store URLs; they store neither intent nor meaning.
 
-## Philosophie
-1. **La capture ne coûte rien.** Aucune friction, aucun formulaire, aucun dossier à choisir. L'intelligence arrive après, en arrière-plan.
-2. **La valeur est dans la restitution.** Un lien sauvé qui ne ressort jamais n'a aucune valeur ; le produit se juge sur l'*outflow* (recherche + digest), pas sur l'*inflow*.
-3. **Le respect de l'attention.** Un seul lien re-surfacé par jour. Lymarks combat la surcharge informationnelle, il ne l'alimente pas.
+## Philosophy
+1. **Capture costs nothing.** No friction, no form, no folder to choose. Intelligence arrives afterwards, in the background.
+2. **Value is in the retrieval.** A saved link that never resurfaces has zero value; the product is judged on *outflow* (search + digest), not on *inflow*.
+3. **Respect for attention.** One link resurfaced per day. Lymarks fights information overload; it does not feed it.
 
-## Public cible
-- Travailleurs du savoir mobiles (devs, designers, marketeurs) qui sauvegardent depuis X, LinkedIn, YouTube, Safari/Chrome.
-- Étudiants et autodidactes qui collectent des ressources d'apprentissage.
-- Créateurs de contenu qui archivent de la matière première.
-Point commun : consommation majoritairement mobile, volume de sauvegarde élevé, taux de relecture proche de zéro.
+## Target audience
+- Mobile knowledge workers (devs, designers, marketers) who save from X, LinkedIn, YouTube, Safari/Chrome.
+- Students and self-learners collecting learning resources.
+- Content creators archiving source material.
+Common thread: predominantly mobile consumption, high save volume, near-zero re-read rate.
 
-## Valeur ajoutée (vs bookmarks natifs, Pocket-like, Notion)
-- Capture 2 s depuis le menu de partage natif, note texte/dictée optionnelle.
-- Résumé automatique en 3 puces : le contexte survit à la mémoire.
-- Recherche sémantique (« le composant UI React vu la semaine dernière ») au lieu de mots-clés exacts.
-- Daily Digest : le contenu revient vers l'utilisateur, pas l'inverse.
+## Differentiation (vs native bookmarks, Pocket-like apps, Notion)
+- 2-second capture from the native share menu, with an optional text/dictation note.
+- Automatic 3-bullet summary: context survives memory.
+- Semantic search ("the React UI component I saw last week") instead of exact keywords.
+- Daily Digest: content comes back to the user, not the other way around.
 
-## Objectifs
-1. **Shipaton 2026 :** app publiée sur l'App Store et Google Play avant le 30/09/2026.
-2. Boucle complète capture → résumé → recherche → digest fonctionnelle dès la V1.0.
-3. Premiers abonnés Pro via RevenueCat dès le lancement (validation du modèle freemium).
+## Goals
+1. **Shipaton 2026:** enter the **Next Gen** category — a two-minute demo, a public repository, and a Devpost page, all before 30/09/2026. No developer account required.
+2. Complete capture → summary → search → digest loop working from day one.
+3. First Pro subscribers via RevenueCat at launch (validation of the freemium model).
 
-## Roadmap globale (résumé)
-V1.0 mobile (Shipaton) → V1.x amélioration digest & widgets → V2 à décider (voir `03-roadmap.md`).
+## Global roadmap (summary)
+V1.0 mobile (Shipaton) → V1.x improved digest & widgets → V2 TBD (see `03-roadmap.md`).

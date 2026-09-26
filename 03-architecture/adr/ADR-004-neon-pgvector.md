@@ -1,6 +1,6 @@
 # ADR-004 — Neon Postgres + pgvector
-**Statut :** accepté · 2026-08-07
-**Contexte :** stocker bookmarks, résumés et embeddings ; recherche par similarité cosinus ; env dev/prod séparés sans coût fixe.
-**Décision :** Neon (serverless, Database Branching) avec l'extension pgvector (index HNSW).
-**Alternatives :** Supabase (très proche ; Neon retenu pour le branching), Pinecone/Qdrant (une 2ᵉ base à opérer pour 768 d × quelques milliers de lignes : injustifié), SQLite/D1 (pas de pgvector mature).
-**Conséquences :** un seul store pour données + vecteurs ; SQL standard ; latence Neon depuis l'edge à mesurer (driver HTTP `@neondatabase/serverless`).
+**Status:** accepted · 2026-08-07
+**Context:** store bookmarks, summaries and embeddings; cosine similarity search; separate dev/prod environments without a fixed cost.
+**Decision:** Neon (serverless, Database Branching) with the pgvector extension (HNSW index).
+**Alternatives:** Supabase (very close; Neon chosen for branching), Pinecone/Qdrant (a 2nd store to operate for 768-d × a few thousand rows: unjustified), SQLite/D1 (no mature pgvector).
+**Consequences:** single store for data + vectors; standard SQL; Neon latency from the edge to measure (HTTP driver `@neondatabase/serverless`).

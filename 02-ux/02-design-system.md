@@ -1,63 +1,54 @@
 # Design System — Lymarks
 
-> **But :** règles UI, tokens et composants Flutter. · **Statut :** vivant · **Màj :** 2026-09-22
+> **Purpose:** UI rules, tokens and Flutter components. · **Status:** living · **Updated:** 2026-09-22
 
-Base : **Material 3** (Flutter), personnalisé par les tokens ci-dessous. Dark mode natif dès la V1.0 (suit le système).
+Base: **Material 3** (Flutter), customised by the tokens below. Native dark mode from V1.0 (follows the system).
 
 ## Tokens
 
-### Couleurs — bleu nuit et chrome
+### Colours — midnight blue and chrome
 
-Identité arrêtée le **22/09/2026**, en remplacement du violet d'origine. La
-source de vérité est `app/lib/core/theme/app_colors.dart` (`LyPalette`) ; le
-tableau ci-dessous en est le reflet, pas l'inverse.
+Identity finalised on **22/09/2026**, replacing the original purple. The source of truth is `app/lib/core/theme/app_colors.dart` (`LyPalette`); the table below reflects it, not the other way around.
 
 | Token | Light | Dark | Usage |
 |---|---|---|---|
-| `primary` | #1A3E72 | #7FA9E8 | Actions, liens actifs, puces de résumé |
-| `onPrimary` / `primarySoft` | #FFFFFF / #E4ECF9 | #06152A / #132339 | Texte sur primaire, fonds doux |
-| `gradientTop` → `gradientBottom` | #0D1F3C → #23508F | #08142A → #1B4275 | `primaryGradient`, diagonale |
+| `primary` | #1A3E72 | #7FA9E8 | Actions, active links, summary bullets |
+| `onPrimary` / `primarySoft` | #FFFFFF / #E4ECF9 | #06152A / #132339 | Text on primary, soft backgrounds |
+| `gradientTop` → `gradientBottom` | #0D1F3C → #23508F | #08142A → #1B4275 | `primaryGradient`, diagonal |
 | `chrome` / `chromeSoft` / `chromeDeep` | #94A3B8 / #E8EDF4 / #56637A | #8593A8 / #D6DEEA / #414D60 | `chromeGradient` |
-| `surface` / `card` / `cardBorder` | #F6F8FC / #FFFFFF / #E3E9F2 | #060A12 / #0E1520 / #1C2634 | Fonds |
-| `navSurface` | #E9EFF9 | #0F1A2E | Barre de navigation |
-| `success` / `warning` / `danger` | #0E9E76 / #E39A0B / #E04A4A | #2CC79C / #F0B429 / #F0716E | États pipeline |
-| `textPrimary` / `textSecondary` | #0A101C / #5B6678 | #EDF1F8 / #94A1B4 | Textes |
+| `surface` / `card` / `cardBorder` | #F6F8FC / #FFFFFF / #E3E9F2 | #060A12 / #0E1520 / #1C2634 | Backgrounds |
+| `navSurface` | #E9EFF9 | #0F1A2E | Navigation bar |
+| `success` / `warning` / `danger` | #0E9E76 / #E39A0B / #E04A4A | #2CC79C / #F0B429 / #F0716E | Pipeline states |
+| `textPrimary` / `textSecondary` | #0A101C / #5B6678 | #EDF1F8 / #94A1B4 | Text |
 
-**Où le dégradé a le droit d'être** : seulement sur les surfaces qui portent
-l'identité — en-tête du profil aujourd'hui. Une carte de contenu ne prend
-jamais le dégradé : elle appartient à sa catégorie, donc à son accent.
+**Where the gradient is allowed:** only on surfaces that carry the identity — the profile header today. A content card never takes the gradient: it belongs to its category, therefore to its accent.
 
-**Dose de chrome** : filets, bordures d'exception et **pastilles Pro**
-(paywall, en-tête du profil). Jamais un fond plein, jamais un texte. Le métal
-signale ce qui est payant ; l'utiliser ailleurs viderait le signal.
+**Chrome dose:** dividers, exception borders, and **Pro badges** (paywall, profile header). Never a solid background, never a text colour. Metal signals what is paid; using it elsewhere would void the signal.
 
-**Accents de catégorie** (5 familles, `fill` / `strong` / `onFill`, tirées au
-sort de façon déterministe par `accentFor`) : `lime`, `blue` (cyan pâle),
-`steel`, `yellow`, `pink`. `steel` (#E5E9F0 / #64748B) remplace la famille
-`lavender` violette — c'est l'acier du thème.
+**Category accents** (5 families, `fill` / `strong` / `onFill`, drawn deterministically by `accentFor`): `lime`, `blue` (pale cyan), `steel`, `yellow`, `pink`. `steel` (#E5E9F0 / #64748B) replaces the purple `lavender` family — it is the theme's steel.
 
-### Espacement & rayons
-Grille 4 pt : `xs 4 · s 8 · m 12 · l 16 · xl 24 · xxl 32`. Rayons : cartes 16, bottom sheets 24 (haut), boutons 12. Marges d'écran : 16.
+### Spacing & radii
+4 pt grid: `xs 4 · s 8 · m 12 · l 16 · xl 24 · xxl 32`. Radii: cards 16, bottom sheets 24 (top), buttons 12. Screen margins: 16.
 
-### Typographie
-`Inter`, en **version variable** : un fichier (876 Ko) au lieu de quatre statiques (1,3 Mo), portant deux axes.
+### Typography
+`Inter`, **variable version**: one file (876 KB) instead of four static weights (1.3 MB), carrying two axes.
 
-- `wght` 100→900, continu. Les valeurs employées restent celles de l'échelle ci-dessous, mais une graisse supplémentaire ne coûte plus un fichier.
-- `opsz` 14→32, la **taille optique**, calée sur la taille du texte : les grandes tailles se resserrent et gagnent en contraste, les petites s'ouvrent et s'espacent. Un titre de 34 et une date de 12 ne sont plus le même dessin agrandi ou réduit.
+- `wght` 100→900, continuous. Used values stay on the scale below, but an extra weight no longer costs a file.
+- `opsz` 14→32, **optical size**, locked to text size: large sizes tighten and gain contrast, small sizes open up and space out. A 34px title and a 12px date are no longer the same drawing scaled up or down.
 
-Échelle : display 28/bold (onboarding), title 20/semibold, body 15/regular, caption 12/**regular**. Hauteur de ligne **1,5 pour le corps** (le texte long respire ; c'est l'air entre les lignes qu'on perçoit avant le dessin des lettres), 1,2 à 1,3 pour les titres et les libellés. Les 3 puces de résumé : body, puces `•` couleur `primary`.
+Scale: display 28/bold (onboarding), title 20/semibold, body 15/regular, caption 12/**regular**. Line height **1.5 for body** (long text breathes; the air between lines is perceived before the letter shapes), 1.2–1.3 for headings and labels. The 3 summary bullets: body, `•` bullets in `primary`.
 
-La caption est en regular et non en medium : ces lignes — domaine, date, chips — accompagnent, elles ne réclament pas. Le gris secondaire portait déjà le retrait, la graisse le contredisait.
+Caption is regular not medium: these lines — domain, date, chips — accompany, they do not demand. The secondary grey already carried the visual step back; adding weight would contradict it.
 
 ### Animations
-Standard 120 ms `easeOut` (tap, hover) ; listes 200 ms `easeInOutCubic` ; squelette `processing` : shimmer 1,2 s en boucle. Aucune animation >250 ms.
+Standard 120 ms `easeOut` (tap, hover); lists 200 ms `easeInOutCubic`; `processing` skeleton: shimmer 1.2 s loop. No animation >250 ms.
 
-## Composants
-- **BookmarkCard** : favicon+domaine, titre (2 lignes max), 3 puces, note perso en italique si présente, rangée de tags (chips 12), menu ⋯ (ouvrir, copier, supprimer). Variantes : `processing` (shimmer), `partial` (badge « résumé limité »), `failed` (bouton réessayer).
-- **DigestCard** : fond teinté `accent` 8 %, mention « Refait surface · sauvegardé il y a N jours », actions Lire / Reporter / Archiver.
-- **SearchField** : sticky en haut, icône ✨ quand la requête part en sémantique (Pro).
-- **PaywallSheet** : bottom sheet RevenueCat, 3 arguments, prix mensuel/annuel, « Restaurer mes achats » toujours visible.
-- **ShareSheetView (extension)** : la plus légère possible — titre de page détecté, champ note 1 ligne extensible, bouton Enregistrer pleine largeur. Aucune image, aucune liste.
+## Components
+- **BookmarkCard**: favicon+domain, title (2 lines max), 3 bullets, personal note in italics if present, tag row (12px chips), ⋯ menu (open, copy, delete). Variants: `processing` (shimmer), `partial` (badge "limited summary"), `failed` (retry button).
+- **DigestCard**: `accent` 8% tinted background, "Resurfaced · saved N days ago" label, Read / Snooze / Archive actions.
+- **SearchField**: sticky at top, ✨ icon when the query goes semantic (Pro).
+- **PaywallSheet**: RevenueCat bottom sheet, 3 arguments, monthly/annual price, "Restore purchases" always visible.
+- **ShareSheetView (extension)**: as light as possible — detected page title, 1-line extensible note field, full-width Save button. No images, no list.
 
-## Iconographie
-Lucide (via `lucide_flutter`) taille 20/24, trait 1,75. Pas d'emojis dans l'UI système (autorisés dans les notes utilisateur).
+## Iconography
+Lucide (via `lucide_flutter`) size 20/24, stroke 1.75. No emojis in the system UI (allowed in user notes).
