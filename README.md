@@ -9,9 +9,10 @@ You save links all day and never open them again. Lymarks reads each one, writes
 three-bullet summary, files it under a category, and lets you find it months later by
 describing what you remember — not by guessing the exact words you bookmarked.
 
-Built for [RevenueCat Shipaton 2026](https://shipaton.revenuecat.com/) — **Next Gen**,
-and **HAMM Award** for the monetization design: past the free limit Lymarks *keeps*
-the link instead of refusing it, and the RevenueCat webhook is what opens it. See
+Built for [RevenueCat Shipaton 2026](https://shipaton.revenuecat.com/), in the
+**Next Gen** category. The monetization is where the design work went: past the free
+limit Lymarks *keeps* the link instead of refusing it, and the RevenueCat webhook is
+what opens it. See
 [Monetization](#monetization-what-the-free-plan-does-instead-of-refusing).
 
 Android first; iOS is deliberately deferred (see `03-architecture/adr/`).
