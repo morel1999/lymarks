@@ -239,7 +239,8 @@ plumbing. iOS is untouched, for want of a Mac.
 
 ## License
 
-[MIT](LICENSE) — © 2026 Morel Herval. Take it, fork it, ship something with it.
+[GNU GPL v3.0](LICENSE) — © 2026 Morel Herval. Fork it and ship something with it;
+if you distribute it, your version stays open under the same terms.
 
 Third-party assets keep their own terms: the [Inter](https://rsms.me/inter/) typeface
 is under the SIL Open Font License 1.1, and the [Lucide](https://lucide.dev) icons
